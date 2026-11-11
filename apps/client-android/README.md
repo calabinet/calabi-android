@@ -15,13 +15,7 @@ properties below.
 
 ## Build
 
-Needs JDK 17, the Android SDK (platform 35, build-tools 35) with NDK r27, and
-the pinned toolchain in `mobile-toolchain.json`:
-
-```bash
-go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20260908204917-8b95e45f8d3e
-go install golang.org/x/mobile/cmd/gobind@v0.0.0-20260908204917-8b95e45f8d3e
-```
+Use the Windows/PowerShell 7 [fresh-checkout instructions](../../README.md#build-from-a-fresh-checkout) for SDK setup and guarded installation of gomobile and gobind. The exact versions are pinned in `mobile-toolchain.json` (Go 1.26.3, JDK 17, NDK 27.3.13750724 and Gradle 8.11.1 for this source).
 
 First prepare the pinned public core from a clean [Android checkout](https://github.com/calabinet/calabi-android):
 
@@ -32,19 +26,18 @@ Set-Location ../calabi-android-build
 
 The Android version is `apps/client-android/VERSION`; `core-source.json` fixes the core's own version and public commit.
 
-1. Build the Go core into `app/libs/calabicore.aar`. It embeds the edge CA the
+1. From the prepared build root, build the Go core into `apps/client-android/app/libs/calabicore.aar`. It embeds the edge CA the
    client trusts. Without `-EdgeCa` that is whatever the tree carries (the
    development edge CA, `CN=calabi-dev-edge-ca`), and the app cannot reach
    calabi.net.
-   calabi.net's edge-CA root is a public certificate carried in every release's
-   `build-manifest.json`:
+   calabi.net's edge-CA root is carried in the **core repository's** signed `build-manifest.json`. Obtain and verify it from the [core release](https://github.com/calabinet/calabi/releases) matching `core-source.json`, and save it as `core-build-manifest.json`. Product manifests contain input hashes and do not have this certificate field:
 
    ```bash
-   jq -r '.inputs.edge_ca.pem[]' build-manifest.json > calabi-edge-ca.pem
+   jq -r '.inputs.edge_ca.pem[]' core-build-manifest.json > calabi-edge-ca.pem
    ```
 
    ```powershell
-   scripts\mobile\build-core-android.ps1 -EdgeCa calabi-edge-ca.pem
+   pwsh -NoProfile -File scripts/mobile/build-core-android.ps1 -EdgeCa calabi-edge-ca.pem -AndroidHome $env:ANDROID_HOME
    ```
 
 2. Build the app (`local.properties` names the SDK, e.g. `sdk.dir=C\:\\Android\\Sdk`):
@@ -61,7 +54,7 @@ A development control plane: `-PcalabiBffUrl=http://192.0.2.10:8002
 
 A signed release build: set `CALABI_ANDROID_KEYSTORE` (path to your `.jks`),
 `CALABI_ANDROID_KEYSTORE_PASSWORD` and, if the alias is not `calabi`,
-`CALABI_ANDROID_KEY_ALIAS`, then `gradle -PcalabiVersion=<version> assembleRelease`.
+`CALABI_ANDROID_KEY_ALIAS`, then run `gradle assembleRelease` from `apps/client-android`. The default version comes from this product's `VERSION` file. `-PcalabiVersion` is supported for development builds; the official release script requires the APK version to match the product version.
 Without the keystore variables the release APK comes out unsigned. The official
 APK is built with `scripts/mobile/build-release-android.ps1` from the
 prepared public product build; it checks that the APK is signed by the certificate in
