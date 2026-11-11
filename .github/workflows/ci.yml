@@ -27,6 +27,9 @@ jobs:
         with:
           gradle-version: '8.11.1'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
       - run: sdkmanager 'platforms;android-35' 'ndk;27.3.13750724'
       - run: pwsh -NoProfile -File ../build-source/scripts/dev/build.ps1 go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20260908204917-8b95e45f8d3e
       - run: pwsh -NoProfile -File ../build-source/scripts/dev/build.ps1 go install golang.org/x/mobile/cmd/gobind@v0.0.0-20260908204917-8b95e45f8d3e
