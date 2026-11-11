@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="product_android_version">Version Android</string>
+    <string name="product_core_version">Version du cœur actif</string>
+    <string name="product_core_commit">Commit du cœur</string>
+</resources>

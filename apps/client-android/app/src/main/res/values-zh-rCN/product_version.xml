@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="product_android_version">Android 版本</string>
+    <string name="product_core_version">运行核心版本</string>
+    <string name="product_core_commit">核心提交</string>
+</resources>
