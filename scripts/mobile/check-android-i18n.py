@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[2]
 RES = ROOT / "apps/client-android/app/src/main/res"
 LANGUAGES = ROOT / "web/www/src/i18n/languages.ts"
+SUPPORTED_LOCALES = ("en", "zh-CN", "zh-TW", "de", "es", "fr", "it", "ja", "ko", "pt")
 QUALIFIERS = {"en": "values", "zh-CN": "values-zh-rCN", "zh-TW": "values-zh-rTW"}
 SPECIFIER = re.compile(r"%(\d+)\$([dsf])")
 
@@ -30,8 +31,11 @@ def formats(text):
 
 
 def check():
-    locales = re.findall(r'code: "([^"]+)"', LANGUAGES.read_text(encoding="utf-8"))
+    # The standalone Android repository does not include the marketing website.
+    locales = (re.findall(r'code: "([^"]+)"', LANGUAGES.read_text(encoding="utf-8"))
+               if LANGUAGES.is_file() else list(SUPPORTED_LOCALES))
     assert len(locales) == 10 and len(set(locales)) == 10
+    assert set(locales) == set(SUPPORTED_LOCALES), "Supported Android and website locales differ"
     allowed = {QUALIFIERS.get(locale, "values-" + locale) for locale in locales}
     actual = {p.name for p in RES.iterdir() if p.is_dir() and
               re.fullmatch(r"values-[a-z]{2}(?:-r[A-Z]{2})?", p.name)} | {"values"}
