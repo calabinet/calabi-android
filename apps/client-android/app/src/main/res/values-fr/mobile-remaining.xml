@@ -147,7 +147,6 @@
     <string name="rdp_forget_credentials">Oublier les identifiants enregistrés</string>
     <string name="rdp_credentials_saved">Identifiants enregistrés sur ce téléphone</string>
     <string name="rdp_credentials_failed">Impossible de lire ou de mettre à jour les identifiants enregistrés. Saisissez-les à nouveau ou essayez de les oublier.</string>
-    <string name="rdp_unavailable">Connectez-vous au réseau maillé et choisissez votre appareil Windows avec Bureau à distance activé et identité vérifiée.</string>
     <string name="rdp_wait_network">Réseau indisponible. Attente d’une connexion (60 secondes maximum)…</string>
     <string name="rdp_repairing">Connexion interrompue. Reconnexion sécurisée (60 secondes maximum)…</string>
     <string name="rdp_repair_timeout">Impossible de rétablir la connexion sous 60 secondes. Vérifiez le réseau et reconnectez-vous.</string>

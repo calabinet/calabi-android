@@ -51,7 +51,6 @@
     <string name="rdp_forget_credentials">忘记已保存的凭据</string>
     <string name="rdp_credentials_saved">凭据已保存在此手机上</string>
     <string name="rdp_credentials_failed">无法读取或更新已保存的凭据，请重新输入或尝试忘记凭据。</string>
-    <string name="rdp_unavailable">请先连接组网，并选择已开启远程桌面、身份信息完整的本人 Windows 设备。</string>
     <string name="rdp_wait_network">网络不可用，正在等待网络恢复（最多 60 秒）…</string>
     <string name="rdp_repairing">连接中断，正在安全重连（最多 60 秒）…</string>
     <string name="rdp_repair_timeout">60 秒内未能恢复连接，请检查网络后重新连接。</string>

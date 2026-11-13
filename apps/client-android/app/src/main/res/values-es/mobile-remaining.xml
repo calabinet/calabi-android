@@ -147,7 +147,6 @@
     <string name="rdp_forget_credentials">Olvidar credenciales guardadas</string>
     <string name="rdp_credentials_saved">Credenciales guardadas en este teléfono</string>
     <string name="rdp_credentials_failed">No se pudieron leer o actualizar las credenciales. Introdúcelas otra vez o intenta olvidarlas.</string>
-    <string name="rdp_unavailable">Conecta a la malla y elige tu dispositivo Windows con Escritorio remoto activado e identidad verificada.</string>
     <string name="rdp_wait_network">Red no disponible. Esperando conexión (hasta 60 segundos)…</string>
     <string name="rdp_repairing">Conexión interrumpida. Reconectando de forma segura (hasta 60 segundos)…</string>
     <string name="rdp_repair_timeout">No se pudo restaurar la conexión en 60 segundos. Comprueba la red y reconecta.</string>

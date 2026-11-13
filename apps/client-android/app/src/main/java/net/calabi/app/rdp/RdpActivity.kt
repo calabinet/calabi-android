@@ -146,19 +146,30 @@ class RdpActivity : ComponentActivity() {
         LaunchedEffect(credentialMessage) {
             if (credentialMessage == savedMessage) { delay(3000); credentialMessage = "" }
         }
-        val failed = stringResource(R.string.rdp_unavailable)
+        val failed = stringResource(R.string.remote_service_failed)
         LaunchedEffect(overlay, reload) {
             error = ""; target = null; password = ""; busy = false; saved = false; rememberPassword = false
             if (!RdpNative.available) { error = failed; return@LaunchedEffect }
+            val state = CoreClient.call("GET", "/v1/state")
+            if (!state.ok) { error = failed; return@LaunchedEffect }
+            credentialScope = RdpCredentialStore.scope(state.json(), BuildConfig.BFF_URL)
+            if (!state.json().optBoolean("connected")) {
+                error = getString(R.string.remote_recent_connect_hint); return@LaunchedEffect
+            }
             val result = CoreClient.call("GET", "/v1/remote/rdp/targets")
+            if (!result.ok || result.json().optJSONArray("items") == null) {
+                error = failed; return@LaunchedEffect
+            }
+            if (!result.json().optBoolean("available")) {
+                error = failed; return@LaunchedEffect
+            }
             val list = result.json().optJSONArray("items")
             target = (0 until (list?.length() ?: 0)).map { list!!.getJSONObject(it) }.firstOrNull { it.optString("overlay") == overlay &&
                 (intent.getStringExtra("device_key") == null || it.optString("device_key") == intent.getStringExtra("device_key")) }
             if (target?.optBoolean("available") != true) error = getString(RdpErrors.reason(target?.optString("reason").orEmpty()))
-            credentialScope = RdpCredentialStore.scope(CoreClient.call("GET", "/v1/state").json(), BuildConfig.BFF_URL)
             val identity = credentialScope
             if (intent.hasExtra("credential_scope") && intent.getStringExtra("credential_scope") != identity) {
-                target = null; error = failed
+                target = null; error = getString(R.string.rdp_identity_changed)
             }
             val key = target?.optString("device_key").orEmpty()
             if (identity != null && key.isNotBlank()) portText = intent.getIntExtra("port", 0).takeIf { it in 1..65535 }?.toString()

@@ -9,7 +9,7 @@ internal object RdpErrors {
         "certificate_unavailable" -> R.string.rdp_certificate_missing
         "identity_unavailable", "remote_identity_changed" -> R.string.rdp_identity_changed
         "windows_required" -> R.string.rdp_windows_required
-        else -> R.string.rdp_unavailable
+        else -> R.string.remote_target_unavailable
     }
     fun session(state: Int, message: String): Int {
         if (state == 9) return R.string.rdp_repair_timeout

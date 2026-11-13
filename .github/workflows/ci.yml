@@ -40,4 +40,4 @@ jobs:
       - run: pwsh -NoProfile -File ../build-source/scripts/dev/build.ps1 go install golang.org/x/mobile/cmd/gobind@v0.0.0-20260908204917-8b95e45f8d3e
       - run: pwsh -NoProfile -File ../build-source/scripts/mobile/build-core-android.ps1
       - run: pwsh -NoProfile -File ../build-source/scripts/mobile/build-rdp-android.ps1
-      - run: gradle -p ../build-source/apps/client-android assembleDebug
+      - run: gradle -p ../build-source/apps/client-android :app:testDebugUnitTest :app:testReleaseUnitTest :app:assembleDebug

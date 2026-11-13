@@ -9,4 +9,7 @@
     <string name="remote_recent_connect_hint">Verbinden Sie sich mit dem Netzwerk, um erneut auf diese Geräte zuzugreifen.</string>
     <string name="remote_recent_preview">Desktop-Vorschau für %1$s</string>
     <string name="remote_recent_no_preview">Noch keine Desktop-Vorschau</string>
+    <string name="remote_service_failed">Remotedesktop ist vorübergehend nicht verfügbar. Bitte erneut versuchen.</string>
+    <string name="remote_target_unavailable">Dieses Gerät ist für Remotedesktop nicht verfügbar. Geräteliste aktualisieren und erneut versuchen.</string>
+    <string name="files_send_unavailable">%1$s (%2$s)</string>
 </resources>

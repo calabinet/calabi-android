@@ -19,7 +19,7 @@ import org.json.JSONObject
 /** Opened by the whole device row; addresses have their own explicit copy action. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DeviceActionsSheet(device: Device, canSendFiles: Boolean, onDismiss: () -> Unit, onFiles: () -> Unit) {
+fun DeviceActionsSheet(device: Device, fileDisabledReason: Int?, onDismiss: () -> Unit, onFiles: () -> Unit) {
     val context = LocalContext.current
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Palette.ground,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
@@ -42,10 +42,10 @@ fun DeviceActionsSheet(device: Device, canSendFiles: Boolean, onDismiss: () -> U
                 })
             }
             if (BuildConfig.FILE_TRANSFER_ENABLED) {
-                OutlinedButton(onClick = onFiles, enabled = canSendFiles, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                    Text(stringResource(R.string.files_new_send))
+                val label = stringResource(R.string.files_new_send)
+                OutlinedButton(onClick = onFiles, enabled = fileDisabledReason == null, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                    Text(if (fileDisabledReason == null) label else stringResource(R.string.files_send_unavailable, label, stringResource(fileDisabledReason)))
                 }
-                if (!canSendFiles) Text(stringResource(if (!device.online) R.string.device_offline else R.string.mobile_files_unavailable), style = Styles.hint)
             }
         }
     }

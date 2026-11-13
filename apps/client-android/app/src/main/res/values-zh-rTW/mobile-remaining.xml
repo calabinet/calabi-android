@@ -30,7 +30,7 @@
     <string name="files_title">檔案傳送</string>
     <string name="files_hint">向組網內線上裝置傳送檔案，接收需逐次確認。檔案共用現有直連或中繼通道。</string>
     <string name="files_receiving">允許接收檔案請求</string>
-    <string name="files_peer_disabled">未開啟接收</string>
+    <string name="files_peer_disabled">對端未啟用</string>
     <string name="files_preparing">正在準備檔案…</string>
     <string name="files_remove">移除</string>
     <string name="files_remove_confirm">移除此條本機記錄或快取檔案？已另存到其他位置的檔案會保留。</string>
@@ -147,7 +147,6 @@
     <string name="rdp_forget_credentials">忘記已儲存的認證資訊</string>
     <string name="rdp_credentials_saved">認證資訊已儲存在此手機上</string>
     <string name="rdp_credentials_failed">無法讀取或更新已儲存的認證資訊，請重新輸入或嘗試忘記認證資訊。</string>
-    <string name="rdp_unavailable">請先連線組網，並選擇已開啟遠端桌面、身分資訊完整的本人 Windows 裝置。</string>
     <string name="rdp_wait_network">網路不可用，正在等待網路恢復（最多 60 秒）…</string>
     <string name="rdp_repairing">連線中斷，正在安全重連（最多 60 秒）…</string>
     <string name="rdp_repair_timeout">60 秒內未能恢復連線，請檢查網路後重新連線。</string>

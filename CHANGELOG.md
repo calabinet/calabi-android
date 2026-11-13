@@ -10,6 +10,8 @@
 - **Changed:** The device-first mesh page now shares a compact, fixed account, organization and connection header with the other main pages. Connection controls, exit devices and subnet routes are grouped in a network panel.
 - **Changed:** Remote Desktop keeps sign-in in portrait and enters landscape fullscreen after connecting. A collapsible floating toolbar groups input, display and session controls.
 - **Changed:** File transfer, endpoints and settings use consistent panels, navigation and touch targets, with large-text layouts and the ten supported interface languages.
+- **Changed:** Unavailable file-sending actions show the reason in the button label, including when the other device has not enabled receiving.
+- **Fixed:** Remote connection availability and local history errors are reported separately, without asking an already-connected phone to reconnect or misreporting a remote-service failure as a history-storage error.
 - **Changed:** Android packages now target 64-bit ARM systems only and use 16 KB alignment for native libraries and APK entries.
 - **Fixed:** Direct-connection status and latency no longer force an extra line at normal text sizes. Android 10 fullscreen sessions no longer reserve an empty status-bar strip.
 

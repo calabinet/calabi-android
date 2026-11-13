@@ -47,7 +47,8 @@ fun RemoteScreen(model: AppModel) {
     var targets by remember { mutableStateOf(emptyList<JSONObject>()) }
     var identity by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(true) }
-    var failed by remember { mutableStateOf(false) }
+    var storageFailed by remember { mutableStateOf(false) }
+    var serviceFailed by remember { mutableStateOf(false) }
     var pending by remember { mutableStateOf<RdpRecent?>(null) }
     var removing by remember { mutableStateOf(false) }
     var revision by remember { mutableIntStateOf(0) }
@@ -64,10 +65,16 @@ fun RemoteScreen(model: AppModel) {
             val response = if (current != null && state.json().optBoolean("connected")) CoreClient.call("GET", "/v1/remote/rdp/targets") else null
             val items = response?.json()?.optJSONArray("items")
             targets = if (response?.ok == true && items != null) (0 until items.length()).map { items.getJSONObject(it) } else emptyList()
-            failed = !state.ok || loaded.isFailure || response?.ok == false
+            storageFailed = loaded.isFailure
+            serviceFailed = !state.ok || response?.ok == false || (response?.ok == true && items == null)
             loading = false
             delay(2000)
         }
+    }
+    val problem = when {
+        storageFailed -> R.string.remote_recent_failed
+        serviceFailed -> R.string.remote_service_failed
+        else -> null
     }
     LazyVerticalGrid(columns = GridCells.Fixed(if (LocalDensity.current.fontScale >= 1.3f) 1 else 2),
         modifier = Modifier.fillMaxSize(), state = gridState, contentPadding = PaddingValues(16.dp),
@@ -75,14 +82,14 @@ fun RemoteScreen(model: AppModel) {
         item(span = { GridItemSpan(maxLineSpan) }) { PageHeading(stringResource(R.string.remote_tab)) }
         item(span = { GridItemSpan(maxLineSpan) }) { SectionLabel(stringResource(R.string.remote_recent)) }
         if (!model.connected) item(span = { GridItemSpan(maxLineSpan) }) { Text(stringResource(R.string.remote_recent_connect_hint), style = Styles.hint) }
-        if (failed) item(span = { GridItemSpan(maxLineSpan) }) {
+        if (problem != null) item(span = { GridItemSpan(maxLineSpan) }) {
             Group { Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.remote_recent_failed), style = Styles.hint.copy(color = Palette.danger), modifier = Modifier.weight(1f))
+                Text(stringResource(problem), style = Styles.hint.copy(color = Palette.danger), modifier = Modifier.weight(1f))
                 CircleButton(R.drawable.ic_refresh, stringResource(R.string.rdp_retry)) { revision++ }
             } }
         }
         if (loading) item(span = { GridItemSpan(maxLineSpan) }) { Loading() }
-        else if (records.isEmpty() && !failed) item(span = { GridItemSpan(maxLineSpan) }) {
+        else if (records.isEmpty() && problem == null) item(span = { GridItemSpan(maxLineSpan) }) {
             Group { Column(Modifier.fillMaxWidth().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Glyph(R.drawable.ic_monitor, Palette.muted, 28.dp)
                 Text(stringResource(R.string.remote_recent_empty), style = Styles.hint)
@@ -131,7 +138,7 @@ fun RemoteScreen(model: AppModel) {
                     val result = withContext(Dispatchers.IO) { runCatching { store.remove(scope, record) } }
                     removing = false
                     if (result.isSuccess) { pending = null; records = records.filterNot { it.deviceKey == record.deviceKey && it.port == record.port } }
-                    else failed = true
+                    else storageFailed = true
                 }
             }) { Text(stringResource(R.string.files_remove)) } },
             dismissButton = { TextButton(enabled = !removing, onClick = { pending = null }) { Text(stringResource(R.string.settings_cancel)) } })

@@ -305,7 +305,12 @@ private fun DevicesTab(
         }
         itemsIndexed(visibleDevices, key = { _, d -> d.overlay + d.name }) { i, d ->
             DeviceRow(d, first = i == 0, last = i == visibleDevices.lastIndex, isExit = d.name == inUseExit || d.overlay == inUseExit,
-                canSendFiles = model.connected && d.online && d.overlay in receivingPeers, onFiles = { onFiles(d.overlay) })
+                fileDisabledReason = when {
+                    !model.connected -> R.string.state_stopped
+                    !d.online -> R.string.device_offline
+                    d.overlay !in receivingPeers -> R.string.files_peer_disabled
+                    else -> null
+                }, onFiles = { onFiles(d.overlay) })
         }
     }
 }
@@ -430,7 +435,7 @@ private fun DisconnectControl(onDisconnect: () -> Unit) {
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-private fun DeviceRow(d: Device, first: Boolean, last: Boolean, isExit: Boolean, canSendFiles: Boolean, onFiles: () -> Unit) {
+private fun DeviceRow(d: Device, first: Boolean, last: Boolean, isExit: Boolean, fileDisabledReason: Int?, onFiles: () -> Unit) {
     var actionsOpen by remember { mutableStateOf(false) }
     val context = LocalContext.current
     Column(
@@ -479,7 +484,7 @@ private fun DeviceRow(d: Device, first: Boolean, last: Boolean, isExit: Boolean,
         }
         if (!last) RowDivider(start = 68.dp)
     }
-    if (actionsOpen) DeviceActionsSheet(d, canSendFiles, onDismiss = { actionsOpen = false }, onFiles = {
+    if (actionsOpen) DeviceActionsSheet(d, fileDisabledReason, onDismiss = { actionsOpen = false }, onFiles = {
         actionsOpen = false
         onFiles()
     })

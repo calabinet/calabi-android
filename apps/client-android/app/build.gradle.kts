@@ -52,6 +52,7 @@ android {
         buildConfigField("String", "CONSOLE_URL", "\"$consoleUrl\"")
         buildConfigField("boolean", "COORD_PLAINTEXT", "$coordPlaintext")
         buildConfigField("boolean", "FILE_TRANSFER_ENABLED", "true")
+        buildConfigField("boolean", "REMOTE_DESKTOP_ENABLED", "true")
         ndk {
             // What scripts/mobile/build-core-android.ps1 builds by default.
             abiFilters += listOf("arm64-v8a")
@@ -110,6 +111,7 @@ val verifyRdpLibraries by tasks.registering {
 tasks.named("preBuild") { dependsOn(verifyRdpLibraries) }
 
 dependencies {
+    testImplementation("junit:junit:4.13.2")
     // The Go core: apps/client/mobile, bound by scripts/mobile/build-core-android.ps1.
     implementation(files("libs/calabicore.aar"))
 

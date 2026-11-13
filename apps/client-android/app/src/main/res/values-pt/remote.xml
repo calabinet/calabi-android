@@ -9,4 +9,7 @@
     <string name="remote_recent_connect_hint">Conecte-se à rede para acessar esses dispositivos novamente.</string>
     <string name="remote_recent_preview">Prévia da área de trabalho de %1$s</string>
     <string name="remote_recent_no_preview">Ainda não há prévia</string>
+    <string name="remote_service_failed">A área de trabalho remota está temporariamente indisponível. Tente novamente.</string>
+    <string name="remote_target_unavailable">Este dispositivo está indisponível para acesso remoto. Atualize a lista de dispositivos e tente novamente.</string>
+    <string name="files_send_unavailable">%1$s (%2$s)</string>
 </resources>

@@ -51,7 +51,6 @@
     <string name="rdp_forget_credentials">Forget saved credentials</string>
     <string name="rdp_credentials_saved">Credentials saved on this phone</string>
     <string name="rdp_credentials_failed">Saved credentials could not be read or updated. Please enter them again or try forgetting them.</string>
-    <string name="rdp_unavailable">Connect to the mesh and select your Windows device with remote desktop enabled and verified identity.</string>
     <string name="rdp_wait_network">Network unavailable. Waiting for a connection (up to 60 seconds)…</string>
     <string name="rdp_repairing">Connection interrupted. Reconnecting securely (up to 60 seconds)…</string>
     <string name="rdp_repair_timeout">Could not restore the connection within 60 seconds. Check the network and reconnect.</string>

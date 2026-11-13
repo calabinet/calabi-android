@@ -9,4 +9,7 @@
     <string name="remote_recent_connect_hint">Connettiti alla rete per accedere di nuovo a questi dispositivi.</string>
     <string name="remote_recent_preview">Anteprima del desktop di %1$s</string>
     <string name="remote_recent_no_preview">Nessuna anteprima disponibile</string>
+    <string name="remote_service_failed">Il desktop remoto non è temporaneamente disponibile. Riprova.</string>
+    <string name="remote_target_unavailable">Questo dispositivo non è disponibile per il desktop remoto. Aggiorna la lista dei dispositivi e riprova.</string>
+    <string name="files_send_unavailable">%1$s (%2$s)</string>
 </resources>

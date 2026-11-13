@@ -9,4 +9,7 @@
     <string name="remote_recent_connect_hint">ネットワークに接続すると、これらのデバイスに再接続できます。</string>
     <string name="remote_recent_preview">%1$s のデスクトッププレビュー</string>
     <string name="remote_recent_no_preview">デスクトップのプレビューはありません</string>
+    <string name="remote_service_failed">リモートデスクトップを一時的に利用できません。再試行してください。</string>
+    <string name="remote_target_unavailable">このデバイスにはリモート接続できません。デバイス一覧を更新して再試行してください。</string>
+    <string name="files_send_unavailable">%1$s（%2$s）</string>
 </resources>

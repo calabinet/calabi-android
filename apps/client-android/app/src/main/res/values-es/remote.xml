@@ -9,4 +9,7 @@
     <string name="remote_recent_connect_hint">Conéctate a la red para volver a acceder a estos dispositivos.</string>
     <string name="remote_recent_preview">Vista previa del escritorio de %1$s</string>
     <string name="remote_recent_no_preview">Aún no hay vista previa</string>
+    <string name="remote_service_failed">El escritorio remoto no está disponible temporalmente. Inténtalo de nuevo.</string>
+    <string name="remote_target_unavailable">Este dispositivo no está disponible para escritorio remoto. Actualiza la lista de dispositivos y vuelve a intentarlo.</string>
+    <string name="files_send_unavailable">%1$s (%2$s)</string>
 </resources>

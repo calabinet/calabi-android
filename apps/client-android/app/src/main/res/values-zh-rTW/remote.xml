@@ -9,4 +9,7 @@
     <string name="remote_recent_connect_hint">連線至網路後，即可再次遠端存取這些裝置。</string>
     <string name="remote_recent_preview">%1$s 的桌面預覽</string>
     <string name="remote_recent_no_preview">尚無桌面預覽</string>
+    <string name="remote_service_failed">遠端桌面暫時無法使用，請重試。</string>
+    <string name="remote_target_unavailable">此裝置暫時無法遠端連線，請重新整理裝置清單後再試。</string>
+    <string name="files_send_unavailable">%1$s（%2$s）</string>
 </resources>

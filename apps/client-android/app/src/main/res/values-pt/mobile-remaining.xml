@@ -147,7 +147,6 @@
     <string name="rdp_forget_credentials">Esquecer credenciais salvas</string>
     <string name="rdp_credentials_saved">Credenciais salvas neste telefone</string>
     <string name="rdp_credentials_failed">Não foi possível ler ou atualizar as credenciais salvas. Digite-as novamente ou tente esquecê-las.</string>
-    <string name="rdp_unavailable">Conecte à malha e selecione seu dispositivo Windows com Área de Trabalho Remota ativa e identidade verificada.</string>
     <string name="rdp_wait_network">Rede indisponível. Aguardando conexão (até 60 segundos)…</string>
     <string name="rdp_repairing">Conexão interrompida. Reconectando com segurança (até 60 segundos)…</string>
     <string name="rdp_repair_timeout">Não foi possível restaurar a conexão em 60 segundos. Verifique a rede e reconecte.</string>

@@ -9,4 +9,7 @@
     <string name="remote_recent_connect_hint">Connectez-vous au réseau pour accéder à nouveau à ces appareils.</string>
     <string name="remote_recent_preview">Aperçu du bureau de %1$s</string>
     <string name="remote_recent_no_preview">Aucun aperçu du bureau</string>
+    <string name="remote_service_failed">Le bureau distant est temporairement indisponible. Réessayez.</string>
+    <string name="remote_target_unavailable">Cet appareil est indisponible pour le bureau distant. Actualisez la liste des appareils et réessayez.</string>
+    <string name="files_send_unavailable">%1$s (%2$s)</string>
 </resources>

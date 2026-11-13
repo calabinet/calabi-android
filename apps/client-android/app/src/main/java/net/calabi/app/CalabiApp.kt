@@ -33,9 +33,7 @@ class CalabiApp : Application() {
             .put("bff_url", BuildConfig.BFF_URL)
             .put("device_name", Build.MODEL ?: "")
             .put("coord_plaintext", BuildConfig.COORD_PLAINTEXT)
-            .put("file_transfer_p0", BuildConfig.DEBUG)
-            .put("file_transfer_v1", BuildConfig.FILE_TRANSFER_ENABLED)
-            .put("remote_desktop_p0", BuildConfig.DEBUG)
+            .apply { coreCapabilities(BuildConfig.DEBUG).forEach { (key, enabled) -> put(key, enabled) } }
             .put("mesh_relay_only", BuildConfig.DEBUG && java.io.File(filesDir, "rdp-test-relay-only").exists())
             .put("mesh_receive_delay_ms", networkTest?.optInt("delay_ms", 0)?.coerceIn(0, 100) ?: 0)
             .put("mesh_receive_drop_every", networkTest?.optInt("drop_every", 0)?.coerceAtLeast(0) ?: 0)

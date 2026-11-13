@@ -14,7 +14,7 @@
  <string name="files_receiving">允许接收文件请求</string>
  <string name="files_device">选择接收设备</string>
  <string name="files_no_devices">没有支持传送的在线设备，双方客户端和协调器均需支持文件传送。</string>
- <string name="files_peer_disabled">未开启接收</string>
+ <string name="files_peer_disabled">对端未启用</string>
  <string name="files_choose">选择文件</string>
  <string name="files_preparing">正在准备文件…</string>
  <plurals name="files_send">

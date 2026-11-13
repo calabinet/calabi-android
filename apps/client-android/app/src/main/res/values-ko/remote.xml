@@ -9,4 +9,7 @@
     <string name="remote_recent_connect_hint">이 기기에 다시 접속하려면 네트워크에 연결하세요.</string>
     <string name="remote_recent_preview">%1$s의 데스크톱 미리 보기</string>
     <string name="remote_recent_no_preview">아직 데스크톱 미리 보기가 없습니다</string>
+    <string name="remote_service_failed">현재 원격 데스크톱을 사용할 수 없습니다. 다시 시도하세요.</string>
+    <string name="remote_target_unavailable">이 기기에 원격으로 연결할 수 없습니다. 기기 목록을 새로 고친 후 다시 시도하세요.</string>
+    <string name="files_send_unavailable">%1$s (%2$s)</string>
 </resources>

@@ -147,7 +147,6 @@
     <string name="rdp_forget_credentials">Gespeicherte Zugangsdaten löschen</string>
     <string name="rdp_credentials_saved">Zugangsdaten auf diesem Telefon gespeichert</string>
     <string name="rdp_credentials_failed">Gespeicherte Zugangsdaten konnten nicht gelesen oder aktualisiert werden. Erneut eingeben oder gespeicherte Daten löschen.</string>
-    <string name="rdp_unavailable">Mit dem Mesh verbinden und eigenes Windows-Gerät mit aktiviertem Remotedesktop und verifizierter Identität wählen.</string>
     <string name="rdp_wait_network">Netzwerk nicht verfügbar. Warte auf Verbindung (bis zu 60 Sekunden)…</string>
     <string name="rdp_repairing">Verbindung unterbrochen. Sichere Wiederverbindung (bis zu 60 Sekunden)…</string>
     <string name="rdp_repair_timeout">Verbindung nicht innerhalb von 60 Sekunden wiederhergestellt. Netzwerk prüfen und neu verbinden.</string>

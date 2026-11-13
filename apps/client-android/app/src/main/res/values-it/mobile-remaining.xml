@@ -147,7 +147,6 @@
     <string name="rdp_forget_credentials">Dimentica credenziali salvate</string>
     <string name="rdp_credentials_saved">Credenziali salvate su questo telefono</string>
     <string name="rdp_credentials_failed">Impossibile leggere o aggiornare le credenziali salvate. Inseriscile di nuovo o prova a dimenticarle.</string>
-    <string name="rdp_unavailable">Connettiti alla mesh e scegli il tuo dispositivo Windows con Desktop remoto attivo e identità verificata.</string>
     <string name="rdp_wait_network">Rete non disponibile. In attesa di connessione (fino a 60 secondi)…</string>
     <string name="rdp_repairing">Connessione interrotta. Riconnessione sicura (fino a 60 secondi)…</string>
     <string name="rdp_repair_timeout">Impossibile ripristinare la connessione entro 60 secondi. Controlla la rete e riconnettiti.</string>

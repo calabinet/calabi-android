@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="mobile_copy_address">複製 IP 位址</string>
-    <string name="mobile_files_unavailable">請先連線至組網，並在對方裝置開啟檔案接收。</string>
     <string name="mobile_hide_controls">收起工具列</string>
     <string name="mobile_show_controls">顯示工具列</string>
     <string name="mobile_input">輸入操作</string>

@@ -9,4 +9,7 @@
     <string name="remote_recent_connect_hint">Connect to the network to reconnect to these devices.</string>
     <string name="remote_recent_preview">Desktop preview for %1$s</string>
     <string name="remote_recent_no_preview">No desktop preview yet</string>
+    <string name="remote_service_failed">Remote Desktop is temporarily unavailable. Please retry.</string>
+    <string name="remote_target_unavailable">This device is unavailable for Remote Desktop. Refresh the device list and retry.</string>
+    <string name="files_send_unavailable">%1$s (%2$s)</string>
 </resources>

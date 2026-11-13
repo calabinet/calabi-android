@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="mobile_copy_address">Copia indirizzo IP</string>
-    <string name="mobile_files_unavailable">Connettiti alla rete mesh e abilita la ricezione di file sull’altro dispositivo.</string>
     <string name="mobile_hide_controls">Nascondi controlli</string>
     <string name="mobile_show_controls">Mostra controlli</string>
     <string name="mobile_input">Input</string>
