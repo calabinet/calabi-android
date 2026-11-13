@@ -155,7 +155,8 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
     }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> scope.launch { stage(uris) } }
     val available = snapshot.optBoolean("available")
-    val reconnectNotice = snapshot.optString("error") == "Reconnect to send or receive files. Local records and completed files remain available."
+    val reconnectNotice = isFileReconnectState(available, snapshot.optString("error"),
+        listOf("received", "jobs", "sources").any { (snapshot.optJSONArray(it)?.length() ?: 0) > 0 })
     val peers = snapshot.objects("peers").sortedWith(compareBy({ it.optString("name") }, { it.optString("ip") }))
     val staged = snapshot.objects("sources").sortedWith(compareByDescending<JSONObject> { it.optLong("created_unix_ms") }.thenBy { it.optString("id") })
     val received = snapshot.objects("received").sortedWith(compareByDescending<JSONObject> { it.optJSONObject("transfer")?.optLong("created_unix_ms") ?: 0L }.then(compareBy(

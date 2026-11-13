@@ -4,6 +4,10 @@ import android.content.Context
 import net.calabi.app.R
 import java.util.Locale
 
+internal fun isFileReconnectState(available: Boolean, error: String, hasRecords: Boolean): Boolean =
+    !available && (error == "Reconnect to send or receive files. Local records and completed files remain available." ||
+        (!hasRecords && error == "connect to the mesh first"))
+
 // User-facing summaries, including errors returned by older native cores.
 // Do not put raw paths, HTTP requests or internal exception text in the UI.
 internal fun fileErrorText(context: Context, error: String): String {

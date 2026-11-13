@@ -4,6 +4,8 @@
 
 ### Changes
 
+- **Fixed:** A fresh installation without mesh connectivity or transfer history shows the empty transfer list without an operation-failed warning. Actual transfer and storage errors remain visible.
+
 - **Added:** Remote Desktop access to authorized Windows devices over the mesh, with certificate verification and optional encrypted credentials stored on this phone. Touchpad and direct-touch modes, Chinese text input and explicit text clipboard exchange are available.
 - **Added:** A dedicated Remote tab with local desktop thumbnails, two cards per row by default, and shortcuts to reconnect to recently used devices.
 - **Added:** Custom Remote Desktop ports from 1 to 65535, with saved credentials and recent connections isolated by account, organization, device and port.
