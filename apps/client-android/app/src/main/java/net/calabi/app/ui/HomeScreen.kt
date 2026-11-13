@@ -2,7 +2,7 @@ package net.calabi.app.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,42 +12,45 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -63,10 +66,11 @@ import net.calabi.app.CoreClient
 import android.net.Uri
 import org.json.JSONObject
 
-private enum class Sheet { Exit, Org, Replace }
+private enum class Sheet { Exit, Connection, Account, Replace }
 
 /** A screen opened from a tab, drawn in its place with a back button. */
-private sealed interface Route {
+private sealed interface Route : java.io.Serializable {
+    data object Account : Route
     data object FileTest : Route
     data class TunnelDetail(val tunnel: Tunnel) : Route
     data class TunnelAccess(val tunnel: Tunnel) : Route
@@ -75,13 +79,17 @@ private sealed interface Route {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(onConnect: () -> Unit, onDisconnect: () -> Unit, onSignedOut: () -> Unit, shared: List<Uri> = emptyList(), onShareTaken: () -> Unit = {}, showFiles: Boolean = false, onFilesTaken: () -> Unit = {}) {
-    val model = remember { AppModel() }
+    val operationScope = rememberCoroutineScope()
+    val model = remember { AppModel(UiActionState(operationScope)) }
     var initialLoading by remember { mutableStateOf(true) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
-    var sheet by remember { mutableStateOf<Sheet?>(null) }
-    var route by remember { mutableStateOf<Route?>(null) }
+    var sheet by rememberSaveable { mutableStateOf<Sheet?>(null) }
+    var route by rememberSaveable { mutableStateOf<Route?>(null) }
     var filePeer by rememberSaveable { mutableStateOf<String?>(null) }
     var fileReview by rememberSaveable { mutableStateOf(false) }
+    var fileSending by remember { mutableStateOf(false) }
+    val screenState = rememberSaveableStateHolder()
+    var settingsDetail by remember { mutableStateOf(false) }
     LaunchedEffect(shared) { if (BuildConfig.FILE_TRANSFER_ENABLED && shared.isNotEmpty()) { tab = 3; route = null; filePeer = "" } }
     LaunchedEffect(showFiles) { if (BuildConfig.FILE_TRANSFER_ENABLED && showFiles) { tab = 3; route = null; fileReview = true; onFilesTaken() } }
 
@@ -107,9 +115,7 @@ fun HomeScreen(onConnect: () -> Unit, onDisconnect: () -> Unit, onSignedOut: () 
     }
 
     if (initialLoading) {
-        Box(Modifier.fillMaxSize().background(Palette.ground), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = Palette.accent)
-        }
+        AppLoadingScreen()
         return
     }
 
@@ -120,9 +126,27 @@ fun HomeScreen(onConnect: () -> Unit, onDisconnect: () -> Unit, onSignedOut: () 
         }
     }
 
-    Scaffold(containerColor = Palette.ground, bottomBar = { if (route == null) BottomNav(tab) { tab = it } }) { padding ->
-        Box(Modifier.padding(padding).fillMaxSize()) {
+    BackHandler(enabled = route == null && tab != 0) { tab = 0 }
+    LaunchedEffect(route) { if (route is Route.TunnelDetail || route is Route.TunnelAccess) model.refreshTunnels() }
+    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val mainPage = route == null && !(tab == 3 && fileSending) && !(tab == 2 && settingsDetail)
+    Scaffold(containerColor = Palette.ground, topBar = {
+        if (mainPage) Column(Modifier.background(Palette.surface).statusBarsPadding()) {
+            Header(model, onAccount = { if (model.selfHosted) { tab = 2; route = Route.Account } else sheet = Sheet.Account },
+                onConnection = { sheet = Sheet.Connection })
+        }
+    }, bottomBar = { if (!imeVisible && route == null && !(tab == 3 && fileSending) && !(tab == 2 && settingsDetail)) BottomNav(tab) { tab = it } }) { padding ->
+        Box(Modifier.padding(padding).imePadding().fillMaxSize()) {
+            val screenKey = when (val r = route) {
+                Route.Account -> "account"
+                Route.FileTest -> "file-test"
+                is Route.TunnelDetail -> "detail-${r.tunnel.id}"
+                is Route.TunnelAccess -> "access-${r.tunnel.id}"
+                null -> "tab-$tab"
+            }
+            screenState.SaveableStateProvider("${model.mode}|${model.server}|${model.activeOrgId}|$screenKey") {
             when (val r = route) {
+                Route.Account -> SettingsTab(model, onSignedOut = { onDisconnect(); onSignedOut() }, onReplace = { sheet = Sheet.Replace }, initialAccount = true, onRootBack = { route = null })
                 Route.FileTest -> FileTransferTestScreen(model, onBack = { route = null })
                 is Route.TunnelDetail -> TunnelDetailScreen(
                     model, r.tunnel, onBack = { route = null }, onAccess = { route = Route.TunnelAccess(r.tunnel) },
@@ -130,43 +154,63 @@ fun HomeScreen(onConnect: () -> Unit, onDisconnect: () -> Unit, onSignedOut: () 
                 is Route.TunnelAccess -> TunnelAccessScreen(r.tunnel, onBack = { route = Route.TunnelDetail(r.tunnel) })
                 null -> when (tab) {
                     0 -> DevicesTab(
-                        model, onConnect, onDisconnect,
-                        onPickExit = { sheet = Sheet.Exit }, onPickOrg = { sheet = Sheet.Org }, onAccount = { tab = 2 },
+                        model,
                         onReplace = { sheet = Sheet.Replace },
                         onFiles = { filePeer = it; tab = 3 },
                     )
                     1 -> TunnelsTab(model) { route = Route.TunnelDetail(it) }
+                    4 -> RemoteScreen(model)
                     3 -> if (BuildConfig.FILE_TRANSFER_ENABLED) FileTransfersScreen(
                         initialPeer = filePeer, shared = shared, onShareTaken = onShareTaken,
                         onSendOpened = { filePeer = null },
                         devices = model.devices,
                         reviewIncoming = fileReview, onReviewOpened = { fileReview = false },
+                        onSendPageChanged = { fileSending = it },
                     )
                     else -> SettingsTab(model, onSignedOut = {
                         // Logout stops the core; also retire the Android VPN
                         // service, notification and Quick Settings state.
                         onDisconnect()
                         onSignedOut()
-                    }, onReplace = { sheet = Sheet.Replace }, onFileTest = { route = Route.FileTest }, onFiles = { tab = 3 })
+                    }, onReplace = { sheet = Sheet.Replace }, onFileTest = { route = Route.FileTest }, onFiles = { tab = 3 }, onDetailChanged = { settingsDetail = it })
                 }
+            }
             }
         }
     }
 
     if (sheet != null) {
-        ModalBottomSheet(onDismissRequest = { sheet = null }, containerColor = Palette.ground) {
+        ModalBottomSheet(modifier = Modifier.statusBarsPadding(), onDismissRequest = { sheet = null }, containerColor = Palette.ground,
+            sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
             Column(
-                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 28.dp),
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 28.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 when (sheet) {
                     Sheet.Exit -> {
+                        TextButton(onClick = { sheet = Sheet.Connection }) { Text(stringResource(R.string.back)) }
                         SheetTitle(stringResource(R.string.settings_exit), stringResource(R.string.settings_exit_hint))
-                        ExitChoices(model) { sheet = null }
+                        ExitChoices(model) { if (sheet == Sheet.Exit) sheet = Sheet.Connection }
                     }
-                    Sheet.Org -> {
-                        SheetTitle(stringResource(R.string.settings_org), stringResource(R.string.settings_org_hint))
+                    Sheet.Connection -> {
+                        SheetTitle(stringResource(R.string.mesh_network_settings), stringResource(R.string.mobile_settings_connection))
+                        ActionFeedback(model.actions)
+                        ConnectionSummary(model)
+                        Group {
+                            LinkRow(stringResource(R.string.settings_exit), model.exitNode.ifBlank { stringResource(R.string.settings_exit_none) }) { sheet = Sheet.Exit }
+                            RowDivider()
+                            SubnetRoutesSwitch(model)
+                        }
+                        if (model.connected) DisconnectControl(onDisconnect = { sheet = null; onDisconnect() })
+                        else PrimaryButton(stringResource(R.string.action_connect), enabled = !model.actions.busy, onClick = { sheet = null; onConnect() })
+                    }
+                    Sheet.Account -> {
+                        SheetTitle(stringResource(R.string.mesh_my), model.email)
+                        Text(stringResource(R.string.mesh_current_org), style = Styles.sectionLabel, modifier = Modifier.padding(horizontal = 8.dp))
                         Group { OrgChoices(model) { sheet = null } }
+                        Group {
+                            ActionRow(stringResource(R.string.account), icon = R.drawable.ic_settings, onClick = { sheet = null; route = Route.Account })
+                        }
                     }
                     Sheet.Replace -> {
                         SheetTitle(stringResource(R.string.replace_title), stringResource(R.string.replace_hint))
@@ -187,18 +231,15 @@ private fun SheetTitle(title: String, hint: String) {
     }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun DevicesTab(
     model: AppModel,
-    onConnect: () -> Unit,
-    onDisconnect: () -> Unit,
-    onPickExit: () -> Unit,
-    onPickOrg: () -> Unit,
-    onAccount: () -> Unit,
     onReplace: () -> Unit,
     onFiles: (String) -> Unit,
 ) {
     var search by rememberSaveable { mutableStateOf("") }
+    var filter by rememberSaveable { mutableIntStateOf(0) }
     var receivingPeers by remember(model.connected, model.activeOrgId, model.mode, model.server) { mutableStateOf(emptySet<String>()) }
     LaunchedEffect(model.connected, model.activeOrgId, model.mode, model.server) {
         if (BuildConfig.FILE_TRANSFER_ENABLED && model.connected) {
@@ -217,11 +258,10 @@ private fun DevicesTab(
         }
     }
     val devices = model.devices
-    val visibleDevices = devices.filter { matchesListSearch(search, it.name, it.overlay, it.ownerEmail) }
+    val visibleDevices = devices.filter { (filter == 1 || it.online == (filter == 0)) && matchesListSearch(search, it.name, it.overlay, it.ownerEmail) }
     val inUseExit = model.connection?.exitNode.orEmpty().ifBlank { model.exitNode }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 20.dp)) {
-        item { Header(model, onPickOrg, onAccount) }
-        item { Hero(model, onConnect, onDisconnect, onPickExit) }
+        item { ActionFeedback(model.actions) }
         item { StoppedPrompt(model) }
         item { ReplacePrompt(model, onReplace) }
         item { CertChangedPrompt(model) }
@@ -230,17 +270,16 @@ private fun DevicesTab(
         item { UnreachablePrompt(model) }
         item { TilePrompt(model) }
         item("device-search") {
-            ListSearchToolbar(search, { search = it }, stringResource(R.string.list_search_devices),
-                Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-                if (model.nodes != null || model.nodesError != null) {
-                    Text(stringResource(R.string.devices_title), style = Styles.section, modifier = Modifier.weight(1f).padding(start = 6.dp))
-                    if (devices.isNotEmpty()) {
-                        Text(stringResource(R.string.devices_online, devices.count { it.online }, devices.size),
-                            fontSize = 13.sp, color = Palette.muted)
-                    }
+            Column(Modifier.padding(horizontal = 22.dp)) {
+                Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.devices_title), style = Styles.section, modifier = Modifier.weight(1f))
+                    if (devices.isNotEmpty()) Text(stringResource(R.string.devices_online, devices.count { it.online }, devices.size), style = Styles.hint)
                 }
+                ListSearchInput(search, { search = it }, stringResource(R.string.list_search_devices))
+                ListFilterTabs(listOf(stringResource(R.string.device_online), stringResource(R.string.mesh_all), stringResource(R.string.device_offline)), filter) { filter = it }
             }
         }
+
         if (model.nodesNeedConnection) {
             item {
                 Group(Modifier.padding(horizontal = 16.dp)) {
@@ -258,7 +297,7 @@ private fun DevicesTab(
             item {
                 Group(Modifier.padding(horizontal = 16.dp)) {
                     Text(
-                        stringResource(if (search.isNotBlank()) R.string.list_search_no_matches else R.string.devices_empty), style = Styles.hint.copy(fontSize = 14.sp),
+                        stringResource(if (search.isNotBlank() || devices.isNotEmpty()) R.string.list_search_no_matches else R.string.devices_empty), style = Styles.hint.copy(fontSize = 14.sp),
                         textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(24.dp),
                     )
                 }
@@ -271,208 +310,143 @@ private fun DevicesTab(
     }
 }
 
+/** Shared chrome stays outside each tab's scrolling content. */
 @Composable
-private fun Header(model: AppModel, onPickOrg: () -> Unit, onAccount: () -> Unit) {
+private fun Header(model: AppModel, onAccount: () -> Unit, onConnection: () -> Unit) {
     val org = model.activeOrg
     val orgLabel = when {
-        // The self-hosted server stands where the organization would.
-        model.selfHosted -> model.server.substringBeforeLast(':')
-        org == null -> ""
+        model.selfHosted -> model.server
+        org == null -> stringResource(R.string.settings_org)
         org.personal -> stringResource(R.string.settings_org_personal)
         else -> org.name
     }
-    val canSwitch = model.orgs.size > 1
-    Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (orgLabel.isNotBlank()) {
-            val shape = RoundedCornerShape(22.dp)
-            Row(
-                Modifier
-                    .height(44.dp)
-                    .clip(shape)
-                    .background(Palette.surface)
-                    .border(1.dp, Palette.line, shape)
-                    // The server has no switcher; it opens the settings that say where this phone is.
-                    .clickable(
-                        enabled = canSwitch || model.selfHosted, role = Role.Button,
-                        onClick = if (model.selfHosted) onAccount else onPickOrg,
-                    )
-                    .padding(start = 6.dp, end = if (canSwitch) 12.dp else 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Box(Modifier.size(32.dp).background(Palette.ink, CircleShape), contentAlignment = Alignment.Center) {
-                    if (model.selfHosted) {
-                        Glyph(R.drawable.ic_server, Palette.ground, 16.dp)
-                    } else {
-                        Text(orgLabel.take(1).uppercase(), color = Palette.ground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-                Text(
-                    orgLabel, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Palette.ink,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 200.dp),
-                )
-                if (canSwitch) Glyph(R.drawable.ic_chevron_down, Palette.ink, 16.dp)
+    // The account API has an email, without a separate display-name field.
+    val username = if (model.selfHosted) model.deviceName.ifBlank { stringResource(R.string.settings_server) }
+        else model.email.substringBefore('@').ifBlank { stringResource(R.string.account) }
+    val initials = remember(orgLabel) { organizationInitials(orgLabel) }
+    val accountDescription = stringResource(if (model.selfHosted) R.string.settings_server else R.string.mesh_my)
+    val status = connectionTitle(model)
+    val networkDescription = stringResource(R.string.mesh_network_settings)
+    val phase = connectionPhase(model)
+    val statusColor = when (phase) {
+        Phase.Off -> Palette.muted
+        Phase.Problem -> Palette.danger
+        else -> Palette.accent
+    }
+    Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 2.dp).heightIn(min = 48.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(10.dp))
+            .clickable(role = Role.Button, onClick = onAccount)
+            .semantics(mergeDescendants = true) { contentDescription = accountDescription },
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.size(36.dp).background(Palette.accentSoft, RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
+                Text(initials, style = Styles.chip.copy(color = Palette.accent), maxLines = 1)
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(username, style = Styles.rowTitle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(orgLabel, style = Styles.hint, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
-        Spacer(Modifier.weight(1f))
-        // No account on a self-hosted server: the chip above is all there is to say.
-        if (!model.selfHosted) {
-            val account = stringResource(R.string.account)
-            Box(
-                Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(Palette.avatar)
-                    .clickable(role = Role.Button, onClick = onAccount)
-                    .semantics { contentDescription = account },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(model.email.take(1).uppercase(), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Palette.ink)
-            }
+        Row(Modifier.widthIn(max = 132.dp).heightIn(min = 48.dp)
+            .clip(RoundedCornerShape(12.dp)).background(when (phase) {
+                Phase.Off -> Palette.sunken
+                Phase.Problem -> Palette.dangerSoft
+                else -> Palette.accentSoft
+            }).clickable(role = Role.Button, onClick = onConnection)
+            .semantics(mergeDescendants = true) { contentDescription = "$status · $networkDescription" }
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Dot(statusColor, 6.dp)
+            Text(status, style = Styles.hint.copy(color = statusColor, fontWeight = FontWeight.SemiBold))
         }
     }
+}
+
+/** Initials from words, camel-case capitals, or the first two Unicode code points. */
+internal fun organizationInitials(label: String): String {
+    val words = label.trim().split(Regex("[\\s._:/-]+")).filter { it.isNotEmpty() }
+    if (words.isEmpty()) return "?"
+    val points = label.trim().codePoints().toArray()
+    val initials = if (words.size > 1) words.take(2).map { it.codePointAt(0) }
+        else points.filter { Character.isUpperCase(it) }.take(2).takeIf { it.size > 1 } ?: points.take(2)
+    return initials.joinToString("") { String(Character.toChars(it)) }.uppercase(java.util.Locale.ROOT)
 }
 
 private enum class Phase { Off, Busy, On, Problem }
 
+private fun connectionPhase(model: AppModel): Phase = when {
+    !model.connected -> Phase.Off
+    model.connection?.state == "connected" -> Phase.On
+    model.connection?.state in setOf("not_enrolled", "signed_out", "needs_invite", "disabled", "cert_changed") -> Phase.Problem
+    else -> Phase.Busy
+}
+
 @Composable
-private fun Hero(model: AppModel, onConnect: () -> Unit, onDisconnect: () -> Unit, onPickExit: () -> Unit) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+private fun connectionTitle(model: AppModel): String = stringResource(when (connectionPhase(model)) {
+    Phase.Off -> R.string.state_stopped
+    Phase.On -> R.string.state_connected
+    Phase.Busy -> if (model.connection?.state == "retrying") R.string.state_retrying else R.string.state_connecting
+    Phase.Problem -> when (model.connection?.state) {
+        "signed_out" -> R.string.state_signed_out_short
+        "needs_invite" -> R.string.state_needs_invite_short
+        "disabled" -> R.string.state_disabled_short
+        "cert_changed" -> R.string.state_cert_changed_short
+        else -> R.string.state_not_enrolled_short
+    }
+})
+
+@Composable
+private fun ConnectionSummary(model: AppModel) {
     val c = model.connection
-    val phase = when {
-        !model.connected -> Phase.Off
-        c?.state == "connected" -> Phase.On
-        c?.state in setOf("not_enrolled", "signed_out", "needs_invite", "disabled", "cert_changed") -> Phase.Problem
-        else -> Phase.Busy
-    }
-    val title = when (phase) {
-        Phase.Off -> stringResource(R.string.state_stopped)
-        Phase.On -> stringResource(R.string.state_connected)
-        Phase.Problem -> stringResource(
-            when (c?.state) {
-                "signed_out" -> R.string.state_signed_out_short
-                "needs_invite" -> R.string.state_needs_invite_short
-                "disabled" -> R.string.state_disabled_short
-                "cert_changed" -> R.string.state_cert_changed_short
-                else -> R.string.state_not_enrolled_short
-            },
-        )
-        Phase.Busy -> stringResource(if (c?.state == "retrying") R.string.state_retrying else R.string.state_connecting)
-    }
-    val subtitle = when (phase) {
+    val subtitle = when (connectionPhase(model)) {
         Phase.Off -> stringResource(R.string.hero_tap_to_connect)
         Phase.On -> "${c?.name.orEmpty()} · ${c?.overlay.orEmpty()}"
-        Phase.Problem -> stringResource(
-            when (c?.state) {
-                "signed_out" -> R.string.state_signed_out
-                "needs_invite" -> R.string.state_needs_invite
-                "disabled" -> R.string.state_disabled
-                "cert_changed" -> R.string.state_cert_changed
-                else -> R.string.state_not_enrolled
-            },
-        )
+        Phase.Problem -> stringResource(when (c?.state) {
+            "signed_out" -> R.string.state_signed_out
+            "needs_invite" -> R.string.state_needs_invite
+            "disabled" -> R.string.state_disabled
+            "cert_changed" -> R.string.state_cert_changed
+            else -> R.string.state_not_enrolled
+        })
         Phase.Busy -> c?.error.orEmpty()
     }
-    val action = stringResource(if (phase == Phase.Off) R.string.action_connect else R.string.action_disconnect)
-
-    Column(
-        Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 18.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        val ring = when (phase) {
-            Phase.Off -> Palette.offRing
-            Phase.Problem -> Palette.dangerSoft
-            else -> Palette.accentSoft
-        }
-        Box(
-            Modifier
-                .size(152.dp)
-                .clip(CircleShape)
-                .background(ring)
-                .clickable(role = Role.Button, onClick = { if (phase == Phase.Off) onConnect() else onDisconnect() })
-                .semantics { contentDescription = action },
-            contentAlignment = Alignment.Center,
-        ) {
-            if (phase == Phase.Busy) {
-                CircularProgressIndicator(Modifier.size(136.dp), color = Palette.accent, strokeWidth = 3.dp, trackColor = Color.Transparent)
-            }
-            val inner = Modifier.size(118.dp)
-            when (phase) {
-                Phase.On -> Box(
-                    inner.shadow(14.dp, CircleShape, ambientColor = Palette.accent, spotColor = Palette.accent)
-                        .background(Palette.accent, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) { Glyph(R.drawable.ic_power, Color.White, 44.dp) }
-                Phase.Off -> Box(
-                    inner.background(Palette.surface, CircleShape).border(1.dp, Palette.fieldLine, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) { Glyph(R.drawable.ic_power, Palette.ink, 44.dp) }
-                Phase.Busy -> Box(inner.background(Palette.surface, CircleShape), contentAlignment = Alignment.Center) {
-                    Glyph(R.drawable.ic_power, Palette.accent, 44.dp)
-                }
-                Phase.Problem -> Box(inner.background(Palette.surface, CircleShape), contentAlignment = Alignment.Center) {
-                    Glyph(R.drawable.ic_power, Palette.danger, 44.dp)
-                }
-            }
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = Styles.heroState, color = if (phase == Phase.Problem) Palette.danger else Palette.ink)
-            // Always laid out, so the chips below do not jump while connecting.
-            Text(
-                subtitle,
-                style = if (phase == Phase.On) Styles.mono.copy(fontSize = 13.sp) else Styles.hint.copy(fontSize = 13.sp),
-                textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
-        }
-        val candidates = model.devices.filter { it.offersExit }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (model.exitNode.isNotBlank() || candidates.isNotEmpty()) {
-                Pill(onClick = onPickExit) {
-                    Glyph(R.drawable.ic_globe, if (model.exitNode.isNotBlank()) Palette.accent else Palette.muted, 16.dp)
-                    Text(
-                        if (model.exitNode.isNotBlank()) stringResource(R.string.chip_exit, model.exitNode)
-                        else stringResource(R.string.chip_exit_none),
-                        style = Styles.chip, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 160.dp),
-                    )
-                    Glyph(R.drawable.ic_chevron_right, Palette.ink, 14.dp)
-                }
-            }
-            val routesOn = stringResource(R.string.routes_on)
-            val routesOff = stringResource(R.string.routes_off)
-            val failed = stringResource(R.string.settings_save_failed)
-            Pill(onClick = {
-                val next = !model.acceptRoutes
-                scope.launch {
-                    val r = model.saveSettings(JSONObject().put("accept_routes", next))
-                    toast(context, if (r.ok) (if (next) routesOn else routesOff) else r.error(failed))
-                }
-            }) {
-                Dot(if (model.acceptRoutes) Palette.accent else Palette.radioLine)
-                Text(stringResource(R.string.chip_routes), style = Styles.chip)
-            }
-        }
+    Column(Modifier.fillMaxWidth().background(Palette.accentSoft, RoundedCornerShape(14.dp)).padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(connectionTitle(model), style = Styles.rowTitle.copy(color = if (connectionPhase(model) == Phase.Problem) Palette.danger else Palette.accent))
+        if (subtitle.isNotBlank()) Text(subtitle, style = Styles.hint)
+        if (!model.selfHosted) Text(model.activeOrg?.let { if (it.personal) stringResource(R.string.settings_org_personal) else it.name }.orEmpty(), style = Styles.hint)
     }
 }
 
 @Composable
+private fun DisconnectControl(onDisconnect: () -> Unit) {
+    var confirm by rememberSaveable { mutableStateOf(false) }
+    OutlinedButton(onClick = { confirm = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.action_disconnect), color = Palette.danger) }
+    if (confirm) androidx.compose.material3.AlertDialog(onDismissRequest = { confirm = false },
+        title = { Text(stringResource(R.string.action_disconnect)) }, text = { Text(stringResource(R.string.mesh_disconnect_hint)) },
+        confirmButton = { TextButton(onClick = { confirm = false; onDisconnect() }) { Text(stringResource(R.string.action_disconnect)) } },
+        dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.settings_cancel)) } })
+}
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
 private fun DeviceRow(d: Device, first: Boolean, last: Boolean, isExit: Boolean, canSendFiles: Boolean, onFiles: () -> Unit) {
     var actionsOpen by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val shape = groupRowShape(first, last)
     Column(
         Modifier
             .padding(horizontal = 16.dp)
             .fillMaxWidth()
-            .clip(shape)
-            .background(Palette.surface)
-            .padding(top = if (first) 4.dp else 0.dp, bottom = if (last) 4.dp else 0.dp),
+            .padding(top = if (first) 8.dp else 0.dp)
+            .clip(RoundedCornerShape(topStart = if (first) 20.dp else 0.dp, topEnd = if (first) 20.dp else 0.dp,
+                bottomStart = if (last) 20.dp else 0.dp, bottomEnd = if (last) 20.dp else 0.dp))
+            .background(Palette.surface),
     ) {
         Row(
             Modifier
                 .fillMaxWidth()
-                .clickable { copyToClipboard(context, d.overlay) }
+                .heightIn(min = 72.dp)
+                .clickable(role = Role.Button) { actionsOpen = true }
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -494,21 +468,21 @@ private fun DeviceRow(d: Device, first: Boolean, last: Boolean, isExit: Boolean,
                         )
                     }
                 }
-                Text(d.overlay, style = Styles.mono, maxLines = 1)
-                if (d.ownerEmail.isNotBlank()) Text(d.ownerEmail, style = Styles.hint, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            Trailing(d)
-            if (BuildConfig.FILE_TRANSFER_ENABLED) Box {
-                IconButton(onClick = { actionsOpen = true }, modifier = Modifier.semantics { contentDescription = context.getString(R.string.files_device_actions) }) { Glyph(R.drawable.ic_more, Palette.muted) }
-                DropdownMenu(expanded = actionsOpen, onDismissRequest = { actionsOpen = false }, containerColor = Palette.surface) {
-                    DropdownMenuItem(text = { Text(stringResource(R.string.files_new_send)) }, enabled = canSendFiles,
-                        onClick = { actionsOpen = false; if (canSendFiles) onFiles() },
-                        leadingIcon = { Glyph(R.drawable.ic_share, if (canSendFiles) Palette.ink else Palette.radioLine) })
+                androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(d.overlay, style = Styles.mono.copy(lineHeight = 16.sp), maxLines = 1)
+                    Trailing(d)
                 }
             }
+            if (d.online && d.os == "windows") CircleButton(R.drawable.ic_monitor, stringResource(R.string.mesh_desktop)) {
+                context.startActivity(android.content.Intent(context, net.calabi.app.rdp.RdpActivity::class.java).putExtra("overlay", d.overlay))
+            } else Glyph(R.drawable.ic_chevron_right, Palette.muted, 16.dp)
         }
         if (!last) RowDivider(start = 68.dp)
     }
+    if (actionsOpen) DeviceActionsSheet(d, canSendFiles, onDismiss = { actionsOpen = false }, onFiles = {
+        actionsOpen = false
+        onFiles()
+    })
 }
 
 @Composable
@@ -523,43 +497,32 @@ private fun Trailing(d: Device) {
         "relay" -> stringResource(R.string.path_relay)
         else -> stringResource(R.string.device_online)
     }
-    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        if (d.path != null && d.rttMicros > 0) {
-            Text(stringResource(R.string.rtt_ms, (d.rttMicros / 1000).toInt()), style = Styles.monoValue)
-        }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Dot(if (relay) Palette.relayDot else Palette.accent, 6.dp)
-            Text(
-                label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
-                color = when {
-                    relay -> Palette.relayText
-                    d.path == null -> Palette.muted
-                    else -> Palette.accent
-                },
-            )
-        }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Dot(if (relay) Palette.relayDot else Palette.accent, 6.dp)
+        Text(label, fontSize = 11.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold,
+            color = if (relay) Palette.relayText else if (d.path == null) Palette.muted else Palette.accent)
+        if (d.path != null && d.rttMicros > 0) Text(stringResource(R.string.rtt_ms, (d.rttMicros / 1000).toInt()),
+            style = Styles.mono.copy(fontSize = 11.sp, lineHeight = 16.sp))
     }
 }
 
 /** The exit-device choices, shared by the sheet and the settings tab. */
 @Composable
 fun ExitChoices(model: AppModel, onPicked: () -> Unit = {}) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val failed = stringResource(R.string.settings_save_failed)
+    val saved = stringResource(R.string.mobile_saved)
     val candidates = model.devices.filter { it.offersExit }
     fun pick(value: String) {
-        scope.launch {
-            val r = model.saveSettings(JSONObject().put("exit_node", value))
-            if (!r.ok) toast(context, r.error(failed))
-            onPicked()
-        }
+        if (value == model.exitNode) { onPicked(); return }
+        model.actions.run(failed, saved, operation = { model.saveSettings(JSONObject().put("exit_node", value)) }, onSuccess = onPicked)
     }
+    ActionFeedback(model.actions)
     Group {
-        ChoiceRow(stringResource(R.string.settings_exit_none), selected = model.exitNode.isBlank()) { pick("") }
+        ChoiceRow(stringResource(R.string.settings_exit_none), selected = model.exitNode.isBlank(), enabled = !model.actions.busy) { pick("") }
         candidates.forEach { d ->
             RowDivider()
-            ChoiceRow(d.name, selected = model.exitNode == d.name || model.exitNode == d.overlay, detail = pathDetail(d)) { pick(d.name) }
+            ChoiceRow(d.name, selected = model.exitNode == d.name || model.exitNode == d.overlay,
+                detail = pathDetail(d), enabled = !model.actions.busy) { pick(d.name) }
         }
     }
     if (candidates.isEmpty()) {
@@ -580,18 +543,27 @@ fun ExitChoices(model: AppModel, onPicked: () -> Unit = {}) {
 /** The organization choices, shared by the sheet and the settings tab. */
 @Composable
 fun OrgChoices(model: AppModel, onPicked: () -> Unit = {}) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val failed = stringResource(R.string.settings_save_failed)
+    val saved = stringResource(R.string.mobile_saved)
     val personal = stringResource(R.string.settings_org_personal)
+    var pendingId by rememberSaveable { mutableStateOf<Long?>(null) }
+    ActionFeedback(model.actions)
     model.orgs.forEach { org ->
-        ChoiceRow(if (org.personal) personal else org.name, selected = org.id == model.activeOrgId) {
-            scope.launch {
-                val r = model.switchOrg(org.id)
-                if (!r.ok) toast(context, r.error(failed))
-                onPicked()
-            }
+        ChoiceRow(if (org.personal) personal else org.name, selected = org.id == model.activeOrgId, enabled = !model.actions.busy) {
+            if (org.id == model.activeOrgId) onPicked()
+            else pendingId = org.id
         }
+    }
+    model.orgs.find { it.id == pendingId }?.let { target ->
+        val from = model.activeOrg?.let { if (it.personal) personal else it.name }.orEmpty()
+        val to = if (target.personal) personal else target.name
+        androidx.compose.material3.AlertDialog(onDismissRequest = { if (!model.actions.busy) pendingId = null },
+            title = { Text(stringResource(R.string.mesh_switch_org)) },
+            text = { Column { Text(stringResource(R.string.mesh_switch_confirm, from, to)); ActionFeedback(model.actions) } },
+            confirmButton = { TextButton(enabled = !model.actions.busy, onClick = {
+                model.actions.run(failed, saved, operation = { model.switchOrg(target.id) }, onSuccess = { pendingId = null; onPicked() })
+            }) { Text(stringResource(R.string.mesh_switch_org)) } },
+            dismissButton = { TextButton(enabled = !model.actions.busy, onClick = { pendingId = null }) { Text(stringResource(R.string.settings_cancel)) } })
     }
 }
 

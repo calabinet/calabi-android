@@ -6,6 +6,8 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -24,6 +26,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -100,7 +103,7 @@ data class Tunnel(
     /** On a self-hosted server: the device whose daemon serves it. */
     val deviceName: String = "",
     val selfHosted: Boolean = false,
-) {
+) : java.io.Serializable {
     /** How a visitor reaches it, formatted as the web console's list does; "" before an edge assigns one. */
     val address: String
         get() = when {
@@ -163,15 +166,11 @@ fun TunnelsTab(model: AppModel, onOpen: (Tunnel) -> Unit) {
     val visibleTunnels = tunnels.orEmpty().filter { matchesListSearch(search, it.name, it.address, it.localAddr, it.type, it.creatorEmail, it.deviceName) }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 20.dp)) {
         item {
-            ListSearchToolbar(search, { search = it }, stringResource(R.string.list_search_endpoints), Modifier.padding(start = 6.dp, end = 6.dp)) {
-                Text(stringResource(R.string.tunnels_title), style = Styles.screenTitle, modifier = Modifier.weight(1f))
-                if (!tunnels.isNullOrEmpty()) {
-                    Text(
-                        stringResource(R.string.devices_online, tunnels.count { it.state == TunnelState.Active }, tunnels.size),
-                        fontSize = 13.sp, color = Palette.muted, modifier = Modifier.padding(bottom = 6.dp),
-                    )
-                }
+            PageHeading(stringResource(R.string.tunnels_title), modifier = Modifier.padding(horizontal = 6.dp)) {
+                if (!tunnels.isNullOrEmpty()) Text(stringResource(R.string.devices_online, tunnels.count { it.state == TunnelState.Active }, tunnels.size), style = Styles.hint)
             }
+            Spacer(Modifier.height(8.dp))
+            ListSearchInput(search, { search = it }, stringResource(R.string.list_search_endpoints))
         }
         if (model.seesOnlyOwnTunnels) {
             item { Text(stringResource(R.string.tunnels_scope_own), style = Styles.hint, modifier = Modifier.padding(start = 6.dp, top = 2.dp)) }
@@ -216,9 +215,10 @@ private fun TunnelRow(t: Tunnel, first: Boolean, last: Boolean, onClick: () -> U
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(groupRowShape(first, last))
-            .background(Palette.surface)
-            .padding(top = if (first) 4.dp else 0.dp, bottom = if (last) 4.dp else 0.dp),
+            .padding(top = if (first) 8.dp else 0.dp)
+            .clip(RoundedCornerShape(topStart = if (first) 20.dp else 0.dp, topEnd = if (first) 20.dp else 0.dp,
+                bottomStart = if (last) 20.dp else 0.dp, bottomEnd = if (last) 20.dp else 0.dp))
+            .background(Palette.surface),
     ) {
         Row(
             Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
@@ -239,6 +239,7 @@ private fun TunnelRow(t: Tunnel, first: Boolean, last: Boolean, onClick: () -> U
                 StateLabel(t.state)
                 if (t.traffic30d > 0) Text(formatBytes(t.traffic30d), style = Styles.mono.copy(fontSize = 11.sp))
             }
+            Glyph(R.drawable.ic_chevron_right, Palette.muted, 16.dp)
         }
         if (!last) RowDivider(start = 68.dp)
     }
@@ -265,6 +266,7 @@ private fun StateLabel(state: TunnelState) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TunnelDetailScreen(model: AppModel, opened: Tunnel, onBack: () -> Unit, onAccess: () -> Unit) {
     val context = LocalContext.current
@@ -274,9 +276,8 @@ fun TunnelDetailScreen(model: AppModel, opened: Tunnel, onBack: () -> Unit, onAc
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        TopBar(onBack)
+        PageHeading(t.name, onBack = onBack)
         Column(Modifier.padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(t.name, style = Styles.screenTitle, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Tag(t.type.uppercase(), Palette.ink, Palette.avatar, mono = true)
                 Tag(stringResource(t.state.label), t.state.color, t.state.dot.copy(alpha = 0.16f))
@@ -295,7 +296,7 @@ fun TunnelDetailScreen(model: AppModel, opened: Tunnel, onBack: () -> Unit, onAc
                     )
                 }
                 if (t.address.isNotBlank()) {
-                    Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(Modifier.fillMaxWidth().padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Pill(onClick = { copyToClipboard(context, t.address) }) {
                             Glyph(R.drawable.ic_copy, Palette.ink, 14.dp)
                             Text(stringResource(R.string.action_copy), style = Styles.chip)
@@ -408,13 +409,12 @@ fun TunnelAccessScreen(tunnel: Tunnel, onBack: () -> Unit) {
     val byHour = current?.rows.orEmpty().groupBy { it.hour }.toSortedMap(compareByDescending { it })
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 20.dp)) {
         item {
-            TopBar(onBack) {
+            PageHeading(stringResource(R.string.access_title), onBack = onBack) {
                 CircleButton(R.drawable.ic_refresh, stringResource(R.string.refresh)) { reload++ }
             }
         }
         item {
             Column(Modifier.padding(start = 6.dp, end = 6.dp, top = 16.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(R.string.access_title), style = Styles.screenTitle)
                 Text(tunnel.name, style = Styles.hint.copy(fontSize = 13.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
@@ -445,8 +445,8 @@ fun TunnelAccessScreen(tunnel: Tunnel, onBack: () -> Unit) {
                 item {
                     val notes = buildList {
                         add(stringResource(R.string.access_note))
-                        if (current.retentionDays > 0) add(stringResource(R.string.access_retention, current.retentionDays))
-                        if (current.rows.size >= ACCESS_LIMIT) add(stringResource(R.string.access_truncated, ACCESS_LIMIT))
+                        if (current.retentionDays > 0) add(pluralStringResource(R.plurals.access_retention, current.retentionDays, current.retentionDays))
+                        if (current.rows.size >= ACCESS_LIMIT) add(pluralStringResource(R.plurals.access_truncated, ACCESS_LIMIT, ACCESS_LIMIT))
                     }
                     Text(notes.joinToString(" "), style = Styles.hint, modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 10.dp))
                 }
@@ -476,8 +476,6 @@ private fun AccessItem(r: AccessRow, first: Boolean, last: Boolean) {
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(groupRowShape(first, last))
-            .background(Palette.surface)
             .padding(top = if (first) 2.dp else 0.dp, bottom = if (last) 2.dp else 0.dp),
     ) {
         Row(
@@ -521,16 +519,9 @@ private fun Tile(label: String, value: String, color: Color, modifier: Modifier)
 
 @Composable
 private fun InfoRow(label: String, value: String, mono: Boolean = false) {
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, style = Styles.row.copy(color = Palette.muted))
-        Text(
-            value, style = if (mono) Styles.mono.copy(fontSize = 14.sp, color = Palette.ink) else Styles.row,
-            textAlign = TextAlign.End, maxLines = 2, overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(start = 16.dp).weight(1f),
-        )
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(label, style = Styles.hint)
+        Text(value, style = if (mono) Styles.monoValue else Styles.row)
     }
 }
 

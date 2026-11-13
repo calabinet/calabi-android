@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mesh_current_org">Organização atual</string>
+    <string name="mesh_switch_org">Mudar de organização</string>
+    <string name="mesh_my">Minha conta</string>
+    <string name="mesh_network_settings">Configurações de rede</string>
+    <string name="mesh_all">Todos</string>
+    <string name="mesh_desktop">Área de trabalho</string>
+    <string name="mesh_disconnect_hint">A desconexão interromperá o acesso aos dispositivos desta rede.</string>
+    <string name="mesh_switch_confirm">Este telefone sairá de %1$s e entrará em %2$s. A conexão de rede será restabelecida.</string>
+</resources>

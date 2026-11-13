@@ -1,6 +1,6 @@
 # Calabi for Android
 
-Native Android application for Calabi. Package name: `net.calabi.app`; Android 8.0+; arm64-v8a and armeabi-v7a.
+Native Android application for Calabi. Package name: `net.calabi.app`; Android 8.0+; arm64-v8a only (64-bit Android).
 
 The application has its own version in `apps/client-android/VERSION`. The shared Go core is maintained in [calabinet/calabi](https://github.com/calabinet/calabi). Its version and complete public commit are pinned in `apps/client-android/core-source.json`.
 
@@ -20,11 +20,12 @@ $mobile = Get-Content apps/client-android/mobile-toolchain.json -Raw | ConvertFr
 pwsh -NoProfile -File scripts/dev/build.ps1 go install "golang.org/x/mobile/cmd/gomobile@$($mobile.gomobile)"
 pwsh -NoProfile -File scripts/dev/build.ps1 go install "golang.org/x/mobile/cmd/gobind@$($mobile.gomobile)"
 pwsh -NoProfile -File scripts/mobile/build-core-android.ps1 -AndroidHome $env:ANDROID_HOME
+pwsh -NoProfile -File scripts/mobile/build-rdp-android.ps1 -AndroidHome $env:ANDROID_HOME
 # Use your installed Gradle, or a project wrapper if present.
-gradle -p apps/client-android assembleDebug
+pwsh -NoProfile -File scripts/dev/build.ps1 gradle -p apps/client-android assembleDebug
 ```
 
-The SDK path above is an example; install its pinned NDK and add your Gradle executable to PATH. Without `-EdgeCa`, this builds a development mobile core, which cannot authenticate production calabi.net edges. To build for a deployment, pass its existing public CA with `-EdgeCa` (see the [application build guide](apps/client-android/README.md#build)).
+The SDK path above is an example; install its pinned NDK and add Gradle, CMake, Ninja and Git for Windows (Bash, Perl and make) to PATH. The RDP script downloads hash-pinned FreeRDP/OpenSSL sources and packages their license notices. Without `-EdgeCa`, this builds a development mobile core, which cannot authenticate production calabi.net edges. To build for a deployment, pass its existing public CA with `-EdgeCa` (see the [application build guide](apps/client-android/README.md#build)).
 
 The core source is fetched at the pinned commit. Build output contains the Android product version and the actual Go library version and commit. Development `--core-tree` overrides are explicitly marked and cannot produce release metadata.
 
@@ -37,7 +38,7 @@ pwsh -NoProfile -File scripts/mobile/build-release-android.ps1 -EdgeCa "C:/certi
 python scripts/products/product.py manifest android
 ```
 
-The release script prompts for the password without echoing it and verifies the pinned certificate fingerprint, application version, production CA in both ABIs and API endpoint before staging. Artifacts and checksums live in `dist/release-android`. The version code remains `MAJOR*1000000 + MINOR*1000 + PATCH`; 3.0.0 is 3000000, higher than 2.7.0 (2070000).
+The release script prompts for the password without echoing it and verifies the pinned certificate fingerprint, application version, production CA in the arm64 library and API endpoint before staging. Artifacts and checksums live in `dist/release-android`. The version code remains `MAJOR*1000000 + MINOR*1000 + PATCH`; 3.0.0 is 3000000, higher than 2.7.0 (2070000).
 
 Validate an upgrade over the previous signed release, preserving credentials, preferences and device identity, before publishing. Official APKs remain manually downloadable; this application currently has no automatic APK installer.
 

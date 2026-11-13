@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mesh_current_org">当前组织</string>
+    <string name="mesh_switch_org">切换组织</string>
+    <string name="mesh_my">我的</string>
+    <string name="mesh_network_settings">网络设置</string>
+    <string name="mesh_all">全部</string>
+    <string name="mesh_desktop">桌面</string>
+    <string name="mesh_disconnect_hint">断开后，此手机将无法访问组网中的设备。</string>
+    <string name="mesh_switch_confirm">此手机将离开 %1$s，加入 %2$s。切换后将重新建立组网连接。</string>
+</resources>

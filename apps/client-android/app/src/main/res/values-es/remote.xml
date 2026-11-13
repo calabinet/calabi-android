@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="remote_tab">Remoto</string>
+    <string name="remote_recent">Conexiones recientes</string>
+    <string name="remote_recent_empty">Los dispositivos a los que te conectes aparecerán aquí.</string>
+    <string name="remote_recent_remove">Eliminar conexión reciente</string>
+    <string name="remote_recent_remove_hint">Se eliminarán esta entrada y su vista previa. Se conservarán las credenciales guardadas.</string>
+    <string name="remote_recent_failed">No se pudieron cargar o guardar las conexiones recientes.</string>
+    <string name="remote_recent_connect_hint">Conéctate a la red para volver a acceder a estos dispositivos.</string>
+    <string name="remote_recent_preview">Vista previa del escritorio de %1$s</string>
+    <string name="remote_recent_no_preview">Aún no hay vista previa</string>
+</resources>

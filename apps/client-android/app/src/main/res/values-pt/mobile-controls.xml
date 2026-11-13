@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mobile_copy_address">Copiar endereço IP</string>
+    <string name="mobile_files_unavailable">Conecte-se à rede mesh e ative o recebimento de arquivos no outro dispositivo.</string>
+    <string name="mobile_hide_controls">Ocultar controles</string>
+    <string name="mobile_show_controls">Mostrar controles</string>
+    <string name="mobile_input">Entrada</string>
+    <string name="mobile_display">Tela</string>
+    <string name="mobile_next_click">Aplica-se à próxima ação do ponteiro.</string>
+    <string name="mobile_disconnect_title">Desconectar a área de trabalho remota?</string>
+    <string name="mobile_disconnect_body">A conexão de área de trabalho remota será encerrada. O telefone permanece conectado à rede mesh.</string>
+    <string name="mobile_settings_account">Conta e organização</string>
+    <string name="mobile_settings_connection">Configurações de conexão</string>
+    <string name="mobile_settings_device">Dispositivo e segundo plano</string>
+    <string name="mobile_settings_about">Sobre</string>
+    <string name="mobile_usage_hint">Tráfego e uso de dispositivos</string>
+    <string name="mobile_saving">Salvando…</string>
+    <string name="mobile_saved">Salvo</string>
+    <string name="mobile_dismiss">Fechar aviso</string>
+</resources>

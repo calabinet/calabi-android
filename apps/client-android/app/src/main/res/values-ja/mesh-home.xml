@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mesh_current_org">現在の組織</string>
+    <string name="mesh_switch_org">組織を切り替え</string>
+    <string name="mesh_my">アカウント</string>
+    <string name="mesh_network_settings">ネットワーク設定</string>
+    <string name="mesh_all">すべて</string>
+    <string name="mesh_desktop">デスクトップ</string>
+    <string name="mesh_disconnect_hint">切断すると、このネットワーク内のデバイスにアクセスできなくなります。</string>
+    <string name="mesh_switch_confirm">このスマートフォンは %1$s から退出し、%2$s に参加します。ネットワーク接続が再確立されます。</string>
+</resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="remote_tab">Remote</string>
+    <string name="remote_recent">Recent connections</string>
+    <string name="remote_recent_empty">Devices you connect to will appear here.</string>
+    <string name="remote_recent_remove">Remove recent connection</string>
+    <string name="remote_recent_remove_hint">This entry and its preview will be removed. Saved credentials will be kept.</string>
+    <string name="remote_recent_failed">Could not load or save recent connections.</string>
+    <string name="remote_recent_connect_hint">Connect to the network to reconnect to these devices.</string>
+    <string name="remote_recent_preview">Desktop preview for %1$s</string>
+    <string name="remote_recent_no_preview">No desktop preview yet</string>
+</resources>

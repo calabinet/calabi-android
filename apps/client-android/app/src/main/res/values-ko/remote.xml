@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="remote_tab">원격</string>
+    <string name="remote_recent">최근 연결</string>
+    <string name="remote_recent_empty">연결에 성공한 기기가 여기에 표시됩니다.</string>
+    <string name="remote_recent_remove">최근 연결 기록 삭제</string>
+    <string name="remote_recent_remove_hint">이 기록과 미리 보기가 삭제됩니다. 저장된 자격 증명은 유지됩니다.</string>
+    <string name="remote_recent_failed">최근 연결 기록을 불러오거나 저장할 수 없습니다.</string>
+    <string name="remote_recent_connect_hint">이 기기에 다시 접속하려면 네트워크에 연결하세요.</string>
+    <string name="remote_recent_preview">%1$s의 데스크톱 미리 보기</string>
+    <string name="remote_recent_no_preview">아직 데스크톱 미리 보기가 없습니다</string>
+</resources>

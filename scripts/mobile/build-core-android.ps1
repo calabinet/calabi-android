@@ -25,7 +25,7 @@
 #>
 param(
     [string]$EdgeCa = $env:EDGE_CA,
-    [string]$Targets = "android/arm64,android/arm",
+    [ValidateSet("android/arm64")][string]$Targets = "android/arm64",
     [string]$AndroidHome = $(if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { "D:\Android\Sdk" })
 )
 $ErrorActionPreference = 'Stop'
@@ -153,7 +153,7 @@ try {
     if ((Invoke-Native "go" @("mod", "tidy")) -ne 0) { throw "go mod tidy failed in $work" }
     Write-Host "gomobile bind -target=$Targets (NDK $($ndk.Name))..."
     $sw = [Diagnostics.Stopwatch]::StartNew()
-    $bind = @("bind", "-target=$Targets", "-androidapi", "26", "-javapkg=net.calabi.core", "-trimpath", "-ldflags=-s -w -X $modulePath/mobile.CoreVersion=$coreVersion -X $modulePath/mobile.CoreCommit=$coreCommit",
+    $bind = @("bind", "-target=$Targets", "-androidapi", "26", "-javapkg=net.calabi.core", "-trimpath", "-ldflags=-s -w -extldflags=-Wl,-z,max-page-size=16384 -X $modulePath/mobile.CoreVersion=$coreVersion -X $modulePath/mobile.CoreCommit=$coreCommit",
         "-o", $out, "$modulePath/mobile")
     if ((Invoke-Native $gomobile $bind) -ne 0) { throw "gomobile bind failed" }
     Write-Host ("built {0} ({1:N1} MB) in {2:N0}s" -f $out, ((Get-Item $out).Length / 1MB), $sw.Elapsed.TotalSeconds)

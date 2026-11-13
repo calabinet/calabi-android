@@ -130,7 +130,7 @@ fun SelfHostedScreen(link: String?, onBack: () -> Unit, onJoined: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         Row(
             Modifier
-                .heightIn(min = 44.dp)
+                .heightIn(min = 48.dp)
                 .clip(RoundedCornerShape(22.dp))
                 .clickable(role = Role.Button, onClick = onBack)
                 .padding(end = 12.dp),

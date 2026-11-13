@@ -5,12 +5,12 @@
 .DESCRIPTION
   In order:
 
-    1. the Go core for both ABIs (build-core-android.ps1) with the production edge CA
-    2. gradle assembleRelease, signed with the release keystore
+    1. the arm64 Go core (build-core-android.ps1) with the production edge CA
+    2. arm64 RDP native libraries, then gradle assembleRelease signed with the release keystore
     3. checks on the APK itself - not on what the build was asked to do:
          - signed by the pinned release certificate, not a debug key
          - versionName is VERSION
-         - each ABI's libgojni.so carries the production edge CA and not the DEV one
+         - only arm64-v8a native libraries; libgojni.so carries the production edge CA and not the DEV one
          - the app's control plane is https://api.calabi.net
     4. copies it to the release directory and records it in SHA256SUMS
 
@@ -134,9 +134,10 @@ try {
 
     # --- 1. Go core ------------------------------------------------------------------
     Write-Host "==> Android $version; Go core $((Get-Content (Join-Path $Tree 'VERSION') -Raw).Trim()) from $Tree"
-    & (Join-Path $Tree "scripts\mobile\build-core-android.ps1") -EdgeCa $EdgeCa -Targets "android/arm64,android/arm" -AndroidHome $AndroidHome
+    & (Join-Path $Tree "scripts\mobile\build-core-android.ps1") -EdgeCa $EdgeCa -Targets "android/arm64" -AndroidHome $AndroidHome
 
-    # --- 2. APK ----------------------------------------------------------------------
+    # --- 2. RDP native libraries and APK -----------------------------------------------
+    & (Join-Path $Tree "scripts\mobile\build-rdp-android.ps1") -AndroidHome $AndroidHome
     Write-Host "==> gradle assembleRelease"
     $project = Join-Path $Tree "apps\client-android"
     $apkDir = Join-Path $project "app\build\outputs\apk\release"
@@ -189,7 +190,9 @@ try {
         $s = $e.Open(); try { $s.CopyTo($ms) } finally { $s.Dispose() }
         return $latin1.GetString($ms.ToArray())
     }
-    foreach ($abi in "arm64-v8a", "armeabi-v7a") {
+    $nativeAbis = @($zip.Entries | Where-Object { $_.FullName -match '^lib/[^/]+/[^/]+\.so$' } | ForEach-Object { $_.FullName.Split('/')[1] } | Sort-Object -Unique)
+    if ($nativeAbis.Count -ne 1 -or $nativeAbis[0] -ne 'arm64-v8a') { $failures += "expected arm64-v8a only, found: $($nativeAbis -join ', ')" }
+    foreach ($abi in "arm64-v8a") {
         $so = EntryText "lib/$abi/libgojni.so"
         if ($null -eq $so) { $failures += "missing lib/$abi/libgojni.so"; continue }
         if (-not $so.Contains($coreSource.commit)) { $failures += "$abi core: pinned source commit NOT embedded" }
@@ -209,7 +212,7 @@ if ($failures.Count -gt 0) {
 }
 Write-Host "  OK  signer $CertSha256"
 Write-Host "  OK  versionName $version"
-Write-Host "  OK  both ABIs: production CA in, DEV CA out"
+Write-Host "  OK  arm64-v8a only: production CA in, DEV CA out"
 Write-Host "  OK  control plane https://api.calabi.net"
 
 # --- 4. stage ---------------------------------------------------------------------

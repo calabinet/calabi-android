@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rdp_connection_options">연결 옵션</string>
+    <string name="rdp_session_tools">세션</string>
+    <string name="rdp_rotate_display">화면 회전</string>
+    <string name="rdp_password_short_hint">PIN이 아닌 Windows 암호를 입력하세요.</string>
+    <string name="rdp_hide_keyboard">키보드 숨기기</string>
+    <string name="rdp_zoom_in">확대</string>
+    <string name="rdp_zoom_out">축소</string>
+    <string name="rdp_port">포트</string>
+    <string name="rdp_port_invalid">1~65535 사이의 포트를 입력하세요.</string>
+</resources>

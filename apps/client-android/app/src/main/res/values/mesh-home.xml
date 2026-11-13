@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mesh_current_org">Current organization</string>
+    <string name="mesh_switch_org">Switch organization</string>
+    <string name="mesh_my">Me</string>
+    <string name="mesh_network_settings">Network settings</string>
+    <string name="mesh_all">All</string>
+    <string name="mesh_desktop">Desktop</string>
+    <string name="mesh_disconnect_hint">Disconnecting will interrupt access to devices on this network.</string>
+    <string name="mesh_switch_confirm">This phone will leave %1$s and join %2$s. The network connection will be re-established.</string>
+</resources>

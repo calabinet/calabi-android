@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mesh_current_org">Aktuelle Organisation</string>
+    <string name="mesh_switch_org">Organisation wechseln</string>
+    <string name="mesh_my">Mein Konto</string>
+    <string name="mesh_network_settings">Netzwerkeinstellungen</string>
+    <string name="mesh_all">Alle</string>
+    <string name="mesh_desktop">Desktop</string>
+    <string name="mesh_disconnect_hint">Beim Trennen wird der Zugriff auf Geräte in diesem Netzwerk unterbrochen.</string>
+    <string name="mesh_switch_confirm">Dieses Telefon verlässt %1$s und tritt %2$s bei. Die Netzwerkverbindung wird neu hergestellt.</string>
+</resources>

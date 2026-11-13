@@ -25,6 +25,9 @@ class CalabiApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        val networkTest = if (BuildConfig.DEBUG) runCatching {
+            JSONObject(java.io.File(filesDir, "rdp-test-network.json").readText())
+        }.getOrNull() else null
         val config = JSONObject()
             .put("state_dir", filesDir.absolutePath)
             .put("bff_url", BuildConfig.BFF_URL)
@@ -32,6 +35,10 @@ class CalabiApp : Application() {
             .put("coord_plaintext", BuildConfig.COORD_PLAINTEXT)
             .put("file_transfer_p0", BuildConfig.DEBUG)
             .put("file_transfer_v1", BuildConfig.FILE_TRANSFER_ENABLED)
+            .put("remote_desktop_p0", BuildConfig.DEBUG)
+            .put("mesh_relay_only", BuildConfig.DEBUG && java.io.File(filesDir, "rdp-test-relay-only").exists())
+            .put("mesh_receive_delay_ms", networkTest?.optInt("delay_ms", 0)?.coerceIn(0, 100) ?: 0)
+            .put("mesh_receive_drop_every", networkTest?.optInt("drop_every", 0)?.coerceAtLeast(0) ?: 0)
         core = Mobile.new_(config.toString(), AppPlatform(this))
         createNotificationChannel()
     }

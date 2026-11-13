@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rdp_connection_options">Opções de conexão</string>
+    <string name="rdp_session_tools">Sessão</string>
+    <string name="rdp_rotate_display">Girar tela</string>
+    <string name="rdp_password_short_hint">Use a senha do Windows, não o PIN.</string>
+    <string name="rdp_hide_keyboard">Ocultar teclado</string>
+    <string name="rdp_zoom_in">Ampliar</string>
+    <string name="rdp_zoom_out">Reduzir</string>
+    <string name="rdp_port">Porta</string>
+    <string name="rdp_port_invalid">Insira uma porta entre 1 e 65535.</string>
+</resources>

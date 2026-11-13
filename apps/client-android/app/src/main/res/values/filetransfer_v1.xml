@@ -8,7 +8,6 @@
  <string name="list_search_close">Close search</string>
  <string name="files_verifying">Verifying and saving file…</string>
  <string name="files_rate_eta">%1$s/s · about %2$d s remaining</string>
- <string name="files_request">New file request. Open to review.</string>
  <string name="files_limit">Choose up to 32 documents from a content provider.</string>
  <string name="files_title">File transfers</string>
  <string name="files_hint">Send to online devices in your network. Incoming files require your confirmation. Files use your existing direct or relay connection.</string>
@@ -18,7 +17,10 @@
  <string name="files_peer_disabled">Not accepting files</string>
  <string name="files_choose">Choose files</string>
  <string name="files_preparing">Preparing files…</string>
- <string name="files_send">Send %1$d selected files</string>
+ <plurals name="files_send">
+     <item quantity="one">Send %1$d selected file</item>
+     <item quantity="other">Send %1$d selected files</item>
+ </plurals>
  <string name="files_remove">Remove</string>
  <string name="files_remove_confirm">Remove this local record or cached file? Received files saved elsewhere are retained.</string>
  <string name="files_pause">Pause</string>
@@ -54,13 +56,8 @@
  <string name="files_network_hint">Within your mesh network</string>
  <string name="files_receive_hint">Mesh devices only · Confirm each request</string>
  <string name="files_new_send">Send files</string>
- <string name="files_active">Ongoing</string>
  <string name="files_pending">Pending</string>
- <string name="files_history">History</string>
  <string name="files_empty_records">No transfer records</string>
- <string name="files_empty_active">No transfers in progress</string>
- <string name="files_empty_pending">No files awaiting confirmation</string>
- <string name="files_empty_history">No transfer history</string>
  <string name="files_from">From %1$s</string>
  <string name="files_to">To %1$s</string>
  <string name="files_offer_loading">Receiving the remaining file details…</string>
@@ -71,9 +68,6 @@
  <string name="files_selection_summary">Selected: %1$d · %2$s</string>
  <string name="files_preparing_hint">Preparing documents for transfer. Large files can take longer.</string>
  <string name="files_unavailable">File transfers are unavailable. Check the network connection.</string>
- <string name="files_device_actions">Device actions</string>
- <string name="files_copy_ip">Copy mesh IP</string>
- <string name="files_close">Close</string>
  <plurals name="files_accept_count"><item quantity="one">Accept %1$d file</item><item quantity="other">Accept %1$d files</item></plurals>
  <string name="files_reconnect">Reconnect to send or receive files. Local records and completed files remain available.</string>
  <plurals name="files_notification_count"><item quantity="one">%1$d file awaiting confirmation</item><item quantity="other">%1$d files awaiting confirmation</item></plurals>

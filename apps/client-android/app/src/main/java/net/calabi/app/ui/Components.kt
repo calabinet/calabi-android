@@ -9,6 +9,8 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +21,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
@@ -52,8 +57,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -117,18 +124,18 @@ fun RadioMark(selected: Boolean) {
 
 /** One choice in a group: a title, an optional detail line, a radio mark. */
 @Composable
-fun ChoiceRow(title: String, selected: Boolean, detail: String? = null, onClick: () -> Unit) {
+fun ChoiceRow(title: String, selected: Boolean, detail: String? = null, enabled: Boolean = true, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
+            .selectable(selected = selected, enabled = enabled, onClick = onClick, role = Role.RadioButton)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(title, style = if (selected) Styles.rowTitle else Styles.row, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(title, style = if (selected) Styles.rowTitle else Styles.row)
             detail?.let { Text(it, style = Styles.hint) }
         }
         RadioMark(selected)
@@ -168,12 +175,12 @@ fun Pill(onClick: () -> Unit, modifier: Modifier = Modifier, content: @Composabl
     val shape = RoundedCornerShape(20.dp)
     Row(
         modifier
-            .height(40.dp)
+            .heightIn(min = 48.dp)
             .clip(shape)
             .background(Palette.surface)
             .border(1.dp, Palette.line, shape)
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         content = content,
@@ -184,7 +191,7 @@ fun Pill(onClick: () -> Unit, modifier: Modifier = Modifier, content: @Composabl
 @Composable
 fun LinkRow(title: String, hint: String, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -198,7 +205,7 @@ fun LinkRow(title: String, hint: String, onClick: () -> Unit) {
 
 /** A setting that is on or off: title, hint, switch. */
 @Composable
-fun SwitchRow(title: String, hint: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+fun SwitchRow(title: String, hint: String, checked: Boolean, enabled: Boolean = true, onCheckedChange: (Boolean) -> Unit) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -208,7 +215,8 @@ fun SwitchRow(title: String, hint: String, checked: Boolean, onCheckedChange: (B
             Text(title, style = Styles.row)
             Text(hint, style = Styles.hint)
         }
-        Switch(checked = checked, colors = calabiSwitchColors(), onCheckedChange = onCheckedChange)
+        Switch(checked = checked, enabled = enabled, modifier = Modifier.semantics { contentDescription = title },
+            colors = calabiSwitchColors(), onCheckedChange = onCheckedChange)
     }
 }
 
@@ -227,11 +235,11 @@ fun PrimaryButton(text: String, enabled: Boolean, onClick: () -> Unit, modifier:
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.fillMaxWidth().height(54.dp),
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = 54.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Palette.ink, contentColor = Color.White,
-            disabledContainerColor = Palette.ink.copy(alpha = 0.35f), disabledContentColor = Color.White,
+            containerColor = Palette.accent, contentColor = Color.White,
+            disabledContainerColor = Palette.accent.copy(alpha = 0.35f), disabledContentColor = Color.White,
         ),
     ) { Text(text, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
 }
@@ -266,11 +274,11 @@ fun LabeledField(
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .height(52.dp)
+                        .heightIn(min = 52.dp)
                         .clip(shape)
                         .background(Palette.surface)
                         .border(if (focused) 2.dp else 1.dp, if (focused) Palette.accent else Palette.fieldLine, shape)
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     contentAlignment = Alignment.CenterStart,
                 ) { inner() }
             },
@@ -278,61 +286,55 @@ fun LabeledField(
     }
 }
 
-/** The tab bar: the selected tab is an ink pill. */
+/** Equal-width tabs grow for larger text and long translations. */
 @Composable
 fun BottomNav(tab: Int, onTab: (Int) -> Unit) {
+    val tabs = buildList {
+        add(Triple(0, R.drawable.ic_mesh, R.string.tab_mesh))
+        add(Triple(1, R.drawable.ic_tunnel, R.string.tab_tunnels))
+        add(Triple(4, R.drawable.ic_monitor, R.string.remote_tab))
+        if (BuildConfig.FILE_TRANSFER_ENABLED) add(Triple(3, R.drawable.ic_transfer, R.string.files_tab))
+        add(Triple(2, R.drawable.ic_settings, R.string.tab_settings))
+    }
     Column(Modifier.fillMaxWidth().background(Palette.ground)) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(Palette.line))
-        Row(
-            Modifier.fillMaxWidth().navigationBarsPadding().height(76.dp).padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (BuildConfig.FILE_TRANSFER_ENABLED) {
-                val tabs = listOf(
-                    Triple(0, R.drawable.ic_mesh, R.string.tab_mesh),
-                    Triple(1, R.drawable.ic_tunnel, R.string.tab_tunnels),
-                    Triple(3, R.drawable.ic_transfer, R.string.files_tab),
-                    Triple(2, R.drawable.ic_settings, R.string.tab_settings),
-                )
-                tabs.forEach { (index, icon, label) ->
-                    Column(
-                        Modifier.weight(1f).clip(RoundedCornerShape(16.dp))
-                            .selectable(selected = tab == index, onClick = { onTab(index) }, role = Role.Tab)
-                            .padding(vertical = 8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Box(Modifier.background(if (tab == index) Palette.ink else Color.Transparent, RoundedCornerShape(16.dp)).padding(horizontal = 16.dp, vertical = 5.dp)) {
-                            Glyph(icon, if (tab == index) Color.White else Palette.muted, 20.dp)
+        val largeText = LocalDensity.current.fontScale >= 1.3f && LocalConfiguration.current.screenWidthDp < 420
+        if (largeText) {
+            Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 8.dp)) {
+                val columns = if (tabs.size > 4) 3 else 2
+                tabs.chunked(columns).forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        row.forEach { (index, icon, label) ->
+                            Column(Modifier.weight(1f).heightIn(min = 56.dp).clip(RoundedCornerShape(12.dp))
+                                .background(if (tab == index) Palette.accentSoft else Color.Transparent)
+                                .selectable(selected = tab == index, onClick = { onTab(index) }, role = Role.Tab)
+                                .padding(horizontal = 10.dp, vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Glyph(icon, if (tab == index) Palette.accent else Palette.muted, 20.dp)
+                                Text(stringResource(label), fontSize = 12.sp, lineHeight = 16.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    color = if (tab == index) Palette.accent else Palette.muted)
+                            }
                         }
-                        Text(stringResource(label), fontSize = 11.sp, color = if (tab == index) Palette.ink else Palette.muted)
+                        repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
-            } else {
-            NavItem(R.drawable.ic_mesh, stringResource(R.string.tab_mesh), tab == 0) { onTab(0) }
-            NavItem(R.drawable.ic_tunnel, stringResource(R.string.tab_tunnels), tab == 1) { onTab(1) }
-            NavItem(R.drawable.ic_settings, stringResource(R.string.tab_settings), tab == 2) { onTab(2) }
+            }
+        } else {
+        Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            tabs.forEach { (index, icon, label) ->
+                Column(Modifier.weight(1f).heightIn(min = 56.dp).clip(RoundedCornerShape(16.dp))
+                    .selectable(selected = tab == index, onClick = { onTab(index) }, role = Role.Tab)
+                    .padding(horizontal = 4.dp, vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Box(Modifier.background(if (tab == index) Palette.accentSoft else Color.Transparent, RoundedCornerShape(16.dp)).padding(horizontal = 16.dp, vertical = 3.dp)) {
+                        Glyph(icon, if (tab == index) Palette.accent else Palette.muted, 20.dp)
+                    }
+                    Text(stringResource(label), fontSize = 12.sp, lineHeight = 16.sp, color = if (tab == index) Palette.accent else Palette.muted,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                }
             }
         }
     }
-}
-
-@Composable
-private fun NavItem(@DrawableRes icon: Int, label: String, selected: Boolean, onClick: () -> Unit) {
-    val fg = if (selected) Color.White else Palette.muted
-    Row(
-        Modifier
-            .height(48.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(if (selected) Palette.ink else Color.Transparent)
-            .selectable(selected = selected, onClick = onClick, role = Role.Tab)
-            .padding(horizontal = 18.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Glyph(icon, fg, 20.dp)
-        Text(label, fontSize = 14.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold, color = fg, maxLines = 1)
     }
 }
 
@@ -350,15 +352,16 @@ fun TopBar(onBack: () -> Unit, actions: @Composable RowScope.() -> Unit = {}) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CircleButton(@DrawableRes icon: Int, description: String, onClick: () -> Unit) {
+    val context = LocalContext.current
     Box(
         Modifier
-            .size(44.dp)
+            .size(48.dp)
             .clip(CircleShape)
-            .background(Palette.surface)
-            .border(1.dp, Palette.line, CircleShape)
-            .clickable(role = Role.Button, onClick = onClick)
+            .combinedClickable(role = Role.Button, onClick = onClick,
+                onLongClick = { Toast.makeText(context, description, Toast.LENGTH_SHORT).show() })
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) { Glyph(icon, Palette.ink, 20.dp) }
@@ -370,15 +373,15 @@ fun Segment(label: String, selected: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(18.dp)
     Box(
         Modifier
-            .height(36.dp)
+            .heightIn(min = 48.dp)
             .clip(shape)
-            .background(if (selected) Palette.ink else Palette.surface)
-            .border(1.dp, if (selected) Palette.ink else Palette.line, shape)
+            .background(if (selected) Palette.accentSoft else Palette.surface)
+            .border(1.dp, if (selected) Palette.accent else Palette.line, shape)
             .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = if (selected) Color.White else Palette.ink)
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = if (selected) Palette.accent else Palette.ink)
     }
 }
 
@@ -414,7 +417,10 @@ fun ListSearchToolbar(
         requestFocus = false
         expanded = false
     }
-    BackHandler(enabled = expanded, onBack = closeSearch)
+    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    BackHandler(enabled = expanded) {
+        if (imeVisible) { focusManager.clearFocus(); keyboard?.hide() } else closeSearch()
+    }
     Row(modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
         if (expanded) {
             androidx.compose.material3.IconButton(onClick = closeSearch, modifier = Modifier.size(48.dp)) {
@@ -452,7 +458,7 @@ private fun ListSearchField(value: String, onValueChange: (String) -> Unit, plac
         }
     }
     val shape = RoundedCornerShape(8.dp)
-    val fieldHeight = maxOf(32.dp, with(LocalDensity.current) { 22.sp.toDp() + 8.dp })
+    val fieldHeight = maxOf(48.dp, with(LocalDensity.current) { 22.sp.toDp() + 8.dp })
     val clearLabel = stringResource(R.string.list_search_clear)
     BasicTextField(
         value = value, onValueChange = onValueChange, singleLine = true,
@@ -479,4 +485,58 @@ private fun ListSearchField(value: String, onValueChange: (String) -> Unit, plac
             }
         },
     )
+}
+
+/** Persistent Home search; Back hides the IME before clearing a query. */
+@Composable
+fun ListSearchInput(value: String, onValueChange: (String) -> Unit, placeholder: String) {
+    val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    val ime = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    BackHandler(enabled = value.isNotEmpty() || ime) {
+        focus.clearFocus(); keyboard?.hide()
+        if (!ime) onValueChange("")
+    }
+    ListSearchField(value, onValueChange, placeholder, false, {})
+}
+
+/** Shared compact chrome for top-level and pushed phone pages. */
+@Composable
+fun PageHeading(title: String, modifier: Modifier = Modifier, onBack: (() -> Unit)? = null,
+    actions: @Composable RowScope.() -> Unit = {}) {
+    Row(modifier.fillMaxWidth().heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (onBack != null) CircleButton(R.drawable.ic_chevron_left, stringResource(R.string.back), onBack)
+        Text(title, style = Styles.screenTitle, modifier = Modifier.weight(1f))
+        actions()
+    }
+}
+
+@Composable
+fun IconLinkRow(title: String, hint: String, @DrawableRes icon: Int, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 68.dp).clickable(role = Role.Button, onClick = onClick).padding(horizontal = 6.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Box(Modifier.size(40.dp).background(Palette.accentSoft, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Glyph(icon, Palette.accent) }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, style = Styles.rowTitle)
+            if (hint.isNotBlank()) Text(hint, style = Styles.hint)
+        }
+        Glyph(R.drawable.ic_chevron_right, Palette.muted, 16.dp)
+    }
+}
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+fun ListFilterTabs(labels: List<String>, selected: Int, onSelect: (Int) -> Unit) {
+    androidx.compose.foundation.layout.FlowRow(Modifier.fillMaxWidth()) {
+        labels.forEachIndexed { index, label ->
+            Column(Modifier.widthIn(min = 72.dp).selectable(selected = selected == index, role = Role.Tab, onClick = { onSelect(index) }).padding(horizontal = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(Modifier.heightIn(min = 48.dp), contentAlignment = Alignment.Center) {
+                    Text(label, color = if (selected == index) Palette.accent else Palette.muted, fontSize = 13.sp,
+                        fontWeight = if (selected == index) FontWeight.Bold else FontWeight.Normal)
+                }
+                Box(Modifier.size(width = 32.dp, height = 2.dp).background(if (selected == index) Palette.accent else Color.Transparent))
+            }
+        }
+    }
 }

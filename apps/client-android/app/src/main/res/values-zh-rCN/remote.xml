@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="remote_tab">远程</string>
+    <string name="remote_recent">最近远程</string>
+    <string name="remote_recent_empty">成功连接过的设备会显示在这里。</string>
+    <string name="remote_recent_remove">移除远程记录</string>
+    <string name="remote_recent_remove_hint">将移除此条记录及其预览图，已保存的凭据会保留。</string>
+    <string name="remote_recent_failed">无法读取或保存最近远程记录。</string>
+    <string name="remote_recent_connect_hint">连接组网后，即可再次远程访问这些设备。</string>
+    <string name="remote_recent_preview">%1$s 的桌面预览</string>
+    <string name="remote_recent_no_preview">暂无桌面预览</string>
+</resources>

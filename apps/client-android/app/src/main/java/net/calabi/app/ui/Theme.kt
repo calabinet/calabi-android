@@ -39,14 +39,14 @@ object Palette {
 }
 
 private val Colors = lightColorScheme(
-    primary = Palette.ink,
+    primary = Palette.accent,
     onPrimary = Color.White,
     primaryContainer = Palette.accentSoft,
     onPrimaryContainer = Palette.ink,
     secondary = Palette.muted,
     onSecondary = Color.White,
-    secondaryContainer = Palette.sunken,
-    onSecondaryContainer = Palette.ink,
+    secondaryContainer = Palette.accentSoft,
+    onSecondaryContainer = Palette.accent,
     tertiary = Palette.accent,
     background = Palette.ground,
     onBackground = Palette.ink,
@@ -77,7 +77,7 @@ private val Type = Typography().let { t ->
 
 /** The handful of text styles the screens use, named by role. */
 object Styles {
-    val screenTitle = TextStyle(fontFamily = Fonts.display, fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp)
+    val screenTitle = TextStyle(fontFamily = Fonts.display, fontSize = 22.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp)
     val heroState = TextStyle(fontFamily = Fonts.display, fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp)
     val section = TextStyle(fontFamily = Fonts.display, fontSize = 18.sp, fontWeight = FontWeight.Bold)
     val sectionLabel = TextStyle(fontFamily = Fonts.display, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Palette.muted)

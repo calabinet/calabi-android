@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tab_mesh">Mesh</string>
+    <string name="tab_tunnels">Points d’accès</string>
+    <string name="files_tab">Transferts</string>
+    <string name="tab_settings">Paramètres</string>
+    <string name="account">Compte</string>
+    <string name="action_connect">Connecter</string>
+    <string name="action_disconnect">Déconnecter</string>
+    <string name="state_connected">Connecté</string>
+    <string name="state_stopped">Déconnecté</string>
+    <string name="state_connecting">Connexion en cours…</string>
+    <string name="state_retrying">Nouvelle tentative…</string>
+    <string name="hero_tap_to_connect">Appuyez pour connecter</string>
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_exit">Appareil de sortie</string>
+    <string name="settings_exit_none">Ne pas utiliser</string>
+    <string name="settings_accept_routes">Utiliser les routes de sous-réseau</string>
+    <string name="settings_accept_routes_hint">Accédez aux réseaux partagés par les autres appareils, par exemple le réseau domestique.</string>
+    <string name="settings_save">Enregistrer</string>
+    <string name="settings_cancel">Annuler</string>
+    <string name="settings_save_failed">Échec de l’enregistrement</string>
+    <string name="back">Retour</string>
+    <string name="device_online">En ligne</string>
+    <string name="device_offline">Hors ligne</string>
+    <string name="devices_title">Appareils</string>
+    <string name="files_new_send">Envoyer des fichiers</string>
+    <string name="files_device">Choisir l’appareil destinataire</string>
+    <string name="files_choose">Choisir des fichiers</string>
+    <string name="files_selected">Fichiers sélectionnés</string>
+    <string name="files_no_devices">Aucun appareil compatible en ligne. Les deux clients et le coordinateur doivent prendre en charge le transfert de fichiers.</string>
+    <string name="files_selection_summary">%1$d fichiers sélectionnés · %2$s</string>
+    <plurals name="files_send">
+        <item quantity="one">Envoyer le %1$d fichier sélectionné</item>
+        <item quantity="many">Envoyer les %1$d fichiers sélectionnés</item>
+        <item quantity="other">Envoyer les %1$d fichiers sélectionnés</item>
+    </plurals>
+</resources>

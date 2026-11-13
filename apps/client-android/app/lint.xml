@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- Android is intentionally arm64-v8a only.
+         No ChromeOS/x86_64 support is advertised or shipped. Keep ABI inspection
+         enabled elsewhere; this exception applies only to this module's ABI list. -->
+    <issue id="ChromeOsAbiSupport">
+        <ignore path="build.gradle.kts" />
+    </issue>
+</lint>

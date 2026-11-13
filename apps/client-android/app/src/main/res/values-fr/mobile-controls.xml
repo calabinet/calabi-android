@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mobile_copy_address">Copier l’adresse IP</string>
+    <string name="mobile_files_unavailable">Connectez-vous au réseau mesh et activez la réception de fichiers sur l’autre appareil.</string>
+    <string name="mobile_hide_controls">Masquer les commandes</string>
+    <string name="mobile_show_controls">Afficher les commandes</string>
+    <string name="mobile_input">Saisie</string>
+    <string name="mobile_display">Affichage</string>
+    <string name="mobile_next_click">S’applique à la prochaine action du pointeur.</string>
+    <string name="mobile_disconnect_title">Déconnecter le bureau à distance ?</string>
+    <string name="mobile_disconnect_body">La connexion au bureau à distance sera fermée. Le téléphone reste connecté au réseau mesh.</string>
+    <string name="mobile_settings_account">Compte et organisation</string>
+    <string name="mobile_settings_connection">Paramètres de connexion</string>
+    <string name="mobile_settings_device">Appareil et arrière-plan</string>
+    <string name="mobile_settings_about">À propos</string>
+    <string name="mobile_usage_hint">Trafic et utilisation des appareils</string>
+    <string name="mobile_saving">Enregistrement…</string>
+    <string name="mobile_saved">Enregistré</string>
+    <string name="mobile_dismiss">Fermer le message</string>
+</resources>

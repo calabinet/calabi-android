@@ -1,5 +1,32 @@
 # Changelog
 
+## 3.1.0 — 2026-11-13
+
+### Changes
+
+- **Added:** Remote Desktop access to authorized Windows devices over the mesh, with certificate verification and optional encrypted credentials stored on this phone. Touchpad and direct-touch modes, Chinese text input and explicit text clipboard exchange are available.
+- **Added:** A dedicated Remote tab with local desktop thumbnails, two cards per row by default, and shortcuts to reconnect to recently used devices.
+- **Added:** Custom Remote Desktop ports from 1 to 65535, with saved credentials and recent connections isolated by account, organization, device and port.
+- **Changed:** The device-first mesh page now shares a compact, fixed account, organization and connection header with the other main pages. Connection controls, exit devices and subnet routes are grouped in a network panel.
+- **Changed:** Remote Desktop keeps sign-in in portrait and enters landscape fullscreen after connecting. A collapsible floating toolbar groups input, display and session controls.
+- **Changed:** File transfer, endpoints and settings use consistent panels, navigation and touch targets, with large-text layouts and the ten supported interface languages.
+- **Changed:** Android packages now target 64-bit ARM systems only and use 16 KB alignment for native libraries and APK entries.
+- **Fixed:** Direct-connection status and latency no longer force an extra line at normal text sizes. Android 10 fullscreen sessions no longer reserve an empty status-bar strip.
+
+### Install or upgrade
+
+Install calabi-android.apk over the existing official application. The package identifier remains net.calabi.app and the release signing certificate remains unchanged. Version 3.1.0 uses versionCode 3001000. Android 8.0 or later with a 64-bit ARM system (arm64-v8a) is required; 32-bit Android systems are no longer supported.
+
+An in-place upgrade retains sign-in, device identity, credentials and preferences. Recent desktop previews are stored only on the device and are removed with their history entries. Official APK updates are installed manually.
+
+### Verify downloads
+
+Check the APK against SHA256SUMS and verify it with `apksigner verify --verbose --print-certs calabi-android.apk`.
+
+Expected signing certificate SHA-256: `5800bc9938dd507b1a4fb7cc497f9b3ce50e3c20655fdcb5383aac4049f97d23`.
+
+build-manifest.json and its detached signature record the product source, pinned core and APK hash.
+
 ## 3.0.0 — 2026-11-11
 
 ## Changes

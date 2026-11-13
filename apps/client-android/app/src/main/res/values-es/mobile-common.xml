@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tab_mesh">Mesh</string>
+    <string name="tab_tunnels">Puntos de acceso</string>
+    <string name="files_tab">Transferencias</string>
+    <string name="tab_settings">Ajustes</string>
+    <string name="account">Cuenta</string>
+    <string name="action_connect">Conectar</string>
+    <string name="action_disconnect">Desconectar</string>
+    <string name="state_connected">Conectado</string>
+    <string name="state_stopped">Desconectado</string>
+    <string name="state_connecting">Conectando…</string>
+    <string name="state_retrying">Reintentando…</string>
+    <string name="hero_tap_to_connect">Toca para conectar</string>
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_exit">Dispositivo de salida</string>
+    <string name="settings_exit_none">No usar</string>
+    <string name="settings_accept_routes">Usar rutas de subred</string>
+    <string name="settings_accept_routes_hint">Accede a las redes compartidas por otros dispositivos, como la red de casa.</string>
+    <string name="settings_save">Guardar</string>
+    <string name="settings_cancel">Cancelar</string>
+    <string name="settings_save_failed">No se pudo guardar</string>
+    <string name="back">Volver</string>
+    <string name="device_online">En línea</string>
+    <string name="device_offline">Sin conexión</string>
+    <string name="devices_title">Dispositivos</string>
+    <string name="files_new_send">Enviar archivos</string>
+    <string name="files_device">Elegir dispositivo receptor</string>
+    <string name="files_choose">Elegir archivos</string>
+    <string name="files_selected">Archivos seleccionados</string>
+    <string name="files_no_devices">No hay dispositivos en línea compatibles. Ambos clientes y el coordinador deben admitir la transferencia de archivos.</string>
+    <string name="files_selection_summary">%1$d archivos seleccionados · %2$s</string>
+    <plurals name="files_send">
+        <item quantity="one">Enviar %1$d archivo seleccionado</item>
+        <item quantity="many">Enviar %1$d archivos seleccionados</item>
+        <item quantity="other">Enviar %1$d archivos seleccionados</item>
+    </plurals>
+</resources>

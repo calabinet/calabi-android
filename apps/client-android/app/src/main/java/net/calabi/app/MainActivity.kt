@@ -13,14 +13,11 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -28,14 +25,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.calabi.app.ui.CalabiTheme
+import net.calabi.app.ui.AppLoadingScreen
 import net.calabi.app.ui.HomeScreen
 import net.calabi.app.ui.LoginScreen
 import net.calabi.app.ui.Palette
@@ -60,6 +56,17 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!isTaskRoot) {
+            // A launcher tap must return to the task's current page, including a retained RDP session.
+            // Explicit invites/shares still route to the existing main page as before.
+            val explicitRoute = intent.action != Intent.ACTION_MAIN || !intent.hasCategory(Intent.CATEGORY_LAUNCHER)
+            // Remove this temporary instance before CLEAR_TOP searches for the existing main page.
+            finish()
+            if (explicitRoute) {
+                startActivity(Intent(intent).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+            }
+            return
+        }
         // The design is light only, so the bar icons stay dark even when the system is in dark mode.
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
@@ -80,7 +87,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // singleTask: an invite opened while the app runs arrives here.
+    // Explicit routes reuse the main page; launcher taps preserve the page above it.
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         inviteIn(intent)?.let { inviteLink.value = it }
@@ -121,6 +128,10 @@ private fun AppRoot(onConnect: () -> Unit, onDisconnect: () -> Unit, invite: Str
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     var signedIn by remember { mutableStateOf<Boolean?>(null) }
+    val sessionExpired by CoreClient.sessionExpired.collectAsState()
+    LaunchedEffect(sessionExpired) {
+        if (sessionExpired && CalabiApp.instance.vpnService != null) onDisconnect()
+    }
     // Which network the phone is on: the signed-in screens are rebuilt when it
     // changes, or they would keep the one they started with (its organizations,
     // its account, its tabs) after joining a self-hosted server.
@@ -137,10 +148,8 @@ private fun AppRoot(onConnect: () -> Unit, onDisconnect: () -> Unit, invite: Str
         }
     }
     val joinFailed = stringResource(R.string.sh_failed)
-    when (signedIn) {
-        null -> Box(Modifier.fillMaxSize().background(Palette.ground), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = Palette.accent)
-        }
+    when (if (sessionExpired) false else signedIn) {
+        null -> AppLoadingScreen()
         false -> if (selfHosted || invite != null) {
             SelfHostedScreen(
                 link = invite,
@@ -151,7 +160,7 @@ private fun AppRoot(onConnect: () -> Unit, onDisconnect: () -> Unit, invite: Str
             LoginScreen(onSignedIn = { refresh++ }, onSelfHosted = { selfHosted = true })
         }
         true -> {
-            key(network) { HomeScreen(onConnect = onConnect, onDisconnect = onDisconnect, onSignedOut = { refresh++ }, shared = shared, onShareTaken = onShareTaken, showFiles = showFiles, onFilesTaken = onFilesTaken) }
+            key(network) { HomeScreen(onConnect = onConnect, onDisconnect = onDisconnect, onSignedOut = { signedIn = false; refresh++ }, shared = shared, onShareTaken = onShareTaken, showFiles = showFiles, onFilesTaken = onFilesTaken) }
             // An invite opened while signed in somewhere: one network at a time, so ask.
             invite?.let { link ->
                 AlertDialog(

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mesh_current_org">目前組織</string>
+    <string name="mesh_switch_org">切換組織</string>
+    <string name="mesh_my">我的</string>
+    <string name="mesh_network_settings">網路設定</string>
+    <string name="mesh_all">全部</string>
+    <string name="mesh_desktop">桌面</string>
+    <string name="mesh_disconnect_hint">中斷後，此手機將無法存取組網中的裝置。</string>
+    <string name="mesh_switch_confirm">此手機將離開 %1$s，加入 %2$s。切換後將重新建立組網連線。</string>
+</resources>

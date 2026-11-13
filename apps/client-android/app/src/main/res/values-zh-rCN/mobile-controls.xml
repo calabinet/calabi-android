@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mobile_copy_address">复制 IP 地址</string>
+    <string name="mobile_files_unavailable">请先连接组网，并在对方设备开启文件接收。</string>
+    <string name="mobile_hide_controls">收起工具栏</string>
+    <string name="mobile_show_controls">显示工具栏</string>
+    <string name="mobile_input">输入操作</string>
+    <string name="mobile_display">画面显示</string>
+    <string name="mobile_next_click">用于下一次指针操作。</string>
+    <string name="mobile_disconnect_title">断开远程桌面？</string>
+    <string name="mobile_disconnect_body">将结束当前远程桌面连接，手机仍保持组网连接。</string>
+    <string name="mobile_settings_account">账户与组织</string>
+    <string name="mobile_settings_connection">连接设置</string>
+    <string name="mobile_settings_device">本机与后台运行</string>
+    <string name="mobile_settings_about">关于</string>
+    <string name="mobile_usage_hint">流量与设备用量</string>
+    <string name="mobile_saving">正在保存…</string>
+    <string name="mobile_saved">已保存</string>
+    <string name="mobile_dismiss">关闭提示</string>
+</resources>

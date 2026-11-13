@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mobile_copy_address">Copia indirizzo IP</string>
+    <string name="mobile_files_unavailable">Connettiti alla rete mesh e abilita la ricezione di file sull’altro dispositivo.</string>
+    <string name="mobile_hide_controls">Nascondi controlli</string>
+    <string name="mobile_show_controls">Mostra controlli</string>
+    <string name="mobile_input">Input</string>
+    <string name="mobile_display">Schermo</string>
+    <string name="mobile_next_click">Si applica alla prossima azione del puntatore.</string>
+    <string name="mobile_disconnect_title">Disconnettere il desktop remoto?</string>
+    <string name="mobile_disconnect_body">La connessione al desktop remoto verrà chiusa. Il telefono resta connesso alla rete mesh.</string>
+    <string name="mobile_settings_account">Account e organizzazione</string>
+    <string name="mobile_settings_connection">Impostazioni di connessione</string>
+    <string name="mobile_settings_device">Dispositivo e attività in background</string>
+    <string name="mobile_settings_about">Informazioni</string>
+    <string name="mobile_usage_hint">Traffico e utilizzo dei dispositivi</string>
+    <string name="mobile_saving">Salvataggio…</string>
+    <string name="mobile_saved">Salvato</string>
+    <string name="mobile_dismiss">Chiudi avviso</string>
+</resources>

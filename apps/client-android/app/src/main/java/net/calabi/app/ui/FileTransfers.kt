@@ -4,11 +4,13 @@ import android.net.Uri
 import android.os.CancellationSignal
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.BackHandler
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextOverflow
@@ -21,10 +23,12 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -42,27 +46,36 @@ private fun JSONObject.objects(key: String): List<JSONObject> = optJSONArray(key
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: () -> Unit, onSendOpened: () -> Unit, devices: List<Device>, reviewIncoming: Boolean, onReviewOpened: () -> Unit) {
+fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: () -> Unit, onSendOpened: () -> Unit, devices: List<Device>, reviewIncoming: Boolean, onReviewOpened: () -> Unit, onSendPageChanged: (Boolean) -> Unit = {}) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var snapshot by remember { mutableStateOf(JSONObject()) }
     var peer by rememberSaveable { mutableStateOf(initialPeer.orEmpty()) }
-    var selected by remember { mutableStateOf(setOf<String>()) }
+    var selected by rememberSaveable { mutableStateOf(setOf<String>()) }
     var busy by remember { mutableStateOf(false) }
-    var message by remember { mutableStateOf("") }
+    var actionBusy by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    val sendScroll = rememberScrollState()
+    var message by rememberSaveable { mutableStateOf("") }
     var exportId by rememberSaveable { mutableStateOf("") }
     var removing by remember { mutableStateOf<JSONObject?>(null) }
     var identityOperation by remember { mutableStateOf<String?>(null) }
-    var sendSheet by rememberSaveable { mutableStateOf(false) }
+    var sendPage by rememberSaveable { mutableStateOf(false) }
     var settingsSheet by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(sendPage) { onSendPageChanged(sendPage) }
+    DisposableEffect(Unit) { onDispose { onSendPageChanged(false) } }
+
     var choosingPeer by rememberSaveable { mutableStateOf(false) }
+    val closeSend = { if (choosingPeer && peer.isNotBlank()) choosingPeer = false else sendPage = false }
+    BackHandler(enabled = sendPage && removing == null, onBack = closeSend)
+
     var search by rememberSaveable { mutableStateOf("") }
     var direction by rememberSaveable { mutableIntStateOf(0) }
     LaunchedEffect(reviewIncoming) {
         if (reviewIncoming) {
             search = ""
             direction = 1
-            sendSheet = false
+            sendPage = false
             settingsSheet = false
             onReviewOpened()
         }
@@ -71,7 +84,7 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
         if (initialPeer != null) {
             peer = initialPeer
             choosingPeer = initialPeer.isBlank()
-            sendSheet = true
+            sendPage = true
             onSendOpened()
         }
     }
@@ -81,11 +94,17 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
     val saved = stringResource(R.string.filetest_saved)
     suspend fun refresh() { snapshot = CoreClient.call("GET", "/v1/files").json() }
     suspend fun action(body: JSONObject): Boolean {
-        val result = CoreClient.call("POST", "/v1/files/action", body)
-        message = if (result.ok) "" else fileErrorText(context, result.error(failed))
-        if (result.ok && body.optString("action") == "forget_source") selected = selected - body.optString("id")
-        refresh()
-        return result.ok
+        if (actionBusy) return false
+        actionBusy = true
+        try {
+            val result = CoreClient.call("POST", "/v1/files/action", body)
+            message = if (result.ok) "" else fileErrorText(context, result.error(failed))
+            if (result.ok && body.optString("action") == "forget_source") selected = selected - body.optString("id")
+            refresh()
+            return result.ok
+        } catch (e: CancellationException) { throw e }
+        catch (_: Exception) { message = failed; return false }
+        finally { actionBusy = false }
     }
     fun runAction(name: String, id: String) { scope.launch { action(JSONObject().put("action", name).put("id", id)) } }
     suspend fun stage(uris: List<Uri>) {
@@ -122,7 +141,7 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
     }
     LaunchedEffect(Unit) { while (true) { refresh(); delay(1000) } }
     LaunchedEffect(shared, snapshot.optBoolean("available")) {
-        if (shared.isNotEmpty() && snapshot.optBoolean("available")) { sendSheet = true; stage(shared); onShareTaken() }
+        if (shared.isNotEmpty() && snapshot.optBoolean("available")) { sendPage = true; stage(shared); onShareTaken() }
     }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> scope.launch { stage(uris) } }
     val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
@@ -158,33 +177,45 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
             staged.any { source -> job.optJSONArray("sources")?.let { ids -> (0 until ids.length()).any { ids.optString(it) == source.optString("id") } } == true && fileMatches(source, job.optString("peer_ip")) }
     }
 
-    LazyColumn(
-        Modifier.fillMaxSize(), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
+    if (!sendPage) LazyColumn(
+        Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item("header") {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.files_center), style = Styles.screenTitle, modifier = Modifier.weight(1f))
+            PageHeading(stringResource(R.string.files_center)) {
                 CircleButton(R.drawable.ic_settings, stringResource(R.string.files_settings), onClick = { settingsSheet = true })
             }
         }
         item("receiving") {
-            Group {
+            Column(Modifier.fillMaxWidth().background(if (snapshot.optBoolean("receiving_requested", snapshot.optBoolean("receiving"))) Palette.accentSoft else Palette.sunken, RoundedCornerShape(14.dp))) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Column(Modifier.weight(1f)) {
                         Text(stringResource(R.string.files_receiving), style = Styles.rowTitle)
                         Text(stringResource(R.string.files_receive_hint), style = Styles.hint)
                     }
-                    Switch(checked = snapshot.optBoolean("receiving_requested", snapshot.optBoolean("receiving")), enabled = (available || snapshot.optBoolean("receiving_requested")) && !busy, colors = calabiSwitchColors(), onCheckedChange = { enabled -> scope.launch { action(JSONObject().put("action", "receiving").put("enabled", enabled)) } })
+                    Switch(checked = snapshot.optBoolean("receiving_requested", snapshot.optBoolean("receiving")), enabled = (available || snapshot.optBoolean("receiving_requested")) && !busy && !actionBusy, colors = calabiSwitchColors(), onCheckedChange = { enabled -> scope.launch { action(JSONObject().put("action", "receiving").put("enabled", enabled)) } })
                 }
             }
         }
         item("send") {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.files_network_hint), style = Styles.hint, modifier = Modifier.weight(1f))
-                Button(enabled = available, onClick = { choosingPeer = peer.isBlank(); sendSheet = true }) {
+            val largeText = LocalConfiguration.current.fontScale >= 1.3f
+            val sendButton: @Composable (Modifier) -> Unit = { modifier ->
+                Button(modifier = modifier.heightIn(min = 48.dp), shape = RoundedCornerShape(14.dp), enabled = available, onClick = { choosingPeer = peer.isBlank(); sendPage = true }) {
                     Glyph(R.drawable.ic_share, androidx.compose.ui.graphics.Color.White, 16.dp)
                     Spacer(Modifier.width(6.dp))
                     Text(stringResource(R.string.files_new_send))
+                }
+            }
+            BoxWithConstraints(Modifier.fillMaxWidth().background(Palette.surface, RoundedCornerShape(16.dp)).padding(12.dp)) {
+                if (largeText || maxWidth < 296.dp) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(stringResource(R.string.files_network_hint), style = Styles.hint)
+                        sendButton(Modifier.fillMaxWidth())
+                    }
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(stringResource(R.string.files_network_hint), style = Styles.hint, modifier = Modifier.weight(1f))
+                        sendButton(Modifier)
+                    }
                 }
             }
         }
@@ -194,16 +225,13 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
             }
         }
         item("tabs") {
-            ListSearchToolbar(search, { search = it }, stringResource(R.string.list_search_files)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    listOf(R.string.files_all_directions, R.string.files_incoming, R.string.files_outgoing).forEachIndexed { index, label ->
-                        FilterChip(selected = direction == index, onClick = { direction = index }, label = { Text(stringResource(label)) })
-                    }
-                }
+            Column(Modifier.fillMaxWidth().background(Palette.surface, RoundedCornerShape(16.dp)).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                ListSearchInput(search, { search = it }, stringResource(R.string.list_search_files))
+                ListFilterTabs(listOf(stringResource(R.string.files_all_directions), stringResource(R.string.files_incoming), stringResource(R.string.files_outgoing)), direction) { direction = it }
             }
         }
         if (visibleGroups.isEmpty() && visibleJobs.isEmpty()) item("empty") {
-            Column(Modifier.fillMaxWidth().padding(vertical = 36.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.fillMaxWidth().background(Palette.surface, RoundedCornerShape(22.dp)).padding(vertical = 36.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Glyph(R.drawable.ic_transfer, Palette.muted, 28.dp)
                 Text(stringResource(if (search.isNotBlank()) R.string.list_search_no_matches else R.string.files_empty_records), style = Styles.hint)
             }
@@ -218,13 +246,13 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
                         val id = transfer.optString("id")
                         RowDivider()
                         TransferRecord(transfer, state, transfer.optString("error")) {
-                            if (state == "completed") TextButton(enabled = !busy, onClick = { exportId = id; save.launch(transfer.optString("name")) }) { Text(stringResource(R.string.filetest_save)) }
+                            if (state == "completed") TextButton(enabled = !busy && !actionBusy, onClick = { exportId = id; save.launch(transfer.optString("name")) }) { Text(stringResource(R.string.filetest_save)) }
                             if (state in listOf("receiving", "accepted", "waiting_sender")) {
                                 TextButton(enabled = !busy && transfer.optBoolean("pause_supported"), onClick = { runAction("pause_receive", id) }) { Text(stringResource(R.string.files_pause)) }
                             }
                             if (state == "paused") TextButton(enabled = !busy && available, onClick = { runAction("resume_receive", id) }) { Text(stringResource(R.string.files_resume)) }
-                            if (state in listOf("receiving", "accepted", "waiting_sender", "paused")) TextButton(onClick = { runAction("cancel_receive", id) }) { Text(stringResource(R.string.filetest_stop)) }
-                            if (state in terminalFileStates) TextButton(onClick = { removing = JSONObject().put("action", "forget_receive").put("id", id) }) { Text(stringResource(R.string.files_remove)) }
+                            if (state in listOf("receiving", "accepted", "waiting_sender", "paused")) TextButton(enabled = !busy && !actionBusy, onClick = { runAction("cancel_receive", id) }) { Text(stringResource(R.string.filetest_stop)) }
+                            if (state in terminalFileStates) TextButton(enabled = !busy && !actionBusy, onClick = { removing = JSONObject().put("action", "forget_receive").put("id", id) }) { Text(stringResource(R.string.files_remove)) }
                         }
                     } }
                     if (waiting.isNotEmpty()) {
@@ -246,24 +274,18 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
                 TransferHeading(true, stringResource(R.string.files_to, deviceName(job.optString("peer_ip"))))
                 RowDivider()
                 TransferRecord(file, state, job.optString("error"), job) {
-                    if (state == "sending") TextButton(onClick = { runAction("pause", id) }) { Text(stringResource(R.string.files_pause)) }
+                    if (state == "sending") TextButton(enabled = !busy && !actionBusy, onClick = { runAction("pause", id) }) { Text(stringResource(R.string.files_pause)) }
                     if (state == "paused") TextButton(enabled = available, onClick = { scope.launch { action(JSONObject().put("action", "resume").put("id", id).put("peer", job.optString("peer_ip"))) } }) { Text(stringResource(if (job.optString("error").isNotBlank()) R.string.files_retry else R.string.files_resume)) }
-                    if (state == "sending" || state == "paused") TextButton(onClick = { runAction("cancel", id) }) { Text(stringResource(R.string.filetest_stop)) }
-                    else TextButton(onClick = { removing = JSONObject().put("action", "forget_job").put("id", id) }) { Text(stringResource(R.string.files_remove)) }
+                    if (state == "sending" || state == "paused") TextButton(enabled = !busy && !actionBusy, onClick = { runAction("cancel", id) }) { Text(stringResource(R.string.filetest_stop)) }
+                    else TextButton(enabled = !busy && !actionBusy, onClick = { removing = JSONObject().put("action", "forget_job").put("id", id) }) { Text(stringResource(R.string.files_remove)) }
                 }
             }
         }
     }
-    if (sendSheet) ModalBottomSheet(
-        onDismissRequest = { sendSheet = false }, containerColor = Palette.ground,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-    ) {
-        Column(Modifier.fillMaxWidth().fillMaxHeight(0.9f).padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.files_new_send), style = Styles.section, modifier = Modifier.weight(1f))
-                TextButton(onClick = { sendSheet = false }) { Text(stringResource(R.string.files_close)) }
-            }
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    if (sendPage) {
+        Column(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            PageHeading(stringResource(R.string.files_new_send), onBack = closeSend)
+            Column(Modifier.weight(1f).verticalScroll(sendScroll), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             val target = peers.firstOrNull { it.optString("ip") == peer }
             if (!choosingPeer && peer.isNotBlank()) {
                 Group {
@@ -274,7 +296,7 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
                             Text(peer, style = Styles.mono)
                             if (target?.optBoolean("receiving") != true) PeerReceptionStatus(false)
                         }
-                        TextButton(onClick = { choosingPeer = true }) { Text(stringResource(R.string.files_change_device)) }
+                        CircleButton(R.drawable.ic_transfer, stringResource(R.string.files_change_device)) { choosingPeer = true }
                     }
                 }
             } else {
@@ -295,9 +317,9 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
                     }
                 }
             }
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.files_selected), style = Styles.sectionLabel, modifier = Modifier.weight(1f))
-                TextButton(enabled = available && !busy, onClick = { picker.launch(arrayOf("*/*")) }) { Text(stringResource(R.string.files_choose)) }
+            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stringResource(R.string.files_selected), style = Styles.sectionLabel)
+                TextButton(enabled = available && !busy && !actionBusy, onClick = { picker.launch(arrayOf("*/*")) }) { Text(stringResource(R.string.files_choose)) }
             }
             val preparing = (busy && preparationSignal.get() != null) || snapshot.optBoolean("preparing")
             if (preparing) {
@@ -311,30 +333,33 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
                     val id = file.optString("id")
                     if (index > 0) RowDivider()
                     Row(Modifier.fillMaxWidth().padding(end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = selected.contains(id), enabled = !busy, onCheckedChange = { selected = if (it) selected + id else selected - id })
+                        Checkbox(checked = selected.contains(id), enabled = !busy && !actionBusy, onCheckedChange = { selected = if (it) selected + id else selected - id })
                         Column(Modifier.weight(1f).padding(vertical = 12.dp)) {
                             Text(file.optString("name"), style = Styles.row, maxLines = 2, overflow = TextOverflow.Ellipsis)
                             Text(fileBytes(file.optLong("size")), style = Styles.hint)
                         }
-                        TextButton(enabled = !busy, onClick = { removing = JSONObject().put("action", "forget_source").put("id", id) }) { Text(stringResource(R.string.files_remove)) }
+                        TextButton(enabled = !busy && !actionBusy, onClick = { removing = JSONObject().put("action", "forget_source").put("id", id) }) { Text(stringResource(R.string.files_remove)) }
                     }
                 }
             }
             }
+            if (busy || actionBusy) LinearProgressIndicator(Modifier.fillMaxWidth(), color = Palette.accent, trackColor = Palette.line)
+            if (!available) Text(snapshotError.ifBlank { stringResource(R.string.files_reconnect) }, style = Styles.hint, color = Palette.danger)
             Text(stringResource(R.string.files_selection_summary, selected.size, fileBytes(staged.filter { it.optString("id") in selected }.sumOf { it.optLong("size") })), style = Styles.hint)
             if (message.isNotBlank()) Text(message, style = Styles.hint, color = Palette.danger)
             Button(
-                modifier = Modifier.fillMaxWidth(), enabled = available && !busy && selected.isNotEmpty() && peers.any { it.optString("ip") == peer && it.optBoolean("receiving") } && !choosingPeer,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = RoundedCornerShape(14.dp), enabled = available && !busy && !actionBusy && selected.isNotEmpty() && peers.any { it.optString("ip") == peer && it.optBoolean("receiving") } && !choosingPeer,
                 onClick = { scope.launch {
                     if (busy) return@launch
                     busy = true
                     try {
                         if (action(JSONObject().put("action", "send").put("peer", peer).put("ids", JSONArray(selected.sorted())))) {
-                            selected = emptySet(); sendSheet = false; search = ""; direction = 2
+                            selected = emptySet(); sendPage = false; search = ""; direction = 2
                         }
                     } finally { busy = false }
                 } },
-            ) { Text(stringResource(R.string.files_send, selected.size)) }
+            ) { Text(pluralStringResource(R.plurals.files_send, selected.size, selected.size)) }
+            Spacer(Modifier.height(12.dp))
         }
     }
     if (settingsSheet) ModalBottomSheet(onDismissRequest = { settingsSheet = false }, containerColor = Palette.ground) {
@@ -356,7 +381,7 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
             }
         }
     }
-    removing?.let { body -> AlertDialog(onDismissRequest = { removing = null }, title = { Text(stringResource(R.string.files_remove)) }, text = { Text(stringResource(R.string.files_remove_confirm)) }, confirmButton = { TextButton(onClick = { removing = null; scope.launch { action(body) } }) { Text(stringResource(R.string.files_remove)) } }, dismissButton = { TextButton(onClick = { removing = null }) { Text(stringResource(R.string.settings_cancel)) } }) }
+    removing?.let { body -> AlertDialog(onDismissRequest = { removing = null }, title = { Text(stringResource(R.string.files_remove)) }, text = { Text(stringResource(R.string.files_remove_confirm)) }, confirmButton = { TextButton(enabled = !busy && !actionBusy, onClick = { removing = null; scope.launch { action(body) } }) { Text(stringResource(R.string.files_remove)) } }, dismissButton = { TextButton(enabled = !busy && !actionBusy, onClick = { removing = null }) { Text(stringResource(R.string.settings_cancel)) } }) }
     identityOperation?.let { operation -> AlertDialog(onDismissRequest = { identityOperation = null }, title = { Text(stringResource(if (operation == "renew") R.string.files_identity_renew else R.string.files_identity_reset)) }, text = { Text(stringResource(R.string.files_identity_confirm)) }, confirmButton = { TextButton(onClick = { identityOperation = null; scope.launch { busy = true; try { action(JSONObject().put("action", "identity_$operation").put("confirmed", true)) } finally { busy = false } } }) { Text(stringResource(if (operation == "renew") R.string.files_identity_renew else R.string.files_identity_reset)) } }, dismissButton = { TextButton(onClick = { identityOperation = null }) { Text(stringResource(R.string.settings_cancel)) } }) }
 }
 
@@ -388,7 +413,7 @@ private fun TransferHeading(outgoing: Boolean, peer: String) {
 }
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun TransferRecord(file: JSONObject, state: String, error: String, metrics: JSONObject = file, actions: @Composable RowScope.() -> Unit) {
+private fun TransferRecord(file: JSONObject, state: String, error: String, metrics: JSONObject = file, actions: @Composable FlowRowScope.() -> Unit) {
     val phase = file.optString("state")
     val preparation = if (state == "sending") metrics.optJSONObject("progress")?.optJSONObject("preparation") else null
     val displayState = when {
@@ -421,6 +446,6 @@ private fun TransferRecord(file: JSONObject, state: String, error: String, metri
         if (error.isNotBlank() && state != "cancelled" && !metrics.optBoolean("cancel_pending")) Text(fileErrorText(LocalContext.current, error), color = Palette.danger, style = Styles.hint)
         if (metrics === file && state in setOf("receiving", "accepted", "waiting_sender") && !file.optBoolean("pause_supported")) Text(stringResource(R.string.files_update_sender), style = Styles.hint)
         if (metrics.optBoolean("cancel_pending") && metrics.optString("stop_reason").isNotBlank()) Text(stringResource(R.string.files_cancel_pending), style = Styles.hint)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, content = actions)
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalArrangement = Arrangement.spacedBy(4.dp), content = actions)
     }
 }

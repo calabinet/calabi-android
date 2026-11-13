@@ -75,7 +75,7 @@ data class SeatUsage(val used: Long, val disabled: Long, val limit: Long, val ow
  * change made in one (the exit device, subnet routes, the organization) is what
  * the other shows.
  */
-class AppModel {
+class AppModel(val actions: UiActionState) {
     var connected by mutableStateOf(false)
         private set
     var connection by mutableStateOf<Connection?>(null)

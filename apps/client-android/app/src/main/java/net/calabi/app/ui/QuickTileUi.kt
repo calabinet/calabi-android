@@ -2,6 +2,8 @@ package net.calabi.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -101,6 +104,7 @@ fun TilePrompt(model: AppModel) {
 @Composable
 fun QuickTileRow() {
     val context = LocalContext.current
+    val largeText = LocalConfiguration.current.fontScale >= 1.3f
     var added by rememberTileAdded()
     var steps by remember { mutableStateOf(false) }
 
@@ -117,10 +121,13 @@ fun QuickTileRow() {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(stringResource(R.string.tile_row), style = Styles.row)
             Text(stringResource(if (added) R.string.tile_row_added_hint else R.string.tile_row_hint), style = Styles.hint)
+            if (added && largeText) {
+                Text(stringResource(R.string.tile_added), style = Styles.hint.copy(color = Palette.accent, fontWeight = FontWeight.SemiBold))
+            }
         }
-        if (added) {
+        if (added && !largeText) {
             Text(stringResource(R.string.tile_added), style = Styles.hint.copy(color = Palette.accent, fontWeight = FontWeight.SemiBold))
-        } else {
+        } else if (!added) {
             Glyph(R.drawable.ic_chevron_right, Palette.muted, 16.dp)
         }
     }
@@ -135,7 +142,7 @@ private fun TileStepsDialog(onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         containerColor = Palette.surface,
         title = { Text(stringResource(R.string.tile_steps_title), style = Styles.section) },
-        text = { Text(stringResource(QuickTile.steps()), style = Styles.row.copy(color = Palette.muted)) },
+        text = { Text(stringResource(QuickTile.steps()), style = Styles.row.copy(color = Palette.muted), modifier = Modifier.verticalScroll(rememberScrollState())) },
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.tile_steps_ok), color = Palette.ink, fontWeight = FontWeight.Bold)

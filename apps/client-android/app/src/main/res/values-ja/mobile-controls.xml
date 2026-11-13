@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mobile_copy_address">IP アドレスをコピー</string>
+    <string name="mobile_files_unavailable">メッシュに接続し、相手のデバイスでファイル受信を有効にしてください。</string>
+    <string name="mobile_hide_controls">操作バーを隠す</string>
+    <string name="mobile_show_controls">操作バーを表示</string>
+    <string name="mobile_input">入力操作</string>
+    <string name="mobile_display">画面表示</string>
+    <string name="mobile_next_click">次のポインター操作に適用します。</string>
+    <string name="mobile_disconnect_title">リモートデスクトップを切断しますか？</string>
+    <string name="mobile_disconnect_body">リモートデスクトップ接続を終了します。スマートフォンのメッシュ接続は維持されます。</string>
+    <string name="mobile_settings_account">アカウントと組織</string>
+    <string name="mobile_settings_connection">接続設定</string>
+    <string name="mobile_settings_device">デバイスとバックグラウンド動作</string>
+    <string name="mobile_settings_about">アプリ情報</string>
+    <string name="mobile_usage_hint">通信量とデバイス使用状況</string>
+    <string name="mobile_saving">保存中…</string>
+    <string name="mobile_saved">保存しました</string>
+    <string name="mobile_dismiss">通知を閉じる</string>
+</resources>

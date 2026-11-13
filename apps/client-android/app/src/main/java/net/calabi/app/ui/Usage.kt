@@ -31,14 +31,14 @@ import java.time.format.TextStyle as DateTextStyle
 
 /** The settings tab's usage card: this month against the cap, the last week, device seats. */
 @Composable
-fun UsageSection(model: AppModel) {
+fun UsageSection(model: AppModel, showTitle: Boolean = true) {
     LaunchedEffect(model.activeOrgId) {
         while (true) {
             model.refreshUsage()
             delay(60_000)
         }
     }
-    SectionLabel(stringResource(R.string.usage_title))
+    if (showTitle) SectionLabel(stringResource(R.string.usage_title))
     val u = model.usage
     when {
         u == null && model.usageError != null ->

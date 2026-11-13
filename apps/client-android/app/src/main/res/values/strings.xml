@@ -37,15 +37,8 @@
     <string name="hero_tap_to_connect">Tap to connect</string>
     <string name="action_connect">Connect</string>
     <string name="action_disconnect">Disconnect</string>
-
-    <string name="chip_exit">Exit %1$s</string>
-    <string name="chip_exit_none">Exit device</string>
-    <string name="chip_routes">Subnet routes</string>
-    <string name="routes_on">Subnet routes on</string>
-    <string name="routes_off">Subnet routes off</string>
-
     <string name="devices_title">Devices</string>
-    <string name="devices_online">%1$d / %2$d online</string>
+    <string name="devices_online">Online: %1$d / %2$d</string>
     <string name="devices_empty">No other devices in this organization yet.</string>
     <string name="device_online">Online</string>
     <string name="device_offline">Offline</string>
@@ -60,7 +53,6 @@
     <string name="settings_org">Organization</string>
     <string name="settings_org_hint">Choose which organization\'s mesh this phone joins.</string>
     <string name="settings_org_personal">Personal</string>
-    <string name="settings_device">This device</string>
     <string name="settings_device_name">Device name</string>
     <string name="settings_save">Save</string>
     <string name="settings_cancel">Cancel</string>
@@ -117,7 +109,6 @@
     <string name="action_copy">Copy</string>
     <string name="action_share">Share</string>
     <string name="action_open">Open</string>
-    <string name="tunnel_status">Status</string>
     <string name="tunnel_local">Local address</string>
     <string name="tunnel_served_by">Served by</string>
     <string name="served_self_hosted">Self-hosted node</string>
@@ -137,8 +128,14 @@
     <string name="access_note">Hourly counts of connections, recorded at the edge.</string>
     <string name="access_empty">No connections in this range.</string>
     <string name="access_records_off">This organization keeps no endpoint access records.</string>
-    <string name="access_retention">Kept for %1$d days.</string>
-    <string name="access_truncated">Showing the latest %1$d rows.</string>
+    <plurals name="access_retention">
+        <item quantity="one">Kept for %1$d day.</item>
+        <item quantity="other">Kept for %1$d days.</item>
+    </plurals>
+    <plurals name="access_truncated">
+        <item quantity="one">Showing the latest %1$d row.</item>
+        <item quantity="other">Showing the latest %1$d rows.</item>
+    </plurals>
     <string name="access_other">Other addresses</string>
     <string name="access_outcome_allowed">Allowed</string>
     <string name="access_outcome_denied_ip">Blocked by IP rule</string>
@@ -157,7 +154,7 @@
     <string name="usage_week">Last 7 days</string>
     <string name="usage_devices">Mesh devices</string>
     <string name="usage_devices_own">My mesh devices</string>
-    <string name="usage_devices_disabled">%1$d disabled</string>
+    <string name="usage_devices_disabled">Disabled: %1$d</string>
     <string name="usage_month_utc">Months run on UTC.</string>
     <string name="usage_unavailable_no_database">This server keeps no traffic records.</string>
     <string name="usage_relay_not_recorded">Relay not recorded</string>

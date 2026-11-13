@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="remote_tab">À distance</string>
+    <string name="remote_recent">Connexions récentes</string>
+    <string name="remote_recent_empty">Les appareils auxquels vous vous connectez apparaîtront ici.</string>
+    <string name="remote_recent_remove">Retirer la connexion récente</string>
+    <string name="remote_recent_remove_hint">Cette entrée et son aperçu seront supprimés. Les identifiants enregistrés seront conservés.</string>
+    <string name="remote_recent_failed">Impossible de charger ou d’enregistrer les connexions récentes.</string>
+    <string name="remote_recent_connect_hint">Connectez-vous au réseau pour accéder à nouveau à ces appareils.</string>
+    <string name="remote_recent_preview">Aperçu du bureau de %1$s</string>
+    <string name="remote_recent_no_preview">Aucun aperçu du bureau</string>
+</resources>

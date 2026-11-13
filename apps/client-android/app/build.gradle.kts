@@ -44,7 +44,8 @@ android {
         applicationId = "net.calabi.app"
         minSdk = 26
         targetSdk = 35
-        testInstrumentationRunner = "net.calabi.app.FileRequestNotificationsTest"
+        testInstrumentationRunner = (findProperty("calabiTestRunner") as String?)
+            ?: "net.calabi.app.FileRequestNotificationsTest"
         versionCode = versionParts[0] * 1_000_000 + versionParts[1] * 1_000 + versionParts[2]
         versionName = repoVersion
         buildConfigField("String", "BFF_URL", "\"$bffUrl\"")
@@ -53,7 +54,7 @@ android {
         buildConfigField("boolean", "FILE_TRANSFER_ENABLED", "true")
         ndk {
             // What scripts/mobile/build-core-android.ps1 builds by default.
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+            abiFilters += listOf("arm64-v8a")
         }
     }
 
@@ -87,6 +88,7 @@ android {
         compose = true
         buildConfig = true
     }
+    sourceSets["main"].jniLibs.srcDir("libs/rdp")
     packaging {
         jniLibs {
             // The Go core must be extracted to be loaded; keep it uncompressed and aligned.
@@ -94,6 +96,18 @@ android {
         }
     }
 }
+
+val verifyRdpLibraries by tasks.registering {
+    doLast {
+        listOf("libcalabi-rdp.so", "libfreerdp3.so", "libfreerdp-client3.so", "libwinpr3.so").forEach {
+            check(file("libs/rdp/arm64-v8a/$it").isFile) { "Missing $it; run scripts/mobile/build-rdp-android.ps1 before building the APK." }
+        }
+        listOf("FreeRDP.txt", "OpenSSL.txt").forEach {
+            check(file("src/main/assets/licenses/$it").isFile) { "Missing RDP dependency license: $it" }
+        }
+    }
+}
+tasks.named("preBuild") { dependsOn(verifyRdpLibraries) }
 
 dependencies {
     // The Go core: apps/client/mobile, bound by scripts/mobile/build-core-android.ps1.

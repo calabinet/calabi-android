@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mesh_current_org">현재 조직</string>
+    <string name="mesh_switch_org">조직 전환</string>
+    <string name="mesh_my">내 계정</string>
+    <string name="mesh_network_settings">네트워크 설정</string>
+    <string name="mesh_all">전체</string>
+    <string name="mesh_desktop">데스크톱</string>
+    <string name="mesh_disconnect_hint">연결을 끊으면 이 네트워크의 기기에 접근할 수 없습니다.</string>
+    <string name="mesh_switch_confirm">이 휴대전화는 %1$s에서 나가 %2$s에 참여합니다. 네트워크 연결이 다시 설정됩니다.</string>
+</resources>

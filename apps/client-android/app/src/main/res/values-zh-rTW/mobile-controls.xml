@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mobile_copy_address">複製 IP 位址</string>
+    <string name="mobile_files_unavailable">請先連線至組網，並在對方裝置開啟檔案接收。</string>
+    <string name="mobile_hide_controls">收起工具列</string>
+    <string name="mobile_show_controls">顯示工具列</string>
+    <string name="mobile_input">輸入操作</string>
+    <string name="mobile_display">畫面顯示</string>
+    <string name="mobile_next_click">用於下一次指標操作。</string>
+    <string name="mobile_disconnect_title">中斷遠端桌面？</string>
+    <string name="mobile_disconnect_body">將結束目前遠端桌面連線，手機仍保持組網連線。</string>
+    <string name="mobile_settings_account">帳戶與組織</string>
+    <string name="mobile_settings_connection">連線設定</string>
+    <string name="mobile_settings_device">本機與背景執行</string>
+    <string name="mobile_settings_about">關於</string>
+    <string name="mobile_usage_hint">流量與裝置用量</string>
+    <string name="mobile_saving">正在儲存…</string>
+    <string name="mobile_saved">已儲存</string>
+    <string name="mobile_dismiss">關閉提示</string>
+</resources>

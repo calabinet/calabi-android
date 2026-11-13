@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="remote_tab">Fernzugriff</string>
+    <string name="remote_recent">Letzte Verbindungen</string>
+    <string name="remote_recent_empty">Geräte, mit denen Sie sich verbunden haben, werden hier angezeigt.</string>
+    <string name="remote_recent_remove">Verbindung aus Verlauf entfernen</string>
+    <string name="remote_recent_remove_hint">Dieser Eintrag und seine Vorschau werden entfernt. Gespeicherte Zugangsdaten bleiben erhalten.</string>
+    <string name="remote_recent_failed">Letzte Verbindungen konnten nicht geladen oder gespeichert werden.</string>
+    <string name="remote_recent_connect_hint">Verbinden Sie sich mit dem Netzwerk, um erneut auf diese Geräte zuzugreifen.</string>
+    <string name="remote_recent_preview">Desktop-Vorschau für %1$s</string>
+    <string name="remote_recent_no_preview">Noch keine Desktop-Vorschau</string>
+</resources>

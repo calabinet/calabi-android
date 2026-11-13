@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mobile_copy_address">IP 주소 복사</string>
+    <string name="mobile_files_unavailable">메시에 연결하고 상대 기기에서 파일 수신을 켜세요.</string>
+    <string name="mobile_hide_controls">도구 모음 숨기기</string>
+    <string name="mobile_show_controls">도구 모음 표시</string>
+    <string name="mobile_input">입력</string>
+    <string name="mobile_display">화면</string>
+    <string name="mobile_next_click">다음 포인터 동작에 적용됩니다.</string>
+    <string name="mobile_disconnect_title">원격 데스크톱 연결을 끊을까요?</string>
+    <string name="mobile_disconnect_body">원격 데스크톱 연결이 종료됩니다. 휴대전화의 메시 연결은 유지됩니다.</string>
+    <string name="mobile_settings_account">계정 및 조직</string>
+    <string name="mobile_settings_connection">연결 설정</string>
+    <string name="mobile_settings_device">기기 및 백그라운드 실행</string>
+    <string name="mobile_settings_about">앱 정보</string>
+    <string name="mobile_usage_hint">트래픽 및 기기 사용량</string>
+    <string name="mobile_saving">저장 중…</string>
+    <string name="mobile_saved">저장됨</string>
+    <string name="mobile_dismiss">알림 닫기</string>
+</resources>

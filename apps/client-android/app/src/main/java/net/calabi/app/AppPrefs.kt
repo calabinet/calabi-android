@@ -64,17 +64,15 @@ object AppPrefs {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val last = context.getSystemService(ActivityManager::class.java)
                 .getHistoricalProcessExitReasons(context.packageName, 0, 1).firstOrNull()
-            if (last != null && last.timestamp > upAt && last.reason in CRASHES) return false
+            if (last != null && last.timestamp > upAt && last.reason in setOf(
+                    ApplicationExitInfo.REASON_CRASH,
+                    ApplicationExitInfo.REASON_CRASH_NATIVE,
+                    ApplicationExitInfo.REASON_ANR,
+                    ApplicationExitInfo.REASON_INITIALIZATION_FAILURE,
+                )) return false
         }
         return true
     }
-
-    private val CRASHES = setOf(
-        ApplicationExitInfo.REASON_CRASH,
-        ApplicationExitInfo.REASON_CRASH_NATIVE,
-        ApplicationExitInfo.REASON_ANR,
-        ApplicationExitInfo.REASON_INITIALIZATION_FAILURE,
-    )
 
     /** Old devices covered by a completed replacement or dismissal: not offered again. */
     fun replaceDismissed(context: Context): Set<Long> =

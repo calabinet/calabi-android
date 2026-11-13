@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tab_mesh">Mesh</string>
+    <string name="tab_tunnels">Endpunkte</string>
+    <string name="files_tab">Dateien</string>
+    <string name="tab_settings">Einstel­lungen</string>
+    <string name="account">Konto</string>
+    <string name="action_connect">Verbinden</string>
+    <string name="action_disconnect">Verbindung trennen</string>
+    <string name="state_connected">Verbunden</string>
+    <string name="state_stopped">Nicht verbunden</string>
+    <string name="state_connecting">Verbindung wird hergestellt…</string>
+    <string name="state_retrying">Erneuter Verbindungsversuch…</string>
+    <string name="hero_tap_to_connect">Zum Verbinden tippen</string>
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_exit">Ausgangsgerät</string>
+    <string name="settings_exit_none">Nicht verwenden</string>
+    <string name="settings_accept_routes">Subnetzrouten verwenden</string>
+    <string name="settings_accept_routes_hint">Auf Netzwerke zugreifen, die andere Geräte freigeben, zum Beispiel das Heimnetz.</string>
+    <string name="settings_save">Speichern</string>
+    <string name="settings_cancel">Abbrechen</string>
+    <string name="settings_save_failed">Speichern fehlgeschlagen</string>
+    <string name="back">Zurück</string>
+    <string name="device_online">Online</string>
+    <string name="device_offline">Offline</string>
+    <string name="devices_title">Geräte</string>
+    <string name="files_new_send">Dateien senden</string>
+    <string name="files_device">Empfangsgerät auswählen</string>
+    <string name="files_choose">Dateien auswählen</string>
+    <string name="files_selected">Ausgewählte Dateien</string>
+    <string name="files_no_devices">Keine erreichbaren Geräte unterstützen Dateiübertragungen. Beide Clients und der Koordinator müssen diese Funktion unterstützen.</string>
+    <string name="files_selection_summary">%1$d Dateien ausgewählt · %2$s</string>
+    <plurals name="files_send">
+        <item quantity="one">%1$d ausgewählte Datei senden</item>
+        <item quantity="other">%1$d ausgewählte Dateien senden</item>
+    </plurals>
+</resources>

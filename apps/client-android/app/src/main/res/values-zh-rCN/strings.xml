@@ -36,13 +36,6 @@
     <string name="hero_tap_to_connect">点按连接</string>
     <string name="action_connect">连接</string>
     <string name="action_disconnect">断开连接</string>
-
-    <string name="chip_exit">出口 %1$s</string>
-    <string name="chip_exit_none">出口设备</string>
-    <string name="chip_routes">子网路由</string>
-    <string name="routes_on">已开启子网路由</string>
-    <string name="routes_off">已关闭子网路由</string>
-
     <string name="devices_title">设备</string>
     <string name="devices_online">%1$d / %2$d 在线</string>
     <string name="devices_empty">组织里还没有其他设备。</string>
@@ -59,7 +52,6 @@
     <string name="settings_org">组织</string>
     <string name="settings_org_hint">选择这部手机加入哪个组织的组网。</string>
     <string name="settings_org_personal">个人空间</string>
-    <string name="settings_device">本机</string>
     <string name="settings_device_name">设备名</string>
     <string name="settings_save">保存</string>
     <string name="settings_cancel">取消</string>
@@ -116,7 +108,6 @@
     <string name="action_copy">复制</string>
     <string name="action_share">分享</string>
     <string name="action_open">打开</string>
-    <string name="tunnel_status">状态</string>
     <string name="tunnel_local">本地地址</string>
     <string name="tunnel_served_by">接入方</string>
     <string name="served_self_hosted">自建节点</string>
@@ -136,8 +127,12 @@
     <string name="access_note">按小时聚合，单位是连接，在边缘节点采集。</string>
     <string name="access_empty">这段时间没有访问。</string>
     <string name="access_records_off">本组织不保留端点访问记录。</string>
-    <string name="access_retention">记录保留 %1$d 天。</string>
-    <string name="access_truncated">只显示最近的 %1$d 行。</string>
+    <plurals name="access_retention">
+        <item quantity="other">记录保留 %1$d 天。</item>
+    </plurals>
+    <plurals name="access_truncated">
+        <item quantity="other">只显示最近的 %1$d 行。</item>
+    </plurals>
     <string name="access_other">其他地址</string>
     <string name="access_outcome_allowed">放行</string>
     <string name="access_outcome_denied_ip">IP 规则拦截</string>

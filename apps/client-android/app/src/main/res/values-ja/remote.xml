@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="remote_tab">リモート</string>
+    <string name="remote_recent">最近の接続</string>
+    <string name="remote_recent_empty">接続に成功したデバイスがここに表示されます。</string>
+    <string name="remote_recent_remove">接続履歴を削除</string>
+    <string name="remote_recent_remove_hint">この履歴とプレビューを削除します。保存済みの認証情報は保持されます。</string>
+    <string name="remote_recent_failed">最近の接続を読み込みまたは保存できませんでした。</string>
+    <string name="remote_recent_connect_hint">ネットワークに接続すると、これらのデバイスに再接続できます。</string>
+    <string name="remote_recent_preview">%1$s のデスクトッププレビュー</string>
+    <string name="remote_recent_no_preview">デスクトップのプレビューはありません</string>
+</resources>

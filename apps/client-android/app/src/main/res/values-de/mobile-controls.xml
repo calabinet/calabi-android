@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mobile_copy_address">IP-Adresse kopieren</string>
+    <string name="mobile_files_unavailable">Mit dem Mesh verbinden und den Dateiempfang auf dem anderen Gerät aktivieren.</string>
+    <string name="mobile_hide_controls">Steuerung ausblenden</string>
+    <string name="mobile_show_controls">Steuerung anzeigen</string>
+    <string name="mobile_input">Eingabe</string>
+    <string name="mobile_display">Anzeige</string>
+    <string name="mobile_next_click">Gilt für die nächste Zeigeraktion.</string>
+    <string name="mobile_disconnect_title">Remotedesktop trennen?</string>
+    <string name="mobile_disconnect_body">Die Remotedesktopverbindung wird beendet. Das Telefon bleibt mit dem Mesh verbunden.</string>
+    <string name="mobile_settings_account">Konto und Organisation</string>
+    <string name="mobile_settings_connection">Verbindungseinstellungen</string>
+    <string name="mobile_settings_device">Gerät und Hintergrundbetrieb</string>
+    <string name="mobile_settings_about">Über die App</string>
+    <string name="mobile_usage_hint">Datenverkehr und Gerätenutzung</string>
+    <string name="mobile_saving">Wird gespeichert…</string>
+    <string name="mobile_saved">Gespeichert</string>
+    <string name="mobile_dismiss">Hinweis schließen</string>
+</resources>

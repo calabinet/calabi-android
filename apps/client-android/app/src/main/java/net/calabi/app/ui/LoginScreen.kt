@@ -7,6 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -62,6 +64,7 @@ import org.json.JSONObject
 
 private const val CODE_LENGTH = 6
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LoginScreen(onSignedIn: () -> Unit, onSelfHosted: () -> Unit) {
     val context = LocalContext.current
@@ -156,7 +159,7 @@ fun LoginScreen(onSignedIn: () -> Unit, onSelfHosted: () -> Unit) {
                     onClick = ::submit,
                     modifier = Modifier.padding(top = 8.dp),
                 )
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally)) {
+                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally)) {
                     Link(stringResource(R.string.login_register)) { openConsole("/register") }
                     // The console's request form. /reset-password is where the
                     // emailed link lands (it needs its token); 1.13.0 and earlier
@@ -177,7 +180,7 @@ fun LoginScreen(onSignedIn: () -> Unit, onSelfHosted: () -> Unit) {
             Spacer(Modifier.height(12.dp))
             Row(
                 Modifier
-                    .heightIn(min = 44.dp)
+                    .heightIn(min = 48.dp)
                     .clip(RoundedCornerShape(22.dp))
                     .clickable(role = Role.Button) { step = 1; code = ""; error = null }
                     .padding(end = 12.dp),
@@ -214,7 +217,7 @@ fun LoginScreen(onSignedIn: () -> Unit, onSelfHosted: () -> Unit) {
 @Composable
 private fun Link(text: String, onClick: () -> Unit) {
     Box(
-        Modifier.heightIn(min = 44.dp).clickable(role = Role.Button, onClick = onClick).padding(horizontal = 4.dp),
+        Modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onClick).padding(horizontal = 4.dp),
         contentAlignment = Alignment.Center,
     ) { Text(text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Palette.accent) }
 }

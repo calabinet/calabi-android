@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tab_mesh">メッシュ</string>
+    <string name="tab_tunnels">エンドポイント</string>
+    <string name="files_tab">ファイル転送</string>
+    <string name="tab_settings">設定</string>
+    <string name="account">アカウント</string>
+    <string name="action_connect">接続</string>
+    <string name="action_disconnect">切断</string>
+    <string name="state_connected">接続済み</string>
+    <string name="state_stopped">未接続</string>
+    <string name="state_connecting">接続中…</string>
+    <string name="state_retrying">再接続中…</string>
+    <string name="hero_tap_to_connect">タップして接続</string>
+    <string name="settings_title">設定</string>
+    <string name="settings_exit">出口デバイス</string>
+    <string name="settings_exit_none">使用しない</string>
+    <string name="settings_accept_routes">サブネットルートを使用</string>
+    <string name="settings_accept_routes_hint">他のデバイスが共有するネットワーク（自宅の LAN など）にアクセスします。</string>
+    <string name="settings_save">保存</string>
+    <string name="settings_cancel">キャンセル</string>
+    <string name="settings_save_failed">保存できませんでした</string>
+    <string name="back">戻る</string>
+    <string name="device_online">オンライン</string>
+    <string name="device_offline">オフライン</string>
+    <string name="devices_title">デバイス</string>
+    <string name="files_new_send">ファイルを送信</string>
+    <string name="files_device">受信デバイスを選択</string>
+    <string name="files_choose">ファイルを選択</string>
+    <string name="files_selected">選択したファイル</string>
+    <string name="files_no_devices">対応するオンラインデバイスがありません。両方のクライアントとコーディネーターがファイル転送に対応している必要があります。</string>
+    <string name="files_selection_summary">%1$d 個を選択 · %2$s</string>
+    <plurals name="files_send">
+        <item quantity="other">選択した %1$d 個を送信</item>
+    </plurals>
+</resources>

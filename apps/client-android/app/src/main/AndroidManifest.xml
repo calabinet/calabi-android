@@ -24,7 +24,10 @@
             <data android:scheme="package" />
         </intent>
         <intent>
-            <action android:name="android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+            <!-- User-initiated VPN background allowance; mirrors BackgroundRun's
+                 BatteryLife exception, not an automatic startup request. -->
+            <action android:name="android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
+                tools:ignore="BatteryLife" />
             <data android:scheme="package" />
         </intent>
         <intent>
@@ -38,15 +41,25 @@
     <application
         android:name=".CalabiApp"
         android:allowBackup="false"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Calabi">
 
+        <!-- Keep sign-in portrait; a successful desktop session switches to
+             landscape and its toolbar still allows manual rotation. -->
+        <activity android:name=".rdp.RdpActivity" android:exported="false"
+            android:screenOrientation="userPortrait"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden"
+            android:windowSoftInputMode="adjustResize" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:launchMode="singleTask"
+            android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -71,8 +84,7 @@
              orientation instead of its default landscape. -->
         <activity
             android:name="com.journeyapps.barcodescanner.CaptureActivity"
-            android:screenOrientation="fullSensor"
-            tools:replace="screenOrientation" />
+            tools:remove="android:screenOrientation" />
 
         <!-- VPN consent qualifies for systemExempted without alarm permissions:
              https://developer.android.com/develop/background-work/services/fgs/service-types#system-exempted -->
