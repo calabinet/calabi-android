@@ -43,13 +43,11 @@
     <string name="rdp_gestures_hint">触控板模式：单指滑动移动指针，轻点点击；双击后拖动，或先点“拖动”，可按住左键拖拽。点击“触控板”可切换到按手指位置操作的“直接触控”。两种模式都支持双指轻点右键、双指滑动滚轮及双指开合缩放（最高 5 倍）。切到“移动画面”可双指平移；点击百分比恢复适应。“工具”中提供常用快捷键和手动文本剪贴板。</string>
     <string name="rdp_username">Windows 用户名</string>
     <string name="rdp_domain">域（可选）</string>
-    <string name="rdp_credentials_hint">输入 Windows 账号密码，不是 PIN。勾选记住密码后，连接成功才会加密保存在本机。会话在后台最多保留 60 秒。</string>
     <string name="rdp_background_expired">会话已在后台超过 60 秒并断开，请重新连接。</string>
     <string name="rdp_identity_changed">设备身份或组网连接已变化，请检查网络后重新连接。</string>
     <string name="rdp_reconnect">重新连接</string>
     <string name="rdp_remember_password">在此手机上记住密码</string>
-    <string name="rdp_forget_credentials">忘记已保存的凭据</string>
-    <string name="rdp_credentials_saved">凭据已保存在此手机上</string>
+    <string name="rdp_clear_credentials">清除凭据</string>
     <string name="rdp_credentials_failed">无法读取或更新已保存的凭据，请重新输入或尝试忘记凭据。</string>
     <string name="rdp_wait_network">网络不可用，正在等待网络恢复（最多 60 秒）…</string>
     <string name="rdp_repairing">连接中断，正在安全重连（最多 60 秒）…</string>

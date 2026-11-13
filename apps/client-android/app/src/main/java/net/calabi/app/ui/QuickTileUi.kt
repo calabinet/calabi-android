@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -57,6 +59,7 @@ private fun rememberTileAdded(): MutableState<Boolean> {
  * the card is dismissed. Waits for a replace-device notice to be dealt with, so a
  * fresh install does not open with two cards.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TilePrompt(model: AppModel) {
     val context = LocalContext.current
@@ -82,10 +85,10 @@ fun TilePrompt(model: AppModel) {
                 Text(stringResource(R.string.tile_prompt_body), style = Styles.hint.copy(fontSize = 13.sp))
             }
         }
-        Row(
-            Modifier.fillMaxWidth().padding(start = 68.dp, end = 16.dp, top = 12.dp, bottom = 14.dp),
+        FlowRow(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Pill(onClick = { QuickTile.add(context, showSteps = { steps = true }, onAdded = { added = true }) }) {
                 Text(stringResource(R.string.tile_add), style = Styles.chip)

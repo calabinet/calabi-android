@@ -63,7 +63,6 @@
     <string name="files_identity_confirm">此操作會停止接收，並取消此 App 內所有帳號、組織的未完成檔案工作。已完成檔案、已準備源檔案和歷史記錄保留，組網裝置身分不變。完成後需重新開啟接收。</string>
     <string name="files_center">傳送中心</string>
     <string name="files_settings">傳送設定</string>
-    <string name="files_network_hint">組網內安全收發</string>
     <string name="files_receive_hint">僅組網裝置 · 每次接收都需確認</string>
     <string name="files_pending">待確認</string>
     <string name="files_empty_records">暫無傳送記錄</string>
@@ -87,8 +86,6 @@
     <string name="files_error_integrity">檔案校驗未通過，請重新傳送。</string>
     <string name="files_error_storage">存儲空間不足，請清理空間後重試。</string>
     <string name="files_error_storagewrite">無法儲存檔案或工作記錄，請檢查存儲位置後重試。</string>
-    <string name="files_error_save_permission">無法寫入儲存位置，請選擇其他位置或檢查該位置的權限。</string>
-    <string name="files_error_save_cleanup">未能移除未完成的目標檔案，請手動刪除後重試。</string>
     <string name="files_error_agent">檔案傳送服務尚未就緒，請重新打開用戶端後重試。</string>
     <string name="files_error_connection">暫時無法連線對端，請確認裝置線上並開啟接收後重試。</string>
     <string name="files_error_limit">檔案或工作數量已達上限，請清理記錄後重試。</string>
@@ -139,13 +136,11 @@
     <string name="rdp_gestures_hint">觸控板模式：單指滑動移動指針，輕點點擊；雙擊後拖動，或先點“拖動”，可按住左鍵拖拽。點擊“觸控板”可切換到按手指位置操作的“直接觸控”。兩種模式都支援雙指輕點右鍵、雙指滑動滾輪及雙指開合縮放（最高 5 倍）。切到“移動畫面”可雙指平移；點擊百分比恢復適應。“工具”中提供常用快捷鍵和手動文字剪貼簿。</string>
     <string name="rdp_username">Windows 使用者名稱</string>
     <string name="rdp_domain">網域（選填）</string>
-    <string name="rdp_credentials_hint">輸入 Windows 帳號密碼，不是 PIN。勾選記住密碼後，連線成功才會加密儲存在本機。工作階段在背景最多保留 60 秒。</string>
     <string name="rdp_background_expired">工作階段已在背景超過 60 秒並中斷連線，請重新連線。</string>
     <string name="rdp_identity_changed">裝置身分或組網連線已變化，請檢查網路後重新連線。</string>
     <string name="rdp_reconnect">重新連線</string>
     <string name="rdp_remember_password">在此手機上記住密碼</string>
-    <string name="rdp_forget_credentials">忘記已儲存的認證資訊</string>
-    <string name="rdp_credentials_saved">認證資訊已儲存在此手機上</string>
+    <string name="rdp_clear_credentials">清除認證資訊</string>
     <string name="rdp_credentials_failed">無法讀取或更新已儲存的認證資訊，請重新輸入或嘗試忘記認證資訊。</string>
     <string name="rdp_wait_network">網路不可用，正在等待網路恢復（最多 60 秒）…</string>
     <string name="rdp_repairing">連線中斷，正在安全重連（最多 60 秒）…</string>
@@ -182,7 +177,6 @@
     <string name="login_totp_code">驗證碼</string>
     <string name="login_totp_invalid">驗證碼不正確，請重新輸入。</string>
     <string name="login_verify">驗證</string>
-    <string name="login_back">返回</string>
     <string name="state_not_enrolled_short">未開通組網</string>
     <string name="state_not_enrolled">當前組織還沒有開通組網。</string>
     <string name="state_signed_out_short">登入已失效</string>

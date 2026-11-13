@@ -53,7 +53,6 @@
  <string name="files_tab">Transfers</string>
  <string name="files_center">Transfer center</string>
  <string name="files_settings">Transfer settings</string>
- <string name="files_network_hint">Within your mesh network</string>
  <string name="files_receive_hint">Mesh devices only · Confirm each request</string>
  <string name="files_new_send">Send files</string>
  <string name="files_pending">Pending</string>
@@ -82,8 +81,6 @@
  <string name="files_error_integrity">File verification failed. Please send the file again.</string>
  <string name="files_error_storage">Not enough storage space. Free up space and retry.</string>
  <string name="files_error_storagewrite">Could not save the file or task record. Check the storage location and retry.</string>
- <string name="files_error_save_permission">Could not write to the save location. Choose another location or check its permissions.</string>
- <string name="files_error_save_cleanup">The incomplete destination could not be removed. Delete it manually before retrying.</string>
  <string name="files_error_agent">The file transfer service is not ready. Reopen the app and retry.</string>
  <string name="files_error_connection">Could not reach the other device. Check that it is online and accepting files, then retry.</string>
  <string name="files_error_limit">The file or task limit has been reached. Clear old records and retry.</string>

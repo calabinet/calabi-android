@@ -20,7 +20,6 @@
     <string name="login_totp_code">Verification code</string>
     <string name="login_totp_invalid">That code did not work. Try again.</string>
     <string name="login_verify">Verify</string>
-    <string name="login_back">Back</string>
 
     <string name="tab_mesh">Mesh</string>
     <string name="tab_settings">Settings</string>

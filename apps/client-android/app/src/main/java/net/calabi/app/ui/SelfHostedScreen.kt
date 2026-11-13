@@ -118,107 +118,87 @@ fun SelfHostedScreen(link: String?, onBack: () -> Unit, onJoined: () -> Unit) {
     LaunchedEffect(link) { if (link != null) join(JSONObject().put("link", link)) }
     BackHandler(onBack = onBack)
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(Palette.ground)
-            .safeDrawingPadding()
-            .imePadding()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 28.dp),
-    ) {
-        Spacer(Modifier.height(12.dp))
-        Row(
-            Modifier
-                .heightIn(min = 48.dp)
-                .clip(RoundedCornerShape(22.dp))
-                .clickable(role = Role.Button, onClick = onBack)
-                .padding(end = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Glyph(R.drawable.ic_chevron_left, Palette.ink, 22.dp)
-            Text(stringResource(R.string.login_back), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Palette.ink)
-        }
-        Spacer(Modifier.height(28.dp))
-        Text(stringResource(R.string.sh_title), style = Styles.screenTitle, color = Palette.ink)
-        Spacer(Modifier.height(8.dp))
-        Text(stringResource(R.string.sh_subtitle), fontSize = 15.sp, color = Palette.muted)
-        Spacer(Modifier.height(28.dp))
+    Column(Modifier.fillMaxSize().background(Palette.ground).safeDrawingPadding().imePadding()) {
+        FixedPage(stringResource(R.string.sh_title), onBack = onBack) {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp)) {
+                Text(stringResource(R.string.sh_subtitle), fontSize = 15.sp, color = Palette.muted)
+                Spacer(Modifier.height(28.dp))
 
-        ScanButton(enabled = !busy) {
-            scanner.launch(
-                ScanOptions()
-                    .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                    .setPrompt(scanPrompt)
-                    .setBeepEnabled(false)
-                    .setOrientationLocked(false),
-            )
-        }
+                ScanButton(enabled = !busy) {
+                    scanner.launch(
+                        ScanOptions()
+                            .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                            .setPrompt(scanPrompt)
+                            .setBeepEnabled(false)
+                            .setOrientationLocked(false),
+                    )
+                }
 
-        Spacer(Modifier.height(28.dp))
-        Text(stringResource(R.string.sh_or_type), style = Styles.section)
-        Spacer(Modifier.height(14.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            LabeledField(
-                label = stringResource(R.string.sh_server), value = server, onValueChange = { server = it },
-                keyboardType = KeyboardType.Uri,
-            )
-            LabeledField(
-                label = stringResource(R.string.sh_key), value = key, onValueChange = { key = it },
-                keyboardType = KeyboardType.Password, password = true, imeAction = ImeAction.Done,
-                onImeAction = { if (server.isNotBlank() && key.isNotBlank()) joinTyped() },
-            )
-            Text(
-                stringResource(if (advanced) R.string.sh_advanced_hide else R.string.sh_advanced),
-                fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Palette.accent,
-                modifier = Modifier.clickable(role = Role.Button) { advanced = !advanced }.padding(vertical = 6.dp),
-            )
-            if (advanced) {
-                LabeledField(
-                    label = stringResource(R.string.sh_pin), value = pin, onValueChange = { pin = it },
-                )
-                Text(stringResource(R.string.sh_pin_hint), style = Styles.hint.copy(fontSize = 13.sp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(stringResource(R.string.sh_plaintext), style = Styles.rowTitle)
-                        Text(stringResource(R.string.sh_plaintext_hint), style = Styles.hint.copy(fontSize = 13.sp))
+                Spacer(Modifier.height(28.dp))
+                Text(stringResource(R.string.sh_or_type), style = Styles.section)
+                Spacer(Modifier.height(14.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    LabeledField(
+                        label = stringResource(R.string.sh_server), value = server, onValueChange = { server = it },
+                        keyboardType = KeyboardType.Uri,
+                    )
+                    LabeledField(
+                        label = stringResource(R.string.sh_key), value = key, onValueChange = { key = it },
+                        keyboardType = KeyboardType.Password, password = true, imeAction = ImeAction.Done,
+                        onImeAction = { if (server.isNotBlank() && key.isNotBlank()) joinTyped() },
+                    )
+                    Text(
+                        stringResource(if (advanced) R.string.sh_advanced_hide else R.string.sh_advanced),
+                        fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Palette.accent,
+                        modifier = Modifier.clickable(role = Role.Button) { advanced = !advanced }.padding(vertical = 6.dp),
+                    )
+                    if (advanced) {
+                        LabeledField(
+                            label = stringResource(R.string.sh_pin), value = pin, onValueChange = { pin = it },
+                        )
+                        Text(stringResource(R.string.sh_pin_hint), style = Styles.hint.copy(fontSize = 13.sp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(stringResource(R.string.sh_plaintext), style = Styles.rowTitle)
+                            }
+                            Switch(checked = plaintext, onCheckedChange = { plaintext = it }, colors = calabiSwitchColors())
+                        }
+                        InlineNotice(stringResource(R.string.sh_plaintext_hint), tone = NoticeTone.Warning)
                     }
-                    Switch(checked = plaintext, onCheckedChange = { plaintext = it }, colors = calabiSwitchColors())
+                    error?.let { InlineNotice(it, tone = NoticeTone.Error) }
+                    PrimaryButton(
+                        text = stringResource(if (busy) R.string.sh_joining else R.string.sh_join),
+                        enabled = !busy && server.isNotBlank() && key.isNotBlank(),
+                        onClick = ::joinTyped,
+                    )
                 }
+                Spacer(Modifier.height(32.dp))
             }
-            error?.let { Text(it, fontSize = 14.sp, color = Palette.danger) }
-            PrimaryButton(
-                text = stringResource(if (busy) R.string.sh_joining else R.string.sh_join),
-                enabled = !busy && server.isNotBlank() && key.isNotBlank(),
-                onClick = ::joinTyped,
-            )
-        }
-        Spacer(Modifier.height(32.dp))
-    }
 
-    confirm?.let { c ->
-        AlertDialog(
-            onDismissRequest = { confirm = null },
-            containerColor = Palette.surface,
-            title = { Text(stringResource(R.string.sh_confirm_title), style = Styles.section) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(stringResource(R.string.sh_confirm_body), style = Styles.row.copy(color = Palette.muted))
-                    Text(groupPin(c.pin), style = Styles.mono.copy(fontSize = 13.sp))
-                    if (c.subject.isNotBlank()) Text(c.subject, style = Styles.hint.copy(fontSize = 12.sp))
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirm = null
-                    join(JSONObject(c.body.toString()).put("pin", c.pin))
-                }) { Text(stringResource(R.string.sh_confirm_yes), color = Palette.accent, fontWeight = FontWeight.Bold) }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirm = null }) { Text(stringResource(R.string.settings_cancel), color = Palette.ink) }
-            },
-        )
+            confirm?.let { c ->
+                AlertDialog(
+                    onDismissRequest = { confirm = null },
+                    containerColor = Palette.surface,
+                    title = { Text(stringResource(R.string.sh_confirm_title), style = Styles.section) },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text(stringResource(R.string.sh_confirm_body), style = Styles.row.copy(color = Palette.muted))
+                            Text(groupPin(c.pin), style = Styles.mono.copy(fontSize = 13.sp))
+                            if (c.subject.isNotBlank()) Text(c.subject, style = Styles.hint.copy(fontSize = 12.sp))
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            confirm = null
+                            join(JSONObject(c.body.toString()).put("pin", c.pin))
+                        }) { Text(stringResource(R.string.sh_confirm_yes), color = Palette.accent, fontWeight = FontWeight.Bold) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { confirm = null }) { Text(stringResource(R.string.settings_cancel), color = Palette.ink) }
+                    },
+                )
+            }
+        }
     }
 }
 

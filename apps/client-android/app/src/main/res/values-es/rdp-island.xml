@@ -3,7 +3,6 @@
     <string name="rdp_connection_options">Opciones de conexión</string>
     <string name="rdp_session_tools">Sesión</string>
     <string name="rdp_rotate_display">Girar pantalla</string>
-    <string name="rdp_password_short_hint">Usa la contraseña de Windows, no el PIN.</string>
     <string name="rdp_hide_keyboard">Ocultar teclado</string>
     <string name="rdp_zoom_in">Ampliar</string>
     <string name="rdp_zoom_out">Reducir</string>

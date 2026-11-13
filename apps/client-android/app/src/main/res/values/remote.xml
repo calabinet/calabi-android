@@ -12,4 +12,8 @@
     <string name="remote_service_failed">Remote Desktop is temporarily unavailable. Please retry.</string>
     <string name="remote_target_unavailable">This device is unavailable for Remote Desktop. Refresh the device list and retry.</string>
     <string name="files_send_unavailable">%1$s (%2$s)</string>
+    <string name="remote_mesh_disconnected">Not connected to mesh</string>
+    <string name="files_open_no_app">No app is available to open this file type.</string>
+    <string name="files_open_unavailable">This received file cannot be read. Try again later or receive it again.</string>
+    <string name="files_share_no_app">No app is available to share files.</string>
 </resources>

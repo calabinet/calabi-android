@@ -3,7 +3,6 @@
     <string name="rdp_connection_options">連線選項</string>
     <string name="rdp_session_tools">工作階段</string>
     <string name="rdp_rotate_display">旋轉螢幕</string>
-    <string name="rdp_password_short_hint">請輸入 Windows 密碼，而非 PIN。</string>
     <string name="rdp_hide_keyboard">收起鍵盤</string>
     <string name="rdp_zoom_in">放大</string>
     <string name="rdp_zoom_out">縮小</string>

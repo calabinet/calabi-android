@@ -12,4 +12,8 @@
     <string name="remote_service_failed">A área de trabalho remota está temporariamente indisponível. Tente novamente.</string>
     <string name="remote_target_unavailable">Este dispositivo está indisponível para acesso remoto. Atualize a lista de dispositivos e tente novamente.</string>
     <string name="files_send_unavailable">%1$s (%2$s)</string>
+    <string name="remote_mesh_disconnected">Sem conexão à rede</string>
+    <string name="files_open_no_app">Nenhum aplicativo disponível para abrir este tipo de arquivo.</string>
+    <string name="files_open_unavailable">Não foi possível ler o arquivo recebido. Tente mais tarde ou receba o arquivo novamente.</string>
+    <string name="files_share_no_app">Nenhum aplicativo disponível para compartilhar arquivos.</string>
 </resources>

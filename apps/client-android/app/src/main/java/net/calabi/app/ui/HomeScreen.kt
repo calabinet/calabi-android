@@ -35,6 +35,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +58,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -80,7 +83,8 @@ private sealed interface Route : java.io.Serializable {
 @Composable
 fun HomeScreen(onConnect: () -> Unit, onDisconnect: () -> Unit, onSignedOut: () -> Unit, shared: List<Uri> = emptyList(), onShareTaken: () -> Unit = {}, showFiles: Boolean = false, onFilesTaken: () -> Unit = {}) {
     val operationScope = rememberCoroutineScope()
-    val model = remember { AppModel(UiActionState(operationScope)) }
+    val context = LocalContext.current.applicationContext
+    val model = remember { AppModel(UiActionState(operationScope, context)) }
     var initialLoading by remember { mutableStateOf(true) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var sheet by rememberSaveable { mutableStateOf<Sheet?>(null) }
@@ -90,6 +94,11 @@ fun HomeScreen(onConnect: () -> Unit, onDisconnect: () -> Unit, onSignedOut: () 
     var fileSending by remember { mutableStateOf(false) }
     val screenState = rememberSaveableStateHolder()
     var settingsDetail by remember { mutableStateOf(false) }
+    LaunchedEffect(tab, route, sheet, fileSending, model.mode, model.server, model.activeOrgId) {
+        model.actions.dismissSuccess()
+    }
+    DisposableEffect(model) { onDispose { model.actions.dismissSuccess() } }
+    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { model.actions.dismissSuccess() }
     LaunchedEffect(shared) { if (BuildConfig.FILE_TRANSFER_ENABLED && shared.isNotEmpty()) { tab = 3; route = null; filePeer = "" } }
     LaunchedEffect(showFiles) { if (BuildConfig.FILE_TRANSFER_ENABLED && showFiles) { tab = 3; route = null; fileReview = true; onFilesTaken() } }
 
@@ -129,9 +138,8 @@ fun HomeScreen(onConnect: () -> Unit, onDisconnect: () -> Unit, onSignedOut: () 
     BackHandler(enabled = route == null && tab != 0) { tab = 0 }
     LaunchedEffect(route) { if (route is Route.TunnelDetail || route is Route.TunnelAccess) model.refreshTunnels() }
     val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-    val mainPage = route == null && !(tab == 3 && fileSending) && !(tab == 2 && settingsDetail)
     Scaffold(containerColor = Palette.ground, topBar = {
-        if (mainPage) Column(Modifier.background(Palette.surface).statusBarsPadding()) {
+        Column(Modifier.background(Palette.surface).statusBarsPadding()) {
             Header(model, onAccount = { if (model.selfHosted) { tab = 2; route = Route.Account } else sheet = Sheet.Account },
                 onConnection = { sheet = Sheet.Connection })
         }
@@ -260,57 +268,57 @@ private fun DevicesTab(
     val devices = model.devices
     val visibleDevices = devices.filter { (filter == 1 || it.online == (filter == 0)) && matchesListSearch(search, it.name, it.overlay, it.ownerEmail) }
     val inUseExit = model.connection?.exitNode.orEmpty().ifBlank { model.exitNode }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 20.dp)) {
-        item { ActionFeedback(model.actions) }
-        item { StoppedPrompt(model) }
-        item { ReplacePrompt(model, onReplace) }
-        item { CertChangedPrompt(model) }
-        item { ApprovalPrompt(model) }
-        item { ShieldsPrompt(model) }
-        item { UnreachablePrompt(model) }
-        item { TilePrompt(model) }
-        item("device-search") {
-            Column(Modifier.padding(horizontal = 22.dp)) {
-                Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.devices_title), style = Styles.section, modifier = Modifier.weight(1f))
-                    if (devices.isNotEmpty()) Text(stringResource(R.string.devices_online, devices.count { it.online }, devices.size), style = Styles.hint)
+    FixedPage(stringResource(R.string.devices_title), actions = {
+        if (devices.isNotEmpty()) Text(stringResource(R.string.devices_online, devices.count { it.online }, devices.size), style = Styles.hint)
+    }) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 20.dp)) {
+            item { ActionFeedback(model.actions) }
+            item { StoppedPrompt(model) }
+            item { ReplacePrompt(model, onReplace) }
+            item { CertChangedPrompt(model) }
+            item { ApprovalPrompt(model) }
+            item { ShieldsPrompt(model) }
+            item { UnreachablePrompt(model) }
+            item { TilePrompt(model) }
+            item("device-search") {
+                Column(Modifier.padding(horizontal = 22.dp)) {
+                    ListSearchInput(search, { search = it }, stringResource(R.string.list_search_devices))
+                    ListFilterTabs(listOf(stringResource(R.string.device_online), stringResource(R.string.mesh_all), stringResource(R.string.device_offline)), filter) { filter = it }
                 }
-                ListSearchInput(search, { search = it }, stringResource(R.string.list_search_devices))
-                ListFilterTabs(listOf(stringResource(R.string.device_online), stringResource(R.string.mesh_all), stringResource(R.string.device_offline)), filter) { filter = it }
             }
-        }
 
-        if (model.nodesNeedConnection) {
-            item {
-                Group(Modifier.padding(horizontal = 16.dp)) {
-                    Text(
-                        stringResource(R.string.devices_connect_to_see), style = Styles.hint.copy(fontSize = 14.sp),
-                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(24.dp),
-                    )
+            if (model.nodesNeedConnection) {
+                item {
+                    Group(Modifier.padding(horizontal = 16.dp)) {
+                        Text(
+                            stringResource(R.string.devices_connect_to_see), style = Styles.hint.copy(fontSize = 14.sp),
+                            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(24.dp),
+                        )
+                    }
                 }
             }
-        }
-        model.nodesError?.let { err ->
-            item { Text(err, color = Palette.danger, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 22.dp, vertical = 4.dp)) }
-        }
-        if (model.nodes != null && visibleDevices.isEmpty()) {
-            item {
-                Group(Modifier.padding(horizontal = 16.dp)) {
-                    Text(
-                        stringResource(if (search.isNotBlank() || devices.isNotEmpty()) R.string.list_search_no_matches else R.string.devices_empty), style = Styles.hint.copy(fontSize = 14.sp),
-                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(24.dp),
-                    )
+            model.nodesError?.let { err ->
+                item { InlineNotice(err, tone = NoticeTone.Error, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) }
+            }
+            if (model.nodes != null && visibleDevices.isEmpty()) {
+                item {
+                    Group(Modifier.padding(horizontal = 16.dp)) {
+                        Text(
+                            stringResource(if (search.isNotBlank() || devices.isNotEmpty()) R.string.list_search_no_matches else R.string.devices_empty), style = Styles.hint.copy(fontSize = 14.sp),
+                            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(24.dp),
+                        )
+                    }
                 }
             }
-        }
-        itemsIndexed(visibleDevices, key = { _, d -> d.overlay + d.name }) { i, d ->
-            DeviceRow(d, first = i == 0, last = i == visibleDevices.lastIndex, isExit = d.name == inUseExit || d.overlay == inUseExit,
-                fileDisabledReason = when {
-                    !model.connected -> R.string.state_stopped
-                    !d.online -> R.string.device_offline
-                    d.overlay !in receivingPeers -> R.string.files_peer_disabled
-                    else -> null
-                }, onFiles = { onFiles(d.overlay) })
+            itemsIndexed(visibleDevices, key = { _, d -> d.overlay + d.name }) { i, d ->
+                DeviceRow(d, first = i == 0, last = i == visibleDevices.lastIndex, isExit = d.name == inUseExit || d.overlay == inUseExit,
+                    fileDisabledReason = when {
+                        !model.connected -> R.string.state_stopped
+                        !d.online -> R.string.device_offline
+                        d.overlay !in receivingPeers -> R.string.files_peer_disabled
+                        else -> null
+                    }, onFiles = { onFiles(d.overlay) })
+            }
         }
     }
 }
@@ -612,11 +620,8 @@ private fun UnreachablePrompt(model: AppModel) {
     if (!model.unreachable) return
     Group(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(stringResource(R.string.unreachable_title), style = Styles.rowTitle)
-            Text(
-                stringResource(if (model.selfHosted) R.string.unreachable_body_server else R.string.unreachable_body_platform),
-                style = Styles.hint.copy(fontSize = 13.sp),
-            )
+            InlineNotice(stringResource(if (model.selfHosted) R.string.unreachable_body_server else R.string.unreachable_body_platform),
+                title = stringResource(R.string.unreachable_title), tone = NoticeTone.Warning)
             if (model.selfHosted && model.server.isNotBlank()) {
                 Text(model.server, style = Styles.mono, maxLines = 1)
             }
@@ -635,22 +640,14 @@ private fun UnreachablePrompt(model: AppModel) {
 @Composable
 private fun ShieldsPrompt(model: AppModel) {
     if (!model.blockIncoming) return
-    Group(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(stringResource(R.string.shields_title), style = Styles.rowTitle)
-            Text(stringResource(R.string.shields_body), style = Styles.hint.copy(fontSize = 13.sp))
-        }
-    }
+    InlineNotice(stringResource(R.string.shields_body), title = stringResource(R.string.shields_title), tone = NoticeTone.Warning,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp))
 }
 
 /** Joined, and waiting for the server's administrator to approve this phone. */
 @Composable
 private fun ApprovalPrompt(model: AppModel) {
     if (!model.selfHosted || !model.awaitingApproval) return
-    Group(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(stringResource(R.string.approval_title), style = Styles.rowTitle)
-            Text(stringResource(R.string.approval_body), style = Styles.hint.copy(fontSize = 13.sp))
-        }
-    }
+    InlineNotice(stringResource(R.string.approval_body), title = stringResource(R.string.approval_title), tone = NoticeTone.Warning,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp))
 }

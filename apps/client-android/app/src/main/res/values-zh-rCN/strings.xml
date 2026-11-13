@@ -19,7 +19,6 @@
     <string name="login_totp_code">验证码</string>
     <string name="login_totp_invalid">验证码不正确，请重新输入。</string>
     <string name="login_verify">验证</string>
-    <string name="login_back">返回</string>
 
     <string name="tab_mesh">组网</string>
     <string name="tab_settings">设置</string>

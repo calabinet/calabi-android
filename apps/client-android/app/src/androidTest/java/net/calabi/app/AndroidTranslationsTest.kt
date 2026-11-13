@@ -41,7 +41,7 @@ internal fun verifyAndroidTranslations(targetContext: Context): String {
         val localized = context(tag)
         check(localized.getString(R.string.rdp_keyboard) == keyboard) { "$tag: RDP locale fallback" }
         if (tag != "en") {
-            for (id in listOf(R.string.files_error_save_cleanup, R.string.sh_pin_mismatch,
+            for (id in listOf(R.string.files_open_unavailable, R.string.files_share_no_app, R.string.sh_pin_mismatch,
                 R.string.background_steps_huawei, R.string.rdp_hardware_hint)) {
                 check(localized.getString(id) != english.getString(id)) { "$tag: untranslated resource $id" }
             }

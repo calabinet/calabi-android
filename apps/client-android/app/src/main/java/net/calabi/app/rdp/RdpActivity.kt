@@ -38,6 +38,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.calabi.app.BuildConfig
 import net.calabi.app.CoreClient
+import net.calabi.app.ui.InlineNotice
+import net.calabi.app.ui.NoticeTone
+import net.calabi.app.ui.StatusBadge
 import net.calabi.app.R
 import net.calabi.app.ui.CalabiTheme
 import net.calabi.app.ui.Palette
@@ -108,11 +111,13 @@ class RdpActivity : ComponentActivity() {
         var domain by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
         var busy by remember { mutableStateOf(false) }
+        var needsMesh by remember { mutableStateOf(false) }
         var active by remember { mutableStateOf<RdpSession?>(null) }
         val store = remember { RdpCredentialStore(this) }
         var credentialScope by remember { mutableStateOf<String?>(null) }
         var rememberPassword by remember { mutableStateOf(false) }
         var saved by remember { mutableStateOf(false) }
+        var clearingCredentials by remember { mutableStateOf(false) }
         var portText by rememberSaveable(overlay) { mutableStateOf("3389") }
         val selectedPort = portText.toIntOrNull()?.takeIf { it in 1..65535 }
         var pendingPort by remember { mutableIntStateOf(3389) }
@@ -142,19 +147,15 @@ class RdpActivity : ComponentActivity() {
         var hardware by remember { mutableStateOf(displayPrefs.getBoolean("hardware", true) &&
             !(BuildConfig.DEBUG && intent.getBooleanExtra("classic", false))) }
         val storageFailed = stringResource(R.string.rdp_credentials_failed)
-        val savedMessage = stringResource(R.string.rdp_credentials_saved)
-        LaunchedEffect(credentialMessage) {
-            if (credentialMessage == savedMessage) { delay(3000); credentialMessage = "" }
-        }
         val failed = stringResource(R.string.remote_service_failed)
         LaunchedEffect(overlay, reload) {
-            error = ""; target = null; password = ""; busy = false; saved = false; rememberPassword = false
+            error = ""; needsMesh = false; target = null; password = ""; busy = false; saved = false; rememberPassword = false
             if (!RdpNative.available) { error = failed; return@LaunchedEffect }
             val state = CoreClient.call("GET", "/v1/state")
             if (!state.ok) { error = failed; return@LaunchedEffect }
             credentialScope = RdpCredentialStore.scope(state.json(), BuildConfig.BFF_URL)
             if (!state.json().optBoolean("connected")) {
-                error = getString(R.string.remote_recent_connect_hint); return@LaunchedEffect
+                needsMesh = true; return@LaunchedEffect
             }
             val result = CoreClient.call("GET", "/v1/remote/rdp/targets")
             if (!result.ok || result.json().optJSONArray("items") == null) {
@@ -174,6 +175,13 @@ class RdpActivity : ComponentActivity() {
             val key = target?.optString("device_key").orEmpty()
             if (identity != null && key.isNotBlank()) portText = intent.getIntExtra("port", 0).takeIf { it in 1..65535 }?.toString()
                 ?: portPrefs.getInt(store.file(identity, key).name, 3389).takeIf { it in 1..65535 }?.toString() ?: "3389"
+        }
+        LaunchedEffect(needsMesh) {
+            while (needsMesh) {
+                delay(2000)
+                val state = CoreClient.call("GET", "/v1/state")
+                if (state.ok && state.json().optBoolean("connected")) { reload++; break }
+            }
         }
         val deviceKey = target?.optString("device_key").orEmpty()
         LaunchedEffect(credentialScope, deviceKey, selectedPort) {
@@ -256,7 +264,8 @@ class RdpActivity : ComponentActivity() {
                             check(RdpCredentialStore.scope(CoreClient.callBlocking("GET", "/v1/state").json(), BuildConfig.BFF_URL) == identity)
                             store.save(identity, target!!.getString("device_key"), credentials, pendingPort)
                         } }
-                        credentialMessage = if (result.isSuccess) savedMessage else storageFailed
+                        credentialMessage = if (result.isSuccess) "" else storageFailed
+                        if (result.isSuccess) saved = true
                     }
                 } else if (RdpSession.terminal(status.first)) pendingSave = null
             }
@@ -272,10 +281,10 @@ class RdpActivity : ComponentActivity() {
                         maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                     RdpIconControl(R.drawable.ic_rdp_rotate, stringResource(R.string.rdp_rotate_display), tint = Color.White, onClick = ::rotateDisplay)
                 }
-                if (credentialMessage.isNotEmpty()) Text(credentialMessage, color = Color.White, modifier = Modifier.padding(horizontal = 12.dp))
-                if (status.first != 1) Text(
+                if (credentialMessage.isNotEmpty()) InlineNotice(credentialMessage, tone = NoticeTone.Error, onDark = true, modifier = Modifier.padding(horizontal = 12.dp))
+                if (status.first != 1) InlineNotice(
                     stringResource(if (status.first == 0) R.string.rdp_connecting else if (status.first == 6) { if (status.second == "offline") R.string.rdp_wait_network else R.string.rdp_repairing } else RdpErrors.session(status.first, status.second)),
-                    color = Color.White, modifier = Modifier.padding(12.dp),
+                    tone = if (RdpSession.terminal(status.first)) NoticeTone.Error else NoticeTone.Info, onDark = true, modifier = Modifier.padding(8.dp),
                 )
                 if (RdpSession.terminal(status.first)) Button(onClick = {
                     running.close(); session = null; active = null; pendingSave = null
@@ -428,12 +437,12 @@ class RdpActivity : ComponentActivity() {
             }
         } else {
             Column(Modifier.fillMaxSize().background(Palette.ground).safeDrawingPadding().imePadding()) {
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     RdpIconControl(R.drawable.ic_chevron_left, stringResource(R.string.back), enabled = !busy, onClick = { finish() })
                     Text(stringResource(R.string.rdp_preview_title), modifier = Modifier.weight(1f))
                     RdpIconControl(R.drawable.ic_rdp_sliders, stringResource(R.string.rdp_connection_options), enabled = !busy, onClick = { connectionOptions = true })
                 }
+                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Surface(shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp), color = Palette.accentSoft) {
                         Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) { net.calabi.app.ui.Glyph(R.drawable.ic_monitor, Palette.accent, 24.dp) }
@@ -442,31 +451,44 @@ class RdpActivity : ComponentActivity() {
                         Text(target?.optString("name") ?: overlay, style = Styles.section)
                         Text(if (selectedPort != null) "$overlay:$selectedPort" else overlay, style = Styles.mono)
                     }
+                    if (needsMesh) StatusBadge(stringResource(R.string.remote_mesh_disconnected), modifier = Modifier.widthIn(max = 128.dp))
                 }
                 OutlinedTextField(shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp), value = user, enabled = !busy, onValueChange = { user = it }, label = { Text(stringResource(R.string.rdp_username)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 if (domain.isNotBlank()) Text(stringResource(R.string.rdp_domain) + ": " + domain, style = Styles.hint)
                 OutlinedTextField(shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp), value = password, enabled = !busy, onValueChange = { password = it }, label = { Text(stringResource(R.string.login_password)) }, singleLine = true,
                     visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth())
-                Text(stringResource(R.string.rdp_password_short_hint), style = Styles.hint)
                 OutlinedTextField(value = portText, onValueChange = { value -> if (value.length <= 5 && value.all(Char::isDigit)) portText = value },
-                    enabled = !busy, isError = selectedPort == null, label = { Text(stringResource(R.string.rdp_port)) },
+                    enabled = !busy && !clearingCredentials, isError = selectedPort == null, label = { Text(stringResource(R.string.rdp_port)) },
                     supportingText = { if (selectedPort == null) Text(stringResource(R.string.rdp_port_invalid)) },
                     singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth())
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = rememberPassword, enabled = !busy && credentialScope != null, onCheckedChange = { rememberPassword = it })
+                    Checkbox(checked = rememberPassword, enabled = !busy && !clearingCredentials && credentialScope != null, onCheckedChange = { rememberPassword = it })
                     Text(stringResource(R.string.rdp_remember_password), modifier = Modifier.weight(1f))
+                    if (saved) TextButton(modifier = Modifier.heightIn(min = 48.dp),
+                        enabled = !busy && !clearingCredentials && selectedPort != null && credentialScope != null && target != null, onClick = {
+                            val forgottenPort = selectedPort ?: return@TextButton
+                            val identity = credentialScope ?: return@TextButton
+                            val deviceKey = target?.getString("device_key") ?: return@TextButton
+                            clearingCredentials = true
+                            scope.launch {
+                                try {
+                                    val result = withContext(Dispatchers.IO) { runCatching { store.forget(identity, deviceKey, forgottenPort) } }
+                                    if (result.isSuccess) { saved = false; rememberPassword = false; password = ""; credentialMessage = "" }
+                                    else credentialMessage = storageFailed
+                                } finally { clearingCredentials = false }
+                            }
+                        }) { Text(stringResource(R.string.rdp_clear_credentials)) }
                 }
-                if (saved && credentialMessage.isEmpty()) Text(stringResource(R.string.rdp_credentials_saved), style = Styles.hint, color = Palette.accent)
                 net.calabi.app.ui.LinkRow(stringResource(R.string.rdp_connection_options), stringResource(quality.title), onClick = { if (!busy) connectionOptions = true })
-                if (credentialMessage.isNotEmpty()) Text(credentialMessage, style = Styles.hint)
-                if (error.isNotEmpty()) Text(error, color = Palette.danger)
-                if (error.isNotEmpty()) TextButton(contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp), enabled = !busy, onClick = { reload++ }) { Text(stringResource(R.string.rdp_retry)) }
+                if (credentialMessage.isNotEmpty()) InlineNotice(credentialMessage, tone = NoticeTone.Error)
+                if (error.isNotEmpty()) InlineNotice(error, tone = NoticeTone.Error, actionIcon = R.drawable.ic_refresh,
+                    actionLabel = stringResource(R.string.rdp_retry), onAction = { if (!busy) reload++ })
                 }
                 Column(Modifier.fillMaxWidth().padding(20.dp)) {
                 Button(modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Palette.accent, contentColor = Color.White), enabled = !busy && selectedPort != null && user.isNotBlank() && password.isNotEmpty() && target?.optBoolean("available") == true && error.isEmpty(), onClick = {
+                    colors = ButtonDefaults.buttonColors(containerColor = Palette.accent, contentColor = Color.White), enabled = !busy && !clearingCredentials && selectedPort != null && user.isNotBlank() && password.isNotEmpty() && target?.optBoolean("available") == true && error.isEmpty(), onClick = {
                     val connectionPort = selectedPort ?: return@Button
                     busy = true
                     scope.launch {
@@ -525,15 +547,6 @@ class RdpActivity : ComponentActivity() {
                 }
                 Text(stringResource(R.string.rdp_hardware_hint), style = Styles.hint)
                 OutlinedTextField(value = domain, enabled = !busy, onValueChange = { domain = it }, label = { Text(stringResource(R.string.rdp_domain)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                if (saved) TextButton(contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp), enabled = !busy && selectedPort != null, onClick = {
-                    val forgottenPort = selectedPort ?: return@TextButton
-                    scope.launch {
-                        val result = withContext(Dispatchers.IO) { runCatching { store.forget(credentialScope!!, target!!.getString("device_key"), forgottenPort) } }
-                        if (result.isSuccess) { saved = false; rememberPassword = false; password = ""; credentialMessage = "" }
-                        else credentialMessage = storageFailed
-                    }
-                }) { Text(stringResource(R.string.rdp_forget_credentials)) }
-                    Text(stringResource(R.string.rdp_credentials_hint), style = Styles.hint)
                 }
             }
         }

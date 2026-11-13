@@ -7,9 +7,14 @@
 - **Added:** Remote Desktop access to authorized Windows devices over the mesh, with certificate verification and optional encrypted credentials stored on this phone. Touchpad and direct-touch modes, Chinese text input and explicit text clipboard exchange are available.
 - **Added:** A dedicated Remote tab with local desktop thumbnails, two cards per row by default, and shortcuts to reconnect to recently used devices.
 - **Added:** Custom Remote Desktop ports from 1 to 65535, with saved credentials and recent connections isolated by account, organization, device and port.
+- **Added:** Completed received files can be opened directly or shared through the Android system panel, without first saving another copy to a chosen location.
 - **Changed:** The device-first mesh page now shares a compact, fixed account, organization and connection header with the other main pages. Connection controls, exit devices and subnet routes are grouped in a network panel.
 - **Changed:** Remote Desktop keeps sign-in in portrait and enters landscape fullscreen after connecting. A collapsible floating toolbar groups input, display and session controls.
 - **Changed:** File transfer, endpoints and settings use consistent panels, navigation and touch targets, with large-text layouts and the ten supported interface languages.
+- **Changed:** The transfer center combines sending and receiving controls above a continuous record list, with search and direction filters kept together.
+- **Changed:** Navigation headers stay fixed while content scrolls, including settings and endpoint detail pages. Receiving controls keep the same compact row when the mesh is disconnected.
+- **Changed:** Save confirmations disappear automatically, while contextual notices keep recovery actions beside the message and avoid repeated red paragraphs for normal disconnected states.
+- **Changed:** Remote Desktop sign-in provides a direct clear-credentials action and removes duplicate saved-credential and password guidance messages.
 - **Changed:** Unavailable file-sending actions show the reason in the button label, including when the other device has not enabled receiving.
 - **Fixed:** Remote connection availability and local history errors are reported separately, without asking an already-connected phone to reconnect or misreporting a remote-service failure as a history-storage error.
 - **Changed:** Android packages now target 64-bit ARM systems only and use 16 KB alignment for native libraries and APK entries.

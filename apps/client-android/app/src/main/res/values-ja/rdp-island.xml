@@ -3,7 +3,6 @@
     <string name="rdp_connection_options">接続オプション</string>
     <string name="rdp_session_tools">セッション</string>
     <string name="rdp_rotate_display">画面を回転</string>
-    <string name="rdp_password_short_hint">PIN ではなく Windows のパスワードを入力してください。</string>
     <string name="rdp_hide_keyboard">キーボードを閉じる</string>
     <string name="rdp_zoom_in">拡大</string>
     <string name="rdp_zoom_out">縮小</string>

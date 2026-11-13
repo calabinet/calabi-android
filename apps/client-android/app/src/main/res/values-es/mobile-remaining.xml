@@ -63,7 +63,6 @@
     <string name="files_identity_confirm">Detiene la recepción y cancela las transferencias incompletas de todas las cuentas y organizaciones de esta app. Se conservan los archivos completados, las fuentes preparadas y el historial. La identidad del dispositivo de malla no cambia. Vuelve a activar la recepción cuando quieras.</string>
     <string name="files_center">Centro de transferencias</string>
     <string name="files_settings">Ajustes de transferencia</string>
-    <string name="files_network_hint">Dentro de tu red de malla</string>
     <string name="files_receive_hint">Solo dispositivos de malla · Confirmar cada solicitud</string>
     <string name="files_pending">Pendientes</string>
     <string name="files_empty_records">No hay registros de transferencias</string>
@@ -87,8 +86,6 @@
     <string name="files_error_integrity">No se pudo verificar el archivo. Vuelve a enviarlo.</string>
     <string name="files_error_storage">No hay suficiente espacio. Libera espacio y vuelve a intentarlo.</string>
     <string name="files_error_storagewrite">No se pudo guardar el archivo o el registro. Comprueba la ubicación y vuelve a intentarlo.</string>
-    <string name="files_error_save_permission">No se pudo escribir en el destino. Elige otro o comprueba sus permisos.</string>
-    <string name="files_error_save_cleanup">No se pudo eliminar el destino incompleto. Bórralo manualmente antes de reintentar.</string>
     <string name="files_error_agent">El servicio de transferencia no está listo. Vuelve a abrir la aplicación e inténtalo de nuevo.</string>
     <string name="files_error_connection">No se pudo conectar con el otro dispositivo. Comprueba que esté en línea y acepte archivos, y vuelve a intentarlo.</string>
     <string name="files_error_limit">Se alcanzó el límite de archivos o tareas. Elimina registros antiguos y vuelve a intentarlo.</string>
@@ -139,13 +136,11 @@
     <string name="rdp_gestures_hint">Panel táctil: desliza un dedo para mover el puntero y toca para hacer clic. Toca dos veces y arrastra, o activa Arrastrar, para mantener el botón izquierdo. Toca Panel táctil para cambiar a Toque directo, que apunta donde tocas. En ambos modos, toca con dos dedos para clic derecho, muévelos juntos para desplazar y pellizca para ampliar hasta 5×. Cambia Desplazar a Mover lienzo para mover la vista. El porcentaje restaura Ajustar. Herramientas incluye atajos y portapapeles de texto manual.</string>
     <string name="rdp_username">Usuario de Windows</string>
     <string name="rdp_domain">Dominio (opcional)</string>
-    <string name="rdp_credentials_hint">Introduce la contraseña de la cuenta Windows, no el PIN. Las credenciales se cifran en este teléfono tras conectar correctamente. Las sesiones se conservan en segundo plano hasta 60 segundos.</string>
     <string name="rdp_background_expired">La sesión terminó tras 60 segundos en segundo plano. Reconecta para continuar.</string>
     <string name="rdp_identity_changed">Cambió la identidad del dispositivo o la conexión de malla. Comprueba la red y reconecta.</string>
     <string name="rdp_reconnect">Volver a conectar</string>
     <string name="rdp_remember_password">Recordar contraseña en este teléfono</string>
-    <string name="rdp_forget_credentials">Olvidar credenciales guardadas</string>
-    <string name="rdp_credentials_saved">Credenciales guardadas en este teléfono</string>
+    <string name="rdp_clear_credentials">Borrar credenciales</string>
     <string name="rdp_credentials_failed">No se pudieron leer o actualizar las credenciales. Introdúcelas otra vez o intenta olvidarlas.</string>
     <string name="rdp_wait_network">Red no disponible. Esperando conexión (hasta 60 segundos)…</string>
     <string name="rdp_repairing">Conexión interrumpida. Reconectando de forma segura (hasta 60 segundos)…</string>
@@ -182,7 +177,6 @@
     <string name="login_totp_code">Código de verificación</string>
     <string name="login_totp_invalid">Ese código no funcionó. Reintenta.</string>
     <string name="login_verify">Verificar</string>
-    <string name="login_back">Volver</string>
     <string name="state_not_enrolled_short">Malla no habilitada</string>
     <string name="state_not_enrolled">Esta organización no ha activado la malla.</string>
     <string name="state_signed_out_short">Sesión cerrada</string>

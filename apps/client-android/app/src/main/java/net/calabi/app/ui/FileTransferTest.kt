@@ -103,83 +103,83 @@ fun FileTransferTestScreen(model: AppModel, onBack: () -> Unit) {
         }
     }
 
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        TopBar(onBack)
-        Text(stringResource(R.string.filetest_title), style = Styles.screenTitle)
-        Text(stringResource(R.string.filetest_hint), style = Styles.hint)
-        SelectionContainer {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(model.connection?.overlay.orEmpty(), style = Styles.mono)
-                Text(snapshot.optString("fingerprint"), style = Styles.mono)
-            }
-        }
-        val running = snapshot.optBoolean("running")
-        val sending = snapshot.optBoolean("sending")
-        if (!running) {
-            LabeledField(stringResource(R.string.filetest_peer), peer, { peer = it })
-            LabeledField(stringResource(R.string.filetest_pin), pin, { pin = it })
-            LabeledField(stringResource(R.string.filetest_rate), kbps, { kbps = it }, keyboardType = KeyboardType.Number)
-            PrimaryButton(stringResource(R.string.filetest_start), enabled = !busy && peer.isNotBlank() && pin.length == 64 && kbps.toIntOrNull() != null, onClick = {
-                scope.launch {
-                    busy = true
-                    val result = CoreClient.call("POST", "/v1/filetest/start", JSONObject().put("peer_ip", peer.trim()).put("fingerprint", pin.trim()).put("kbps", kbps.toInt()).put("port", 17401))
-                    message = if (result.ok) "" else result.error(failure)
-                    busy = false
-                    refresh()
+    FixedPage(stringResource(R.string.filetest_title), onBack = onBack) {
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(stringResource(R.string.filetest_hint), style = Styles.hint)
+            SelectionContainer {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(model.connection?.overlay.orEmpty(), style = Styles.mono)
+                    Text(snapshot.optString("fingerprint"), style = Styles.mono)
                 }
-            })
-        }
-        if (running) {
-            PrimaryButton(stringResource(R.string.filetest_send), enabled = !busy && !sending, onClick = { chooseFile.launch(arrayOf("*/*")) })
-            TextButton(onClick = { scope.launch { CoreClient.call("POST", "/v1/filetest/stop"); refresh() } }) {
-                Text(stringResource(R.string.filetest_stop))
             }
-        }
-        val outgoing = snapshot.optJSONObject("outgoing")
-        if (outgoing != null && outgoing.optString("id").isNotBlank()) {
-            Text(stringResource(R.string.filetest_outgoing, outgoing.optString("name"), outgoing.optLong("offset"), outgoing.optLong("size")), style = Styles.hint)
-        }
-        val transfers = snapshot.optJSONArray("transfers")
-        if (transfers != null) for (i in 0 until transfers.length()) {
-            val file = transfers.getJSONObject(i)
-            val id = file.optString("id")
-            Group {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(file.optString("name"), style = Styles.rowTitle)
-                    Text(stringResource(R.string.filetest_progress, file.optLong("offset"), file.optLong("size"), file.optString("state")), style = Styles.hint)
-                    if (file.optString("state") == "waiting") {
-                        Row {
-                            TextButton(onClick = { scope.launch { decide(id, accept = true) } }) { Text(stringResource(R.string.filetest_accept)) }
-                            TextButton(onClick = { scope.launch { decide(id) } }) { Text(stringResource(R.string.filetest_reject)) }
+            val running = snapshot.optBoolean("running")
+            val sending = snapshot.optBoolean("sending")
+            if (!running) {
+                LabeledField(stringResource(R.string.filetest_peer), peer, { peer = it })
+                LabeledField(stringResource(R.string.filetest_pin), pin, { pin = it })
+                LabeledField(stringResource(R.string.filetest_rate), kbps, { kbps = it }, keyboardType = KeyboardType.Number)
+                PrimaryButton(stringResource(R.string.filetest_start), enabled = !busy && peer.isNotBlank() && pin.length == 64 && kbps.toIntOrNull() != null, onClick = {
+                    scope.launch {
+                        busy = true
+                        val result = CoreClient.call("POST", "/v1/filetest/start", JSONObject().put("peer_ip", peer.trim()).put("fingerprint", pin.trim()).put("kbps", kbps.toInt()).put("port", 17401))
+                        message = if (result.ok) "" else result.error(failure)
+                        busy = false
+                        refresh()
+                    }
+                })
+            }
+            if (running) {
+                PrimaryButton(stringResource(R.string.filetest_send), enabled = !busy && !sending, onClick = { chooseFile.launch(arrayOf("*/*")) })
+                TextButton(onClick = { scope.launch { CoreClient.call("POST", "/v1/filetest/stop"); refresh() } }) {
+                    Text(stringResource(R.string.filetest_stop))
+                }
+            }
+            val outgoing = snapshot.optJSONObject("outgoing")
+            if (outgoing != null && outgoing.optString("id").isNotBlank()) {
+                Text(stringResource(R.string.filetest_outgoing, outgoing.optString("name"), outgoing.optLong("offset"), outgoing.optLong("size")), style = Styles.hint)
+            }
+            val transfers = snapshot.optJSONArray("transfers")
+            if (transfers != null) for (i in 0 until transfers.length()) {
+                val file = transfers.getJSONObject(i)
+                val id = file.optString("id")
+                Group {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(file.optString("name"), style = Styles.rowTitle)
+                        Text(stringResource(R.string.filetest_progress, file.optLong("offset"), file.optLong("size"), file.optString("state")), style = Styles.hint)
+                        if (file.optString("state") == "waiting") {
+                            Row {
+                                TextButton(onClick = { scope.launch { decide(id, accept = true) } }) { Text(stringResource(R.string.filetest_accept)) }
+                                TextButton(onClick = { scope.launch { decide(id) } }) { Text(stringResource(R.string.filetest_reject)) }
+                            }
+                        } else if (file.optString("state") == "completed") {
+                            TextButton(enabled = !busy, onClick = { exportId = id; saveFile.launch(file.optString("name")) }) { Text(stringResource(R.string.filetest_save)) }
+                        } else if (file.optString("state") == "accepted" || file.optString("state") == "receiving") {
+                            TextButton(onClick = { scope.launch { decide(id, cancel = true) } }) { Text(stringResource(R.string.filetest_stop)) }
                         }
-                    } else if (file.optString("state") == "completed") {
-                        TextButton(enabled = !busy, onClick = { exportId = id; saveFile.launch(file.optString("name")) }) { Text(stringResource(R.string.filetest_save)) }
-                    } else if (file.optString("state") == "accepted" || file.optString("state") == "receiving") {
-                        TextButton(onClick = { scope.launch { decide(id, cancel = true) } }) { Text(stringResource(R.string.filetest_stop)) }
                     }
                 }
             }
+            val error = snapshot.optString("error")
+            if (error.isNotBlank()) InlineNotice(error, tone = NoticeTone.Error)
+            if (message.isNotBlank()) InlineNotice(message)
+            TextButton(enabled = !busy && !sending, onClick = { clearing = true }) { Text(stringResource(R.string.filetest_clear), color = Palette.danger) }
         }
-        val error = snapshot.optString("error")
-        if (error.isNotBlank()) Text(error, color = Palette.danger)
-        if (message.isNotBlank()) Text(message, style = Styles.hint)
-        TextButton(enabled = !busy && !sending, onClick = { clearing = true }) { Text(stringResource(R.string.filetest_clear), color = Palette.danger) }
+        if (clearing) AlertDialog(
+            onDismissRequest = { clearing = false },
+            title = { Text(stringResource(R.string.filetest_clear)) },
+            text = { Text(stringResource(R.string.filetest_clear_hint)) },
+            confirmButton = { TextButton(onClick = {
+                clearing = false
+                scope.launch {
+                    val result = CoreClient.call("POST", "/v1/filetest/clear")
+                    message = if (result.ok) "" else result.error(failure)
+                    refresh()
+                }
+            }) { Text(stringResource(R.string.filetest_clear)) } },
+            dismissButton = { TextButton(onClick = { clearing = false }) { Text(stringResource(R.string.filetest_reject)) } },
+        )
     }
-    if (clearing) AlertDialog(
-        onDismissRequest = { clearing = false },
-        title = { Text(stringResource(R.string.filetest_clear)) },
-        text = { Text(stringResource(R.string.filetest_clear_hint)) },
-        confirmButton = { TextButton(onClick = {
-            clearing = false
-            scope.launch {
-                val result = CoreClient.call("POST", "/v1/filetest/clear")
-                message = if (result.ok) "" else result.error(failure)
-                refresh()
-            }
-        }) { Text(stringResource(R.string.filetest_clear)) } },
-        dismissButton = { TextButton(onClick = { clearing = false }) { Text(stringResource(R.string.filetest_reject)) } },
-    )
 }

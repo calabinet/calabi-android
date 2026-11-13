@@ -13,6 +13,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import net.calabi.app.ui.InlineNotice
+import net.calabi.app.ui.NoticeTone
 import net.calabi.app.R
 
 internal data class RdpShortcut(val label: String, val modifiers: IntArray, val scan: Int)
@@ -121,9 +123,9 @@ internal object RdpClipboardText {
             OutlinedButton(enabled = ready && !busy, onClick = {
                 busy = true; message = 0; request = session.clipboard()
             }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.rdp_clip_get)) }
-            if (!ready) Text(stringResource(R.string.rdp_clip_unavailable), style = MaterialTheme.typography.bodySmall)
+            if (!ready && message == 0) InlineNotice(stringResource(R.string.rdp_clip_unavailable), tone = NoticeTone.Warning)
             if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-            if (message != 0) Text(stringResource(message), style = MaterialTheme.typography.bodySmall)
+            if (message != 0) InlineNotice(stringResource(message), tone = if (message in setOf(R.string.rdp_clip_sent, R.string.rdp_clip_received, R.string.rdp_clip_copied)) NoticeTone.Info else NoticeTone.Warning)
         }
     }, confirmButton = { TextButton(onClick = dismiss) { Text(stringResource(android.R.string.cancel)) } })
 }

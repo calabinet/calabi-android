@@ -11,8 +11,8 @@ class MobileUiStateTest : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
-            runBlocking {
-                val state = UiActionState(this)
+            runBlocking(Dispatchers.Main) {
+                val state = UiActionState(this, targetContext.applicationContext)
                 val gate = CompletableDeferred<Unit>()
                 var calls = 0
                 var successes = 0
@@ -23,7 +23,8 @@ class MobileUiStateTest : Instrumentation() {
                 check(calls == 1 && successes == 0) { "Repeat submission must be rejected while pending" }
                 gate.complete(Unit)
                 yield()
-                check(!state.busy && state.message == "saved" && !state.failed && successes == 1)
+                check(!state.busy && state.message == null && !state.failed && successes == 1)
+                state.dismissSuccess()
                 state.run("failed", "saved", operation = { ApiResult(500, "{}") }, onSuccess = { successes++ })
                 yield()
                 check(!state.busy && state.failed && !state.message.isNullOrEmpty() && successes == 1) { "Failure must not navigate or close the editor" }
@@ -33,7 +34,7 @@ class MobileUiStateTest : Instrumentation() {
                 yield()
                 check(!state.busy && state.failed && state.message == "exception" && successes == 1)
                 val owner = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
-                val pending = UiActionState(owner)
+                val pending = UiActionState(owner, targetContext.applicationContext)
                 pending.run("failed", "saved", operation = { CompletableDeferred<Unit>().await(); ApiResult(200, "{}") })
                 check(pending.busy)
                 owner.cancel()

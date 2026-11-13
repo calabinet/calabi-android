@@ -43,13 +43,11 @@
     <string name="rdp_gestures_hint">Trackpad: slide one finger to move the pointer; tap to click. Double tap and drag, or arm Drag, to hold the left button. Tap Trackpad to switch to Direct touch, where the finger position is the target. In either mode, tap with two fingers for right click, move two fingers together to scroll, and pinch to zoom up to 5×. Switch Scroll to Move canvas to pan. The percentage restores Fit. Tools contains shortcuts and a manual text clipboard.</string>
     <string name="rdp_username">Windows username</string>
     <string name="rdp_domain">Domain (optional)</string>
-    <string name="rdp_credentials_hint">Enter the Windows account password, not a PIN. Remembered credentials are encrypted on this phone after a successful connection. Sessions are retained in the background for up to 60 seconds.</string>
     <string name="rdp_background_expired">The session ended after 60 seconds in the background. Reconnect to continue.</string>
     <string name="rdp_identity_changed">The device identity or mesh connection changed. Reconnect after checking the network.</string>
     <string name="rdp_reconnect">Reconnect</string>
     <string name="rdp_remember_password">Remember password on this phone</string>
-    <string name="rdp_forget_credentials">Forget saved credentials</string>
-    <string name="rdp_credentials_saved">Credentials saved on this phone</string>
+    <string name="rdp_clear_credentials">Clear credentials</string>
     <string name="rdp_credentials_failed">Saved credentials could not be read or updated. Please enter them again or try forgetting them.</string>
     <string name="rdp_wait_network">Network unavailable. Waiting for a connection (up to 60 seconds)…</string>
     <string name="rdp_repairing">Connection interrupted. Reconnecting securely (up to 60 seconds)…</string>

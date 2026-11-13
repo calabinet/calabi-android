@@ -12,4 +12,8 @@
     <string name="remote_service_failed">リモートデスクトップを一時的に利用できません。再試行してください。</string>
     <string name="remote_target_unavailable">このデバイスにはリモート接続できません。デバイス一覧を更新して再試行してください。</string>
     <string name="files_send_unavailable">%1$s（%2$s）</string>
+    <string name="remote_mesh_disconnected">ネットワーク未接続</string>
+    <string name="files_open_no_app">この種類のファイルを開けるアプリがありません。</string>
+    <string name="files_open_unavailable">受信したファイルを読み取れません。後でもう一度試すか、再度受信してください。</string>
+    <string name="files_share_no_app">ファイルを共有できるアプリがありません。</string>
 </resources>

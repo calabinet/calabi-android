@@ -118,98 +118,80 @@ fun LoginScreen(onSignedIn: () -> Unit, onSelfHosted: () -> Unit) {
         error = null
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(Palette.ground)
-            .safeDrawingPadding()
-            .imePadding()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 28.dp),
-    ) {
-        if (step == 1) {
-            Spacer(Modifier.height(72.dp))
-            Column(
-                Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                // The app icon: the brand's blue and mark, as on the launcher and the desktop client.
-                Box(Modifier.size(72.dp).background(Palette.brand, RoundedCornerShape(20.dp)), contentAlignment = Alignment.Center) {
-                    Glyph(R.drawable.ic_tile, Color.White, 36.dp)
+    Column(Modifier.fillMaxSize().background(Palette.ground).safeDrawingPadding().imePadding()) {
+        if (step == 2) PageHeading(stringResource(R.string.login_totp_title),
+            modifier = Modifier.padding(horizontal = 22.dp, vertical = 8.dp),
+            onBack = { step = 1; code = ""; error = null })
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 28.dp)) {
+            if (step == 1) {
+                Spacer(Modifier.height(72.dp))
+                Column(
+                    Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    // The app icon: the brand's blue and mark, as on the launcher and the desktop client.
+                    Box(Modifier.size(72.dp).background(Palette.brand, RoundedCornerShape(20.dp)), contentAlignment = Alignment.Center) {
+                        Glyph(R.drawable.ic_tile, Color.White, 36.dp)
+                    }
+                    Text(stringResource(R.string.app_name), fontFamily = Fonts.display, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = Palette.ink)
+                    Text(stringResource(R.string.login_subtitle), fontSize = 15.sp, color = Palette.muted, textAlign = TextAlign.Center)
                 }
-                Text(stringResource(R.string.app_name), fontFamily = Fonts.display, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = Palette.ink)
-                Text(stringResource(R.string.login_subtitle), fontSize = 15.sp, color = Palette.muted, textAlign = TextAlign.Center)
-            }
-            Spacer(Modifier.height(36.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                LabeledField(
-                    label = stringResource(R.string.login_email), value = email, onValueChange = { email = it },
-                    keyboardType = KeyboardType.Email,
+                Spacer(Modifier.height(36.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    LabeledField(
+                        label = stringResource(R.string.login_email), value = email, onValueChange = { email = it },
+                        keyboardType = KeyboardType.Email,
+                    )
+                    LabeledField(
+                        label = stringResource(R.string.login_password), value = password, onValueChange = { password = it },
+                        keyboardType = KeyboardType.Password, password = true, imeAction = ImeAction.Done,
+                        onImeAction = { if (email.isNotBlank() && password.isNotEmpty()) submit() },
+                    )
+                    error?.let { InlineNotice(it, tone = NoticeTone.Error) }
+                    PrimaryButton(
+                        text = stringResource(if (busy) R.string.login_signing_in else R.string.login_sign_in),
+                        enabled = !busy && email.isNotBlank() && password.isNotEmpty(),
+                        onClick = ::submit,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally)) {
+                        Link(stringResource(R.string.login_register)) { openConsole("/register") }
+                        // The console's request form. /reset-password is where the
+                        // emailed link lands (it needs its token); 1.13.0 and earlier
+                        // opened it here, and the console now forwards those.
+                        Link(stringResource(R.string.login_forgot)) { openConsole("/login?mode=forgot") }
+                    }
+                }
+                Spacer(Modifier.height(48.dp))
+                Text(
+                    stringResource(R.string.login_footnote), fontSize = 12.sp, color = Palette.muted, textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
                 )
-                LabeledField(
-                    label = stringResource(R.string.login_password), value = password, onValueChange = { password = it },
-                    keyboardType = KeyboardType.Password, password = true, imeAction = ImeAction.Done,
-                    onImeAction = { if (email.isNotBlank() && password.isNotEmpty()) submit() },
-                )
-                error?.let { Text(it, fontSize = 14.sp, color = Palette.danger) }
+                // Below everything calabi.net: most people never need it.
+                Row(Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 24.dp), horizontalArrangement = Arrangement.Center) {
+                    Link(stringResource(R.string.login_self_hosted), onClick = onSelfHosted)
+                }
+            } else {
+                Spacer(Modifier.height(8.dp))
+                Text(stringResource(R.string.login_totp_subtitle, email.trim()), fontSize = 15.sp, color = Palette.muted)
+                Spacer(Modifier.height(28.dp))
+                CodeField(code, stringResource(R.string.login_totp_code)) {
+                    code = it
+                    error = null
+                    if (it.length == CODE_LENGTH) submit()
+                }
+                error?.let {
+                    Spacer(Modifier.height(12.dp))
+                    InlineNotice(it, tone = NoticeTone.Error)
+                }
+                Spacer(Modifier.height(24.dp))
                 PrimaryButton(
-                    text = stringResource(if (busy) R.string.login_signing_in else R.string.login_sign_in),
-                    enabled = !busy && email.isNotBlank() && password.isNotEmpty(),
+                    text = stringResource(if (busy) R.string.login_signing_in else R.string.login_verify),
+                    enabled = !busy && code.length == CODE_LENGTH,
                     onClick = ::submit,
-                    modifier = Modifier.padding(top = 8.dp),
                 )
-                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally)) {
-                    Link(stringResource(R.string.login_register)) { openConsole("/register") }
-                    // The console's request form. /reset-password is where the
-                    // emailed link lands (it needs its token); 1.13.0 and earlier
-                    // opened it here, and the console now forwards those.
-                    Link(stringResource(R.string.login_forgot)) { openConsole("/login?mode=forgot") }
-                }
             }
-            Spacer(Modifier.height(48.dp))
-            Text(
-                stringResource(R.string.login_footnote), fontSize = 12.sp, color = Palette.muted, textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            // Below everything calabi.net: most people never need it.
-            Row(Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 24.dp), horizontalArrangement = Arrangement.Center) {
-                Link(stringResource(R.string.login_self_hosted), onClick = onSelfHosted)
-            }
-        } else {
-            Spacer(Modifier.height(12.dp))
-            Row(
-                Modifier
-                    .heightIn(min = 48.dp)
-                    .clip(RoundedCornerShape(22.dp))
-                    .clickable(role = Role.Button) { step = 1; code = ""; error = null }
-                    .padding(end = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Glyph(R.drawable.ic_chevron_left, Palette.ink, 22.dp)
-                Text(stringResource(R.string.login_back), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Palette.ink)
-            }
-            Spacer(Modifier.height(40.dp))
-            Text(stringResource(R.string.login_totp_title), style = Styles.screenTitle, color = Palette.ink)
-            Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.login_totp_subtitle, email.trim()), fontSize = 15.sp, color = Palette.muted)
-            Spacer(Modifier.height(28.dp))
-            CodeField(code, stringResource(R.string.login_totp_code)) {
-                code = it
-                error = null
-                if (it.length == CODE_LENGTH) submit()
-            }
-            error?.let {
-                Spacer(Modifier.height(12.dp))
-                Text(it, fontSize = 14.sp, color = Palette.danger)
-            }
-            Spacer(Modifier.height(24.dp))
-            PrimaryButton(
-                text = stringResource(if (busy) R.string.login_signing_in else R.string.login_verify),
-                enabled = !busy && code.length == CODE_LENGTH,
-                onClick = ::submit,
-            )
         }
     }
 }

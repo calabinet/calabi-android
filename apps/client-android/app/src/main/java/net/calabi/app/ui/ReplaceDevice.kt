@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -54,6 +56,7 @@ internal fun rememberReplaceDismissed(): State<Set<Long>> {
  * phone may be replacing (a reinstall or a new phone). Hidden after a successful
  * replacement or dismissal, until a device not seen before turns up.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ReplacePrompt(model: AppModel, onChoose: () -> Unit) {
     val context = LocalContext.current
@@ -73,10 +76,10 @@ fun ReplacePrompt(model: AppModel, onChoose: () -> Unit) {
                 Text(stringResource(R.string.replace_prompt_body), style = Styles.hint.copy(fontSize = 13.sp))
             }
         }
-        Row(
-            Modifier.fillMaxWidth().padding(start = 68.dp, end = 16.dp, top = 12.dp, bottom = 14.dp),
+        FlowRow(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Pill(onClick = onChoose) { Text(stringResource(R.string.replace_choose), style = Styles.chip) }
             TextButton(onClick = {

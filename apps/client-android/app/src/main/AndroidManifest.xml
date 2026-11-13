@@ -48,6 +48,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Calabi">
 
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.received-files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/received_file_paths" />
+        </provider>
+
         <!-- Keep sign-in portrait; a successful desktop session switches to
              landscape and its toolbar still allows manual rotation. -->
         <activity android:name=".rdp.RdpActivity" android:exported="false"

@@ -63,7 +63,6 @@
     <string name="files_identity_confirm">Interrompe a recepção e cancela transferências incompletas de todas as contas e organizações deste app. Arquivos concluídos, fontes preparadas e histórico são mantidos. A identidade do dispositivo da malha não muda. Ative a recepção novamente quando quiser.</string>
     <string name="files_center">Central de transferências</string>
     <string name="files_settings">Configurações de transferência</string>
-    <string name="files_network_hint">Dentro da sua rede de malha</string>
     <string name="files_receive_hint">Apenas dispositivos da malha · Confirmar cada solicitação</string>
     <string name="files_pending">Pendentes</string>
     <string name="files_empty_records">Nenhum registro de transferência</string>
@@ -87,8 +86,6 @@
     <string name="files_error_integrity">A verificação do arquivo falhou. Envie o arquivo novamente.</string>
     <string name="files_error_storage">Espaço insuficiente. Libere espaço e tente novamente.</string>
     <string name="files_error_storagewrite">Não foi possível salvar o arquivo ou o registro da tarefa. Verifique o local e tente novamente.</string>
-    <string name="files_error_save_permission">Não foi possível gravar no destino. Escolha outro local ou verifique as permissões.</string>
-    <string name="files_error_save_cleanup">Não foi possível remover o arquivo de destino incompleto. Exclua-o manualmente antes de tentar novamente.</string>
     <string name="files_error_agent">O serviço de transferência não está pronto. Reabra o aplicativo e tente novamente.</string>
     <string name="files_error_connection">Não foi possível acessar o outro dispositivo. Verifique se ele está online e aceita arquivos, e tente novamente.</string>
     <string name="files_error_limit">O limite de arquivos ou tarefas foi atingido. Limpe registros antigos e tente novamente.</string>
@@ -139,13 +136,11 @@
     <string name="rdp_gestures_hint">Trackpad: deslize um dedo para mover o ponteiro e toque para clicar. Toque duas vezes e arraste, ou ative Arrastar, para segurar o botão esquerdo. Toque em Trackpad para mudar para Toque direto na posição do dedo. Nos dois modos: toque com dois dedos para clique direito, mova-os juntos para rolar e faça pinça para ampliar até 5×. Mude Rolar para Mover visualização para deslocar a imagem. A porcentagem restaura Ajustar. Ferramentas inclui atalhos e área de transferência de texto manual.</string>
     <string name="rdp_username">Nome de usuário do Windows</string>
     <string name="rdp_domain">Domínio (opcional)</string>
-    <string name="rdp_credentials_hint">Digite a senha da conta Windows, não o PIN. As credenciais lembradas são criptografadas neste telefone após conectar com sucesso. As sessões são mantidas em segundo plano por até 60 segundos.</string>
     <string name="rdp_background_expired">A sessão terminou após 60 segundos em segundo plano. Reconecte para continuar.</string>
     <string name="rdp_identity_changed">A identidade do dispositivo ou a conexão da malha mudou. Verifique a rede e reconecte.</string>
     <string name="rdp_reconnect">Voltar a ligar</string>
     <string name="rdp_remember_password">Lembrar senha neste telefone</string>
-    <string name="rdp_forget_credentials">Esquecer credenciais salvas</string>
-    <string name="rdp_credentials_saved">Credenciais salvas neste telefone</string>
+    <string name="rdp_clear_credentials">Limpar credenciais</string>
     <string name="rdp_credentials_failed">Não foi possível ler ou atualizar as credenciais salvas. Digite-as novamente ou tente esquecê-las.</string>
     <string name="rdp_wait_network">Rede indisponível. Aguardando conexão (até 60 segundos)…</string>
     <string name="rdp_repairing">Conexão interrompida. Reconectando com segurança (até 60 segundos)…</string>
@@ -182,7 +177,6 @@
     <string name="login_totp_code">Código de verificação</string>
     <string name="login_totp_invalid">Esse código não funcionou. Tente novamente.</string>
     <string name="login_verify">Verificar</string>
-    <string name="login_back">Voltar</string>
     <string name="state_not_enrolled_short">Malha não ativada</string>
     <string name="state_not_enrolled">Esta organização não ativou a malha.</string>
     <string name="state_signed_out_short">Sessão encerrada</string>

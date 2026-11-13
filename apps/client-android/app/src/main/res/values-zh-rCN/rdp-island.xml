@@ -3,7 +3,6 @@
     <string name="rdp_connection_options">连接选项</string>
     <string name="rdp_session_tools">会话</string>
     <string name="rdp_rotate_display">旋转屏幕</string>
-    <string name="rdp_password_short_hint">请输入 Windows 密码，而非 PIN。</string>
     <string name="rdp_hide_keyboard">收起键盘</string>
     <string name="rdp_zoom_in">放大</string>
     <string name="rdp_zoom_out">缩小</string>

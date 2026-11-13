@@ -12,4 +12,8 @@
     <string name="remote_service_failed">Le bureau distant est temporairement indisponible. Réessayez.</string>
     <string name="remote_target_unavailable">Cet appareil est indisponible pour le bureau distant. Actualisez la liste des appareils et réessayez.</string>
     <string name="files_send_unavailable">%1$s (%2$s)</string>
+    <string name="remote_mesh_disconnected">Non connecté au réseau</string>
+    <string name="files_open_no_app">Aucune application compatible avec ce type de fichier.</string>
+    <string name="files_open_unavailable">Impossible de lire ce fichier reçu. Réessayez plus tard ou recevez-le à nouveau.</string>
+    <string name="files_share_no_app">Aucune application disponible pour partager des fichiers.</string>
 </resources>

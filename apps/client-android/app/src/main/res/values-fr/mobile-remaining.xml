@@ -63,7 +63,6 @@
     <string name="files_identity_confirm">Arrête la réception et annule les transferts inachevés de tous les comptes et organisations de cette application. Les fichiers terminés, sources préparées et historique sont conservés. L’identité maillée de l’appareil reste inchangée. Réactivez la réception lorsque vous le souhaitez.</string>
     <string name="files_center">Centre de transfert</string>
     <string name="files_settings">Paramètres de transfert</string>
-    <string name="files_network_hint">Au sein de votre réseau maillé</string>
     <string name="files_receive_hint">Appareils maillés uniquement · Confirmer chaque demande</string>
     <string name="files_pending">En attente</string>
     <string name="files_empty_records">Aucun transfert enregistré</string>
@@ -87,8 +86,6 @@
     <string name="files_error_integrity">La vérification du fichier a échoué. Renvoyez le fichier.</string>
     <string name="files_error_storage">Espace de stockage insuffisant. Libérez de l’espace, puis réessayez.</string>
     <string name="files_error_storagewrite">Impossible d’enregistrer le fichier ou l’historique de la tâche. Vérifiez l’emplacement, puis réessayez.</string>
-    <string name="files_error_save_permission">Impossible d’écrire à l’emplacement choisi. Choisissez-en un autre ou vérifiez ses autorisations.</string>
-    <string name="files_error_save_cleanup">Impossible de supprimer le fichier de destination incomplet. Supprimez-le manuellement avant de réessayer.</string>
     <string name="files_error_agent">Le service de transfert n’est pas prêt. Rouvrez l’application et réessayez.</string>
     <string name="files_error_connection">Impossible de joindre l’autre appareil. Vérifiez qu’il est en ligne et accepte les fichiers, puis réessayez.</string>
     <string name="files_error_limit">La limite de fichiers ou de tâches est atteinte. Supprimez les anciens éléments, puis réessayez.</string>
@@ -139,13 +136,11 @@
     <string name="rdp_gestures_hint">Pavé tactile : glissez un doigt pour déplacer le pointeur, touchez pour cliquer. Touchez deux fois puis glissez, ou activez Glisser, pour maintenir le bouton gauche. Touchez Pavé tactile pour passer au toucher direct à la position du doigt. Dans les deux modes : touchez à deux doigts pour le clic droit, déplacez-les ensemble pour défiler et pincez pour zoomer jusqu’à 5×. Passez de Défiler à Déplacer la vue pour déplacer l’affichage. Le pourcentage rétablit Ajuster. Outils contient les raccourcis et le presse-papiers texte manuel.</string>
     <string name="rdp_username">Nom d’utilisateur Windows</string>
     <string name="rdp_domain">Domaine (facultatif)</string>
-    <string name="rdp_credentials_hint">Saisissez le mot de passe du compte Windows, pas le code PIN. Les identifiants mémorisés sont chiffrés sur ce téléphone après une connexion réussie. Les sessions restent en arrière-plan jusqu’à 60 secondes.</string>
     <string name="rdp_background_expired">La session s’est terminée après 60 secondes en arrière-plan. Reconnectez-vous pour continuer.</string>
     <string name="rdp_identity_changed">L’identité de l’appareil ou la connexion maillée a changé. Vérifiez le réseau avant de vous reconnecter.</string>
     <string name="rdp_reconnect">Se reconnecter</string>
     <string name="rdp_remember_password">Mémoriser le mot de passe sur ce téléphone</string>
-    <string name="rdp_forget_credentials">Oublier les identifiants enregistrés</string>
-    <string name="rdp_credentials_saved">Identifiants enregistrés sur ce téléphone</string>
+    <string name="rdp_clear_credentials">Effacer les identifiants</string>
     <string name="rdp_credentials_failed">Impossible de lire ou de mettre à jour les identifiants enregistrés. Saisissez-les à nouveau ou essayez de les oublier.</string>
     <string name="rdp_wait_network">Réseau indisponible. Attente d’une connexion (60 secondes maximum)…</string>
     <string name="rdp_repairing">Connexion interrompue. Reconnexion sécurisée (60 secondes maximum)…</string>
@@ -182,7 +177,6 @@
     <string name="login_totp_code">Code de vérification</string>
     <string name="login_totp_invalid">Ce code n’a pas été accepté. Réessayez.</string>
     <string name="login_verify">Vérifier</string>
-    <string name="login_back">Retour</string>
     <string name="state_not_enrolled_short">Maillage non activé</string>
     <string name="state_not_enrolled">Cette organisation n’a pas activé le réseau maillé.</string>
     <string name="state_signed_out_short">Déconnecté</string>

@@ -14,6 +14,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -50,6 +52,7 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var snapshot by remember { mutableStateOf(JSONObject()) }
+    var snapshotLoaded by remember { mutableStateOf(false) }
     var peer by rememberSaveable { mutableStateOf(initialPeer.orEmpty()) }
     var selected by rememberSaveable { mutableStateOf(setOf<String>()) }
     var busy by remember { mutableStateOf(false) }
@@ -57,7 +60,8 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
     val listState = rememberLazyListState()
     val sendScroll = rememberScrollState()
     var message by rememberSaveable { mutableStateOf("") }
-    var exportId by rememberSaveable { mutableStateOf("") }
+    val receivedFiles = remember { ReceivedFiles.cache }
+    var preparingDocument by remember { mutableStateOf<String?>(null) }
     var removing by remember { mutableStateOf<JSONObject?>(null) }
     var identityOperation by remember { mutableStateOf<String?>(null) }
     var sendPage by rememberSaveable { mutableStateOf(false) }
@@ -91,8 +95,11 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
     val preparingCancelled = remember { AtomicBoolean(false) }
     val preparationSignal = remember { AtomicReference<CancellationSignal?>(null) }
     val failed = stringResource(R.string.filetest_failed)
-    val saved = stringResource(R.string.filetest_saved)
-    suspend fun refresh() { snapshot = CoreClient.call("GET", "/v1/files").json() }
+    suspend fun refresh() {
+        val result = CoreClient.call("GET", "/v1/files")
+        snapshot = result.json().apply { if (!result.ok) put("error", result.error(failed)) }
+        snapshotLoaded = true
+    }
     suspend fun action(body: JSONObject): Boolean {
         if (actionBusy) return false
         actionBusy = true
@@ -100,6 +107,9 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
             val result = CoreClient.call("POST", "/v1/files/action", body)
             message = if (result.ok) "" else fileErrorText(context, result.error(failed))
             if (result.ok && body.optString("action") == "forget_source") selected = selected - body.optString("id")
+            if (result.ok && body.optString("action") == "forget_receive") {
+                receivedFiles.forget(body.optString("id"))
+            }
             refresh()
             return result.ok
         } catch (e: CancellationException) { throw e }
@@ -144,18 +154,8 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
         if (shared.isNotEmpty() && snapshot.optBoolean("available")) { sendPage = true; stage(shared); onShareTaken() }
     }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> scope.launch { stage(uris) } }
-    val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
-        val id = exportId
-        exportId = ""
-        if (uri != null && id.isNotEmpty()) scope.launch {
-            busy = true
-            message = try { withContext(Dispatchers.IO) {
-                exportVerifiedDocument(context.contentResolver, uri) { fd -> CalabiApp.instance.core.saveFile(id, fd) }
-            }; saved } catch (e: Exception) { fileDocumentExportError(context, e) }
-            busy = false
-        }
-    }
     val available = snapshot.optBoolean("available")
+    val reconnectNotice = snapshot.optString("error") == "Reconnect to send or receive files. Local records and completed files remain available."
     val peers = snapshot.objects("peers").sortedWith(compareBy({ it.optString("name") }, { it.optString("ip") }))
     val staged = snapshot.objects("sources").sortedWith(compareByDescending<JSONObject> { it.optLong("created_unix_ms") }.thenBy { it.optString("id") })
     val received = snapshot.objects("received").sortedWith(compareByDescending<JSONObject> { it.optJSONObject("transfer")?.optLong("created_unix_ms") ?: 0L }.then(compareBy(
@@ -168,7 +168,7 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
         ?: devices.firstOrNull { it.overlay == ip }?.name?.takeIf { it.isNotBlank() } ?: ip
     fun deviceIcon(ip: String) = devices.firstOrNull { it.overlay == ip }?.os?.let(::osIcon) ?: R.drawable.ic_laptop
     val snapshotError = snapshot.optString("error").let {
-        if (it == "Reconnect to send or receive files. Local records and completed files remain available.") stringResource(R.string.files_reconnect) else fileErrorText(context, it)
+        if (reconnectNotice) stringResource(R.string.files_reconnect) else fileErrorText(context, it)
     }
     fun fileMatches(file: JSONObject, ip: String): Boolean = matchesListSearch(search, file.optString("name"), ip, deviceName(ip))
     val visibleGroups = if (direction == 2) emptyMap() else incomingGroups.filterValues { group -> group.any { fileMatches(it.optJSONObject("transfer") ?: JSONObject(), it.optString("ip")) } }
@@ -177,108 +177,128 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
             staged.any { source -> job.optJSONArray("sources")?.let { ids -> (0 until ids.length()).any { ids.optString(it) == source.optString("id") } } == true && fileMatches(source, job.optString("peer_ip")) }
     }
 
-    if (!sendPage) LazyColumn(
-        Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item("header") {
-            PageHeading(stringResource(R.string.files_center)) {
-                CircleButton(R.drawable.ic_settings, stringResource(R.string.files_settings), onClick = { settingsSheet = true })
-            }
-        }
-        item("receiving") {
-            Column(Modifier.fillMaxWidth().background(if (snapshot.optBoolean("receiving_requested", snapshot.optBoolean("receiving"))) Palette.accentSoft else Palette.sunken, RoundedCornerShape(14.dp))) {
-                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.files_receiving), style = Styles.rowTitle)
-                        Text(stringResource(R.string.files_receive_hint), style = Styles.hint)
-                    }
-                    Switch(checked = snapshot.optBoolean("receiving_requested", snapshot.optBoolean("receiving")), enabled = (available || snapshot.optBoolean("receiving_requested")) && !busy && !actionBusy, colors = calabiSwitchColors(), onCheckedChange = { enabled -> scope.launch { action(JSONObject().put("action", "receiving").put("enabled", enabled)) } })
-                }
-            }
-        }
-        item("send") {
-            val largeText = LocalConfiguration.current.fontScale >= 1.3f
-            val sendButton: @Composable (Modifier) -> Unit = { modifier ->
-                Button(modifier = modifier.heightIn(min = 48.dp), shape = RoundedCornerShape(14.dp), enabled = available, onClick = { choosingPeer = peer.isBlank(); sendPage = true }) {
-                    Glyph(R.drawable.ic_share, androidx.compose.ui.graphics.Color.White, 16.dp)
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.files_new_send))
-                }
-            }
-            BoxWithConstraints(Modifier.fillMaxWidth().background(Palette.surface, RoundedCornerShape(16.dp)).padding(12.dp)) {
-                if (largeText || maxWidth < 296.dp) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(stringResource(R.string.files_network_hint), style = Styles.hint)
-                        sendButton(Modifier.fillMaxWidth())
-                    }
-                } else {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(stringResource(R.string.files_network_hint), style = Styles.hint, modifier = Modifier.weight(1f))
-                        sendButton(Modifier)
+    if (!sendPage) FixedPage(stringResource(R.string.files_center), actions = {
+        CircleButton(R.drawable.ic_settings, stringResource(R.string.files_settings), onClick = { settingsSheet = true })
+    }) {
+        LazyColumn(
+            Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 20.dp),
+        ) {
+            item("actions") {
+                val receiving = snapshot.optBoolean("receiving_requested", snapshot.optBoolean("receiving"))
+                val largeText = LocalConfiguration.current.fontScale >= 1.3f
+                val sendButton: @Composable (Modifier) -> Unit = { modifier ->
+                    Button(modifier = modifier.heightIn(min = 48.dp), shape = RoundedCornerShape(12.dp), enabled = available && !busy && !actionBusy,
+                        onClick = { choosingPeer = peer.isBlank(); sendPage = true }) {
+                        Glyph(R.drawable.ic_share, androidx.compose.ui.graphics.Color.White, 18.dp)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.files_new_send))
                     }
                 }
-            }
-        }
-        if (message.isNotBlank() || snapshot.optString("error").isNotBlank() || !available) {
-            item("error") {
-                Text(message.ifBlank { snapshotError.ifBlank { context.getString(R.string.files_unavailable) } }, style = Styles.hint, color = Palette.danger)
-            }
-        }
-        item("tabs") {
-            Column(Modifier.fillMaxWidth().background(Palette.surface, RoundedCornerShape(16.dp)).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                ListSearchInput(search, { search = it }, stringResource(R.string.list_search_files))
-                ListFilterTabs(listOf(stringResource(R.string.files_all_directions), stringResource(R.string.files_incoming), stringResource(R.string.files_outgoing)), direction) { direction = it }
-            }
-        }
-        if (visibleGroups.isEmpty() && visibleJobs.isEmpty()) item("empty") {
-            Column(Modifier.fillMaxWidth().background(Palette.surface, RoundedCornerShape(22.dp)).padding(vertical = 36.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Glyph(R.drawable.ic_transfer, Palette.muted, 28.dp)
-                Text(stringResource(if (search.isNotBlank()) R.string.list_search_no_matches else R.string.files_empty_records), style = Styles.hint)
-            }
-        }
-        visibleGroups.forEach { (batchKey, group) ->
-            item("receive/$batchKey") {
-                val waiting = group.mapNotNull { it.optJSONObject("transfer") }.filter { it.optString("state") == "waiting" }
-                Group {
-                    TransferHeading(false, stringResource(R.string.files_from, deviceName(group.first().optString("ip"))))
-                    group.forEach { row -> row.optJSONObject("transfer")?.let { transfer ->
-                        val state = transfer.optString("state")
-                        val id = transfer.optString("id")
-                        RowDivider()
-                        TransferRecord(transfer, state, transfer.optString("error")) {
-                            if (state == "completed") TextButton(enabled = !busy && !actionBusy, onClick = { exportId = id; save.launch(transfer.optString("name")) }) { Text(stringResource(R.string.filetest_save)) }
-                            if (state in listOf("receiving", "accepted", "waiting_sender")) {
-                                TextButton(enabled = !busy && transfer.optBoolean("pause_supported"), onClick = { runAction("pause_receive", id) }) { Text(stringResource(R.string.files_pause)) }
+                val receiveSwitch: @Composable () -> Unit = {
+                    Switch(checked = receiving, enabled = (available || receiving) && !busy && !actionBusy,
+                        modifier = Modifier.semantics { contentDescription = context.getString(R.string.files_receiving) },
+                        colors = calabiSwitchColors(), onCheckedChange = { enabled ->
+                            scope.launch { action(JSONObject().put("action", "receiving").put("enabled", enabled)) }
+                        })
+                }
+                BoxWithConstraints(Modifier.padding(bottom = 14.dp).fillMaxWidth().background(Palette.surface, RoundedCornerShape(22.dp)).padding(12.dp)) {
+                    if (largeText || maxWidth < 280.dp) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            sendButton(Modifier.fillMaxWidth())
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Text(stringResource(R.string.files_receiving), style = Styles.row, modifier = Modifier.weight(1f))
+                                receiveSwitch()
                             }
-                            if (state == "paused") TextButton(enabled = !busy && available, onClick = { runAction("resume_receive", id) }) { Text(stringResource(R.string.files_resume)) }
-                            if (state in listOf("receiving", "accepted", "waiting_sender", "paused")) TextButton(enabled = !busy && !actionBusy, onClick = { runAction("cancel_receive", id) }) { Text(stringResource(R.string.filetest_stop)) }
-                            if (state in terminalFileStates) TextButton(enabled = !busy && !actionBusy, onClick = { removing = JSONObject().put("action", "forget_receive").put("id", id) }) { Text(stringResource(R.string.files_remove)) }
                         }
-                    } }
-                    if (waiting.isNotEmpty()) {
-                        val completeOffer = group.size >= waiting.first().optInt("batch_count", 1)
-                        if (!completeOffer) Text(stringResource(R.string.files_offer_loading), style = Styles.hint, modifier = Modifier.padding(horizontal = 16.dp))
-                        FlowRow(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.End) {
-                            TextButton(onClick = { scope.launch { action(JSONObject().put("action", "decide").put("ids", JSONArray(waiting.map { it.optString("id") })).put("accept", false)) } }) { Text(stringResource(R.string.filetest_reject)) }
-                            Button(enabled = available && completeOffer, onClick = { scope.launch { action(JSONObject().put("action", "decide").put("ids", JSONArray(waiting.map { it.optString("id") })).put("accept", true)) } }) { Text(pluralStringResource(R.plurals.files_accept_count, waiting.size, waiting.size)) }
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            sendButton(Modifier.weight(1f))
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(stringResource(R.string.files_incoming), style = Styles.row)
+                                receiveSwitch()
+                            }
                         }
                     }
                 }
             }
-        }
-        items(visibleJobs, key = { "send/" + it.optString("id") }) { job ->
-            val id = job.optString("id")
-            val state = job.optString("state")
-            val file = job.optJSONObject("progress")?.optJSONObject("transfer") ?: JSONObject()
-            Group {
-                TransferHeading(true, stringResource(R.string.files_to, deviceName(job.optString("peer_ip"))))
-                RowDivider()
-                TransferRecord(file, state, job.optString("error"), job) {
-                    if (state == "sending") TextButton(enabled = !busy && !actionBusy, onClick = { runAction("pause", id) }) { Text(stringResource(R.string.files_pause)) }
-                    if (state == "paused") TextButton(enabled = available, onClick = { scope.launch { action(JSONObject().put("action", "resume").put("id", id).put("peer", job.optString("peer_ip"))) } }) { Text(stringResource(if (job.optString("error").isNotBlank()) R.string.files_retry else R.string.files_resume)) }
-                    if (state == "sending" || state == "paused") TextButton(enabled = !busy && !actionBusy, onClick = { runAction("cancel", id) }) { Text(stringResource(R.string.filetest_stop)) }
-                    else TextButton(enabled = !busy && !actionBusy, onClick = { removing = JSONObject().put("action", "forget_job").put("id", id) }) { Text(stringResource(R.string.files_remove)) }
+            if (message.isNotBlank() || (snapshotLoaded && !available && !reconnectNotice) || (snapshot.optString("error").isNotBlank() && !reconnectNotice)) {
+                item("error") {
+                    InlineNotice(message.ifBlank { snapshotError.ifBlank { context.getString(R.string.files_unavailable) } }, tone = NoticeTone.Error, modifier = Modifier.padding(bottom = 12.dp))
                 }
+            }
+            item("tabs") {
+                Column(Modifier.fillMaxWidth().background(Palette.surface, RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)).padding(start = 12.dp, end = 12.dp, top = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    ListSearchInput(search, { search = it }, stringResource(R.string.list_search_files))
+                    ListFilterTabs(listOf(stringResource(R.string.files_all_directions), stringResource(R.string.files_incoming), stringResource(R.string.files_outgoing)), direction) { direction = it }
+                }
+            }
+            if (visibleGroups.isEmpty() && visibleJobs.isEmpty()) item("empty") {
+                Column(Modifier.fillMaxWidth().background(Palette.surface).padding(horizontal = 16.dp, vertical = 48.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Glyph(R.drawable.ic_transfer, Palette.muted, 28.dp)
+                    Text(stringResource(if (search.isNotBlank()) R.string.list_search_no_matches else R.string.files_empty_records), style = Styles.hint)
+                }
+            }
+            visibleGroups.forEach { (batchKey, group) ->
+                item("receive/$batchKey") {
+                    val waiting = group.mapNotNull { it.optJSONObject("transfer") }.filter { it.optString("state") == "waiting" }
+                    Column(Modifier.fillMaxWidth().background(Palette.surface)) {
+                        RowDivider()
+                        TransferHeading(false, stringResource(R.string.files_from, deviceName(group.first().optString("ip"))))
+                        group.forEach { row -> row.optJSONObject("transfer")?.let { transfer ->
+                            val state = transfer.optString("state")
+                            val id = transfer.optString("id")
+                            RowDivider()
+                            TransferRecord(transfer, state, transfer.optString("error"), opening = preparingDocument == id) {
+                                if (state == "completed") {
+                                    fun openDocument(share: Boolean) {
+                                        if (busy || actionBusy) return
+                                        busy = true; preparingDocument = id; message = ""
+                                        scope.launch {
+                                            try { message = receivedFiles.launch(context, id, share)?.let { context.getString(it) }.orEmpty() }
+                                            finally { busy = false; preparingDocument = null }
+                                        }
+                                    }
+                                    TextButton(enabled = !busy && !actionBusy, onClick = { openDocument(false) }) { Text(stringResource(R.string.action_open)) }
+                                    TextButton(enabled = !busy && !actionBusy, onClick = { openDocument(true) }) { Text(stringResource(R.string.action_share)) }
+                                }
+                                if (state in listOf("receiving", "accepted", "waiting_sender")) {
+                                    TextButton(enabled = !busy && transfer.optBoolean("pause_supported"), onClick = { runAction("pause_receive", id) }) { Text(stringResource(R.string.files_pause)) }
+                                }
+                                if (state == "paused") TextButton(enabled = !busy && available, onClick = { runAction("resume_receive", id) }) { Text(stringResource(R.string.files_resume)) }
+                                if (state in listOf("receiving", "accepted", "waiting_sender", "paused")) TextButton(enabled = !busy && !actionBusy, onClick = { runAction("cancel_receive", id) }) { Text(stringResource(R.string.filetest_stop)) }
+                                if (state in terminalFileStates) TextButton(enabled = !busy && !actionBusy, onClick = { removing = JSONObject().put("action", "forget_receive").put("id", id) }) { Text(stringResource(R.string.files_remove)) }
+                            }
+                        } }
+                        if (waiting.isNotEmpty()) {
+                            val completeOffer = group.size >= waiting.first().optInt("batch_count", 1)
+                            if (!completeOffer) Text(stringResource(R.string.files_offer_loading), style = Styles.hint, modifier = Modifier.padding(horizontal = 16.dp))
+                            FlowRow(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.End) {
+                                TextButton(onClick = { scope.launch { action(JSONObject().put("action", "decide").put("ids", JSONArray(waiting.map { it.optString("id") })).put("accept", false)) } }) { Text(stringResource(R.string.filetest_reject)) }
+                                Button(enabled = available && completeOffer, onClick = { scope.launch { action(JSONObject().put("action", "decide").put("ids", JSONArray(waiting.map { it.optString("id") })).put("accept", true)) } }) { Text(pluralStringResource(R.plurals.files_accept_count, waiting.size, waiting.size)) }
+                            }
+                        }
+                    }
+                }
+            }
+            items(visibleJobs, key = { "send/" + it.optString("id") }) { job ->
+                val id = job.optString("id")
+                val state = job.optString("state")
+                val file = job.optJSONObject("progress")?.optJSONObject("transfer") ?: JSONObject()
+                Column(Modifier.fillMaxWidth().background(Palette.surface)) {
+                    RowDivider()
+                    TransferHeading(true, stringResource(R.string.files_to, deviceName(job.optString("peer_ip"))))
+                    RowDivider()
+                    TransferRecord(file, state, job.optString("error"), job) {
+                        if (state == "sending") TextButton(enabled = !busy && !actionBusy, onClick = { runAction("pause", id) }) { Text(stringResource(R.string.files_pause)) }
+                        if (state == "paused") TextButton(enabled = available, onClick = { scope.launch { action(JSONObject().put("action", "resume").put("id", id).put("peer", job.optString("peer_ip"))) } }) { Text(stringResource(if (job.optString("error").isNotBlank()) R.string.files_retry else R.string.files_resume)) }
+                        if (state == "sending" || state == "paused") TextButton(enabled = !busy && !actionBusy, onClick = { runAction("cancel", id) }) { Text(stringResource(R.string.filetest_stop)) }
+                        else TextButton(enabled = !busy && !actionBusy, onClick = { removing = JSONObject().put("action", "forget_job").put("id", id) }) { Text(stringResource(R.string.files_remove)) }
+                    }
+                }
+            }
+            item("records-bottom") {
+                Spacer(Modifier.fillMaxWidth().height(12.dp).background(Palette.surface, RoundedCornerShape(bottomStart = 22.dp, bottomEnd = 22.dp)))
             }
         }
     }
@@ -344,9 +364,9 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
             }
             }
             if (busy || actionBusy) LinearProgressIndicator(Modifier.fillMaxWidth(), color = Palette.accent, trackColor = Palette.line)
-            if (!available) Text(snapshotError.ifBlank { stringResource(R.string.files_reconnect) }, style = Styles.hint, color = Palette.danger)
+            if (!available && !reconnectNotice && snapshotError.isNotBlank()) InlineNotice(snapshotError, tone = NoticeTone.Error)
             Text(stringResource(R.string.files_selection_summary, selected.size, fileBytes(staged.filter { it.optString("id") in selected }.sumOf { it.optLong("size") })), style = Styles.hint)
-            if (message.isNotBlank()) Text(message, style = Styles.hint, color = Palette.danger)
+            if (message.isNotBlank()) InlineNotice(message, tone = NoticeTone.Error)
             Button(
                 modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = RoundedCornerShape(14.dp), enabled = available && !busy && !actionBusy && selected.isNotEmpty() && peers.any { it.optString("ip") == peer && it.optBoolean("receiving") } && !choosingPeer,
                 onClick = { scope.launch {
@@ -358,7 +378,7 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
                         }
                     } finally { busy = false }
                 } },
-            ) { Text(pluralStringResource(R.plurals.files_send, selected.size, selected.size)) }
+            ) { Text(if (reconnectNotice) stringResource(R.string.files_send_unavailable, pluralStringResource(R.plurals.files_send, selected.size, selected.size), stringResource(R.string.state_stopped)) else pluralStringResource(R.plurals.files_send, selected.size, selected.size)) }
             Spacer(Modifier.height(12.dp))
         }
     }
@@ -367,13 +387,14 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
             Text(stringResource(R.string.files_settings), style = Styles.section)
             TextButton(onClick = { context.startActivity(android.content.Intent(android.provider.Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName).putExtra(android.provider.Settings.EXTRA_CHANNEL_ID, CalabiApp.CHANNEL_FILES)) }) { Text(stringResource(R.string.files_notification_settings)) }
             Text(stringResource(R.string.files_hint), style = Styles.hint)
+            Text(stringResource(R.string.files_receive_hint), style = Styles.hint)
             snapshot.optJSONObject("identity")?.let { identity ->
                 Group {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(R.string.files_identity), style = Styles.rowTitle)
                         if (identity.optLong("expires_unix") > 0) Text(stringResource(R.string.files_identity_expires, java.text.DateFormat.getDateTimeInstance().format(java.util.Date(identity.optLong("expires_unix") * 1000))), style = Styles.hint)
-                        if (identity.optString("error").isNotBlank()) Text(fileErrorText(context, identity.optString("error")), color = Palette.danger, style = Styles.hint)
-                        else if (identity.optBoolean("needs_renewal")) Text(stringResource(R.string.files_identity_due), style = Styles.hint)
+                        if (identity.optString("error").isNotBlank()) InlineNotice(fileErrorText(context, identity.optString("error")), tone = NoticeTone.Error)
+                        else if (identity.optBoolean("needs_renewal")) InlineNotice(stringResource(R.string.files_identity_due), tone = NoticeTone.Warning)
                         TextButton(enabled = !busy && identity.optString("fingerprint").isNotBlank(), onClick = { identityOperation = "renew" }) { Text(stringResource(R.string.files_identity_renew)) }
                         TextButton(enabled = !busy && identity.optBoolean("exists"), onClick = { identityOperation = "reset" }) { Text(stringResource(R.string.files_identity_reset)) }
                     }
@@ -391,9 +412,9 @@ private fun PeerReceptionStatus(receiving: Boolean) {
     if (receiving) {
         Text(stringResource(R.string.files_peer_ready), style = Styles.hint)
     } else {
-        Text(stringResource(R.string.files_peer_disabled), color = Palette.danger,
+        Text(stringResource(R.string.files_peer_disabled), color = Palette.muted,
             style = Styles.hint.copy(fontWeight = FontWeight.Medium),
-            modifier = Modifier.padding(top = 4.dp).background(Palette.dangerSoft, RoundedCornerShape(6.dp))
+            modifier = Modifier.padding(top = 4.dp).background(Palette.sunken, RoundedCornerShape(6.dp))
                 .padding(horizontal = 7.dp, vertical = 3.dp))
     }
 }
@@ -413,7 +434,7 @@ private fun TransferHeading(outgoing: Boolean, peer: String) {
 }
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun TransferRecord(file: JSONObject, state: String, error: String, metrics: JSONObject = file, actions: @Composable FlowRowScope.() -> Unit) {
+private fun TransferRecord(file: JSONObject, state: String, error: String, metrics: JSONObject = file, opening: Boolean = false, actions: @Composable FlowRowScope.() -> Unit) {
     val phase = file.optString("state")
     val preparation = if (state == "sending") metrics.optJSONObject("progress")?.optJSONObject("preparation") else null
     val displayState = when {
@@ -433,6 +454,10 @@ private fun TransferRecord(file: JSONObject, state: String, error: String, metri
                 Text(fileState(displayState), style = Styles.hint)
             }
         }
+        if (opening) {
+            LinearProgressIndicator(Modifier.fillMaxWidth(), color = Palette.accent, trackColor = Palette.line)
+            Text(stringResource(R.string.files_preparing), style = Styles.hint)
+        }
         val size = file.optLong("size")
         val offset = file.optLong("offset")
         if (displayState in setOf("preparing", "verifying", "committing", "hashing", "connecting")) {
@@ -443,9 +468,9 @@ private fun TransferRecord(file: JSONObject, state: String, error: String, metri
         Text("${fileBytes(offset)} / ${fileBytes(size)}", style = Styles.mono)
         val rate = metrics.optLong("rate_bps", file.optLong("rate_bps"))
         if (rate > 0 && displayState in setOf("sending", "receiving", "accepted")) Text(stringResource(R.string.files_rate_eta, fileBytes(rate), metrics.optLong("remaining_seconds", file.optLong("remaining_seconds"))), style = Styles.hint)
-        if (error.isNotBlank() && state != "cancelled" && !metrics.optBoolean("cancel_pending")) Text(fileErrorText(LocalContext.current, error), color = Palette.danger, style = Styles.hint)
-        if (metrics === file && state in setOf("receiving", "accepted", "waiting_sender") && !file.optBoolean("pause_supported")) Text(stringResource(R.string.files_update_sender), style = Styles.hint)
-        if (metrics.optBoolean("cancel_pending") && metrics.optString("stop_reason").isNotBlank()) Text(stringResource(R.string.files_cancel_pending), style = Styles.hint)
+        if (error.isNotBlank() && state != "cancelled" && !metrics.optBoolean("cancel_pending")) InlineNotice(fileErrorText(LocalContext.current, error), tone = NoticeTone.Error)
+        if (metrics === file && state in setOf("receiving", "accepted", "waiting_sender") && !file.optBoolean("pause_supported")) InlineNotice(stringResource(R.string.files_update_sender), tone = NoticeTone.Warning)
+        if (metrics.optBoolean("cancel_pending") && metrics.optString("stop_reason").isNotBlank()) InlineNotice(stringResource(R.string.files_cancel_pending))
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalArrangement = Arrangement.spacedBy(4.dp), content = actions)
     }
 }

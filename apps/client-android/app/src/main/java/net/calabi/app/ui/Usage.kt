@@ -42,23 +42,17 @@ fun UsageSection(model: AppModel, showTitle: Boolean = true) {
     val u = model.usage
     when {
         u == null && model.usageError != null ->
-            Text(model.usageError!!, color = Palette.danger, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 8.dp))
+            InlineNotice(model.usageError!!, tone = NoticeTone.Error)
         // Explained in full on the devices tab; here just why there are no figures.
         u == null && model.unreachable -> Group {
-            Text(
-                stringResource(R.string.unreachable_short), style = Styles.hint.copy(fontSize = 14.sp),
-                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(24.dp),
-            )
+            InlineNotice(stringResource(R.string.unreachable_short), tone = NoticeTone.Warning)
         }
         u == null -> Group { Loading() }
         else -> {
             Group {
                 u.month?.let { MonthBlock(it, u.plan, u.relayNotRecorded) }
                 if (u.month == null && u.unavailable.isNotBlank()) {
-                    Text(
-                        stringResource(R.string.usage_unavailable_no_database), style = Styles.hint.copy(fontSize = 14.sp),
-                        modifier = Modifier.padding(16.dp),
-                    )
+                    InlineNotice(stringResource(R.string.usage_unavailable_no_database))
                 }
                 if (u.days.isNotEmpty()) {
                     if (u.month != null) RowDivider()
@@ -112,7 +106,7 @@ private fun MonthBlock(m: MonthUsage, plan: String, relayNotRecorded: Boolean) {
             }
         }
         if (m.limitBytes > 0) Meter(fraction, tone)
-        if (m.limitBytes == 0L) Text(stringResource(R.string.usage_limit_unknown), style = Styles.hint)
+        if (m.limitBytes == 0L) StatusBadge(stringResource(R.string.usage_limit_unknown))
         val relay = if (relayNotRecorded) stringResource(R.string.usage_relay_not_recorded) else stringResource(R.string.usage_relay, formatBytes(m.relayBytes))
         Text(
             stringResource(R.string.usage_tunnels, formatBytes(m.tunnelBytes)) + " · " + relay,

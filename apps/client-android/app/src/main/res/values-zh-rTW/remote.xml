@@ -12,4 +12,8 @@
     <string name="remote_service_failed">遠端桌面暫時無法使用，請重試。</string>
     <string name="remote_target_unavailable">此裝置暫時無法遠端連線，請重新整理裝置清單後再試。</string>
     <string name="files_send_unavailable">%1$s（%2$s）</string>
+    <string name="remote_mesh_disconnected">尚未連線組網</string>
+    <string name="files_open_no_app">找不到可開啟此類檔案的應用程式。</string>
+    <string name="files_open_unavailable">暫時無法讀取此檔案，請稍後重試或重新接收。</string>
+    <string name="files_share_no_app">找不到可分享檔案的應用程式。</string>
 </resources>

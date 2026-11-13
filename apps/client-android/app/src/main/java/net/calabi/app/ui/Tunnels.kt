@@ -164,48 +164,45 @@ fun TunnelsTab(model: AppModel, onOpen: (Tunnel) -> Unit) {
     var search by rememberSaveable { mutableStateOf("") }
     val tunnels = model.tunnels
     val visibleTunnels = tunnels.orEmpty().filter { matchesListSearch(search, it.name, it.address, it.localAddr, it.type, it.creatorEmail, it.deviceName) }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 20.dp)) {
-        item {
-            PageHeading(stringResource(R.string.tunnels_title), modifier = Modifier.padding(horizontal = 6.dp)) {
-                if (!tunnels.isNullOrEmpty()) Text(stringResource(R.string.devices_online, tunnels.count { it.state == TunnelState.Active }, tunnels.size), style = Styles.hint)
+    FixedPage(stringResource(R.string.tunnels_title), actions = {
+        if (!tunnels.isNullOrEmpty()) Text(stringResource(R.string.devices_online, tunnels.count { it.state == TunnelState.Active }, tunnels.size), style = Styles.hint)
+    }) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 20.dp)) {
+            item {
+                ListSearchInput(search, { search = it }, stringResource(R.string.list_search_endpoints))
             }
-            Spacer(Modifier.height(8.dp))
-            ListSearchInput(search, { search = it }, stringResource(R.string.list_search_endpoints))
-        }
-        if (model.seesOnlyOwnTunnels) {
-            item { Text(stringResource(R.string.tunnels_scope_own), style = Styles.hint, modifier = Modifier.padding(start = 6.dp, top = 2.dp)) }
-        }
-        if (model.selfHosted) {
-            item { Text(stringResource(R.string.tunnels_scope_self_hosted), style = Styles.hint, modifier = Modifier.padding(start = 6.dp, top = 2.dp)) }
-        }
-        item { Spacer(Modifier.height(14.dp)) }
-        model.tunnelsError?.let { err ->
-            item { Text(err, color = Palette.danger, fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)) }
-        }
-        when {
-            // Said in full on the devices tab, so here it is only why this list
-            // is empty — never a second copy of the same error.
-            model.unreachable -> item {
-                Group {
-                    Text(
-                        stringResource(R.string.unreachable_short), style = Styles.hint.copy(fontSize = 14.sp),
-                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(24.dp),
-                    )
+            if (model.seesOnlyOwnTunnels) {
+                item { InlineNotice(stringResource(R.string.tunnels_scope_own)) }
+            }
+            if (model.selfHosted) {
+                item { InlineNotice(stringResource(R.string.tunnels_scope_self_hosted)) }
+            }
+            item { Spacer(Modifier.height(14.dp)) }
+            model.tunnelsError?.let { err ->
+                item { InlineNotice(err, tone = NoticeTone.Error, modifier = Modifier.padding(bottom = 8.dp)) }
+            }
+            when {
+                // Said in full on the devices tab, so here it is only why this list
+                // is empty — never a second copy of the same error.
+                model.unreachable -> item {
+                    Group {
+                        InlineNotice(stringResource(R.string.unreachable_short), tone = NoticeTone.Warning)
+                    }
+                }
+                tunnels == null && model.tunnelsError == null -> item { Loading() }
+                tunnels != null && visibleTunnels.isEmpty() -> item {
+                    Group {
+                        Text(
+                            stringResource(if (search.isNotBlank()) R.string.list_search_no_matches else if (model.selfHosted) R.string.tunnels_empty_self_hosted else R.string.tunnels_empty),
+                            style = Styles.hint.copy(fontSize = 14.sp),
+                            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(24.dp),
+                        )
+                    }
                 }
             }
-            tunnels == null && model.tunnelsError == null -> item { Loading() }
-            tunnels != null && visibleTunnels.isEmpty() -> item {
-                Group {
-                    Text(
-                        stringResource(if (search.isNotBlank()) R.string.list_search_no_matches else if (model.selfHosted) R.string.tunnels_empty_self_hosted else R.string.tunnels_empty),
-                        style = Styles.hint.copy(fontSize = 14.sp),
-                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(24.dp),
-                    )
-                }
+            itemsIndexed(visibleTunnels, key = { _, t -> t.id }) { i, t ->
+                TunnelRow(t, first = i == 0, last = i == visibleTunnels.lastIndex) { onOpen(t) }
             }
-        }
-        itemsIndexed(visibleTunnels, key = { _, t -> t.id }) { i, t ->
-            TunnelRow(t, first = i == 0, last = i == visibleTunnels.lastIndex) { onOpen(t) }
         }
     }
 }
@@ -272,78 +269,79 @@ fun TunnelDetailScreen(model: AppModel, opened: Tunnel, onBack: () -> Unit, onAc
     val context = LocalContext.current
     // The list keeps refreshing underneath; show its latest copy of this tunnel.
     val t = model.tunnels?.firstOrNull { it.id == opened.id } ?: opened
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        PageHeading(t.name, onBack = onBack)
-        Column(Modifier.padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Tag(t.type.uppercase(), Palette.ink, Palette.avatar, mono = true)
-                Tag(stringResource(t.state.label), t.state.color, t.state.dot.copy(alpha = 0.16f))
-            }
-            reasonText(t)?.let { Text(it, style = Styles.hint.copy(fontSize = 13.sp, color = t.state.color)) }
-        }
-
-        Group {
-            Column(Modifier.padding(16.dp)) {
-                Text(stringResource(R.string.tunnel_address), style = Styles.sectionLabel)
-                SelectionContainer {
-                    Text(
-                        t.address.ifBlank { stringResource(R.string.tunnel_no_address) },
-                        style = if (t.address.isBlank()) Styles.row.copy(color = Palette.muted) else Styles.monoValue.copy(fontSize = 16.sp),
-                        modifier = Modifier.padding(top = 6.dp),
-                    )
+    FixedPage(t.name, onBack = onBack) {
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Column(Modifier.padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Tag(t.type.uppercase(), Palette.ink, Palette.avatar, mono = true)
+                    Tag(stringResource(t.state.label), t.state.color, t.state.dot.copy(alpha = 0.16f))
                 }
-                if (t.address.isNotBlank()) {
-                    FlowRow(Modifier.fillMaxWidth().padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Pill(onClick = { copyToClipboard(context, t.address) }) {
-                            Glyph(R.drawable.ic_copy, Palette.ink, 14.dp)
-                            Text(stringResource(R.string.action_copy), style = Styles.chip)
-                        }
-                        Pill(onClick = {
-                            val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, t.address)
-                            context.startActivity(Intent.createChooser(send, null))
-                        }) {
-                            Glyph(R.drawable.ic_share, Palette.ink, 14.dp)
-                            Text(stringResource(R.string.action_share), style = Styles.chip)
-                        }
-                        if (t.openable) {
-                            Pill(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(t.address))) }) {
-                                Glyph(R.drawable.ic_open, Palette.ink, 14.dp)
-                                Text(stringResource(R.string.action_open), style = Styles.chip)
+                reasonText(t)?.let { InlineNotice(it, tone = if (t.state in setOf(TunnelState.Error, TunnelState.UpstreamDown)) NoticeTone.Warning else NoticeTone.Info) }
+            }
+
+            Group {
+                Column(Modifier.padding(16.dp)) {
+                    Text(stringResource(R.string.tunnel_address), style = Styles.sectionLabel)
+                    SelectionContainer {
+                        Text(
+                            t.address.ifBlank { stringResource(R.string.tunnel_no_address) },
+                            style = if (t.address.isBlank()) Styles.row.copy(color = Palette.muted) else Styles.monoValue.copy(fontSize = 16.sp),
+                            modifier = Modifier.padding(top = 6.dp),
+                        )
+                    }
+                    if (t.address.isNotBlank()) {
+                        FlowRow(Modifier.fillMaxWidth().padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Pill(onClick = { copyToClipboard(context, t.address) }) {
+                                Glyph(R.drawable.ic_copy, Palette.ink, 14.dp)
+                                Text(stringResource(R.string.action_copy), style = Styles.chip)
+                            }
+                            Pill(onClick = {
+                                val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, t.address)
+                                context.startActivity(Intent.createChooser(send, null))
+                            }) {
+                                Glyph(R.drawable.ic_share, Palette.ink, 14.dp)
+                                Text(stringResource(R.string.action_share), style = Styles.chip)
+                            }
+                            if (t.openable) {
+                                Pill(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(t.address))) }) {
+                                    Glyph(R.drawable.ic_open, Palette.ink, 14.dp)
+                                    Text(stringResource(R.string.action_open), style = Styles.chip)
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        Group {
-            InfoRow(stringResource(R.string.tunnel_local), t.localAddr.ifBlank { "—" }, mono = true)
-            RowDivider()
-            InfoRow(stringResource(R.string.tunnel_served_by), servedBy(t))
-            if (t.deviceName.isNotBlank()) {
-                RowDivider()
-                InfoRow(stringResource(R.string.tunnel_device), t.deviceName)
-            }
-            RowDivider()
-            InfoRow(stringResource(R.string.tunnel_traffic_30d), formatBytes(t.traffic30d), mono = true)
-            if (t.createdByMe || t.creatorEmail.isNotBlank()) {
-                RowDivider()
-                InfoRow(stringResource(R.string.tunnel_creator), if (t.createdByMe) stringResource(R.string.tunnel_creator_me) else t.creatorEmail)
-            }
-            parseInstant(t.createdAt)?.let {
-                RowDivider()
-                InfoRow(stringResource(R.string.tunnel_created), formatDate(context, it))
-            }
-        }
-
-        // A self-hosted server keeps no access log.
-        if (!t.selfHosted) {
             Group {
-                ActionRow(stringResource(R.string.access_title), onClick = onAccess) {
-                    Glyph(R.drawable.ic_chevron_right, Palette.muted, 16.dp)
+                InfoRow(stringResource(R.string.tunnel_local), t.localAddr.ifBlank { "—" }, mono = true)
+                RowDivider()
+                InfoRow(stringResource(R.string.tunnel_served_by), servedBy(t))
+                if (t.deviceName.isNotBlank()) {
+                    RowDivider()
+                    InfoRow(stringResource(R.string.tunnel_device), t.deviceName)
+                }
+                RowDivider()
+                InfoRow(stringResource(R.string.tunnel_traffic_30d), formatBytes(t.traffic30d), mono = true)
+                if (t.createdByMe || t.creatorEmail.isNotBlank()) {
+                    RowDivider()
+                    InfoRow(stringResource(R.string.tunnel_creator), if (t.createdByMe) stringResource(R.string.tunnel_creator_me) else t.creatorEmail)
+                }
+                parseInstant(t.createdAt)?.let {
+                    RowDivider()
+                    InfoRow(stringResource(R.string.tunnel_created), formatDate(context, it))
+                }
+            }
+
+            // A self-hosted server keeps no access log.
+            if (!t.selfHosted) {
+                Group {
+                    ActionRow(stringResource(R.string.access_title), onClick = onAccess) {
+                        Glyph(R.drawable.ic_chevron_right, Palette.muted, 16.dp)
+                    }
                 }
             }
         }
@@ -407,62 +405,61 @@ fun TunnelAccessScreen(tunnel: Tunnel, onBack: () -> Unit) {
 
     val current = log
     val byHour = current?.rows.orEmpty().groupBy { it.hour }.toSortedMap(compareByDescending { it })
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 20.dp)) {
-        item {
-            PageHeading(stringResource(R.string.access_title), onBack = onBack) {
-                CircleButton(R.drawable.ic_refresh, stringResource(R.string.refresh)) { reload++ }
-            }
-        }
-        item {
-            Column(Modifier.padding(start = 6.dp, end = 6.dp, top = 16.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(tunnel.name, style = Styles.hint.copy(fontSize = 13.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Segment(stringResource(R.string.access_range_24h), hours == 24) { hours = 24 }
-                Segment(stringResource(R.string.access_range_7d), hours == 168) { hours = 168 }
-            }
-        }
-        item { Spacer(Modifier.height(12.dp)) }
-        when {
-            error != null -> item { Text(error!!, color = Palette.danger, fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp)) }
-            current == null -> item { Loading() }
-            current.recordsDisabled -> item { Notice(stringResource(R.string.access_records_off)) }
-            else -> {
-                item {
-                    val rows = current.rows
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Tile(stringResource(R.string.access_conns), rows.sumOf { it.conns }.toString(), Palette.ink, Modifier.weight(1f))
-                        val blocked = rows.filter { it.outcome != "allowed" }.sumOf { it.conns }
-                        Tile(stringResource(R.string.access_blocked), blocked.toString(), if (blocked > 0) Palette.danger else Palette.ink, Modifier.weight(1f))
-                        Tile(
-                            stringResource(R.string.access_visitors),
-                            rows.mapNotNull { it.visitor.ifBlank { null } }.toSet().size.toString(), Palette.ink, Modifier.weight(1f),
-                        )
-                    }
+    FixedPage(stringResource(R.string.access_title), onBack = onBack, actions = {
+        CircleButton(R.drawable.ic_refresh, stringResource(R.string.refresh)) { reload++ }
+    }) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 20.dp)) {
+            item {
+                Column(Modifier.padding(start = 6.dp, end = 6.dp, top = 16.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(tunnel.name, style = Styles.hint.copy(fontSize = 13.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                item {
-                    val notes = buildList {
-                        add(stringResource(R.string.access_note))
-                        if (current.retentionDays > 0) add(pluralStringResource(R.plurals.access_retention, current.retentionDays, current.retentionDays))
-                        if (current.rows.size >= ACCESS_LIMIT) add(pluralStringResource(R.plurals.access_truncated, ACCESS_LIMIT, ACCESS_LIMIT))
-                    }
-                    Text(notes.joinToString(" "), style = Styles.hint, modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 10.dp))
+            }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Segment(stringResource(R.string.access_range_24h), hours == 24) { hours = 24 }
+                    Segment(stringResource(R.string.access_range_7d), hours == 168) { hours = 168 }
                 }
-                if (current.rows.isEmpty()) {
-                    item { Spacer(Modifier.height(12.dp)) }
-                    item { Notice(stringResource(R.string.access_empty)) }
-                }
-                byHour.forEach { (hour, rows) ->
-                    item(key = "h$hour") {
-                        Text(
-                            formatRecent(context, hour), style = Styles.sectionLabel,
-                            modifier = Modifier.padding(start = 6.dp, top = 18.dp, bottom = 8.dp),
-                        )
+            }
+            item { Spacer(Modifier.height(12.dp)) }
+            when {
+                error != null -> item { InlineNotice(error!!, tone = NoticeTone.Error) }
+                current == null -> item { Loading() }
+                current.recordsDisabled -> item { Notice(stringResource(R.string.access_records_off)) }
+                else -> {
+                    item {
+                        val rows = current.rows
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Tile(stringResource(R.string.access_conns), rows.sumOf { it.conns }.toString(), Palette.ink, Modifier.weight(1f))
+                            val blocked = rows.filter { it.outcome != "allowed" }.sumOf { it.conns }
+                            Tile(stringResource(R.string.access_blocked), blocked.toString(), if (blocked > 0) Palette.danger else Palette.ink, Modifier.weight(1f))
+                            Tile(
+                                stringResource(R.string.access_visitors),
+                                rows.mapNotNull { it.visitor.ifBlank { null } }.toSet().size.toString(), Palette.ink, Modifier.weight(1f),
+                            )
+                        }
                     }
-                    itemsIndexed(rows, key = { i, r -> "$hour/${r.visitor}/${r.outcome}/$i" }) { i, r ->
-                        AccessItem(r, first = i == 0, last = i == rows.lastIndex)
+                    item {
+                        val notes = buildList {
+                            add(stringResource(R.string.access_note))
+                            if (current.retentionDays > 0) add(pluralStringResource(R.plurals.access_retention, current.retentionDays, current.retentionDays))
+                            if (current.rows.size >= ACCESS_LIMIT) add(pluralStringResource(R.plurals.access_truncated, ACCESS_LIMIT, ACCESS_LIMIT))
+                        }
+                        Text(notes.joinToString(" "), style = Styles.hint, modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 10.dp))
+                    }
+                    if (current.rows.isEmpty()) {
+                        item { Spacer(Modifier.height(12.dp)) }
+                        item { Notice(stringResource(R.string.access_empty)) }
+                    }
+                    byHour.forEach { (hour, rows) ->
+                        item(key = "h$hour") {
+                            Text(
+                                formatRecent(context, hour), style = Styles.sectionLabel,
+                                modifier = Modifier.padding(start = 6.dp, top = 18.dp, bottom = 8.dp),
+                            )
+                        }
+                        itemsIndexed(rows, key = { i, r -> "$hour/${r.visitor}/${r.outcome}/$i" }) { i, r ->
+                            AccessItem(r, first = i == 0, last = i == rows.lastIndex)
+                        }
                     }
                 }
             }

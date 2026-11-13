@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -501,6 +502,15 @@ fun ListSearchInput(value: String, onValueChange: (String) -> Unit, placeholder:
 }
 
 /** Shared compact chrome for top-level and pushed phone pages. */
+@Composable
+fun FixedPage(title: String, onBack: (() -> Unit)? = null,
+    actions: @Composable RowScope.() -> Unit = {}, content: @Composable () -> Unit) {
+    Column(Modifier.fillMaxSize()) {
+        PageHeading(title, modifier = Modifier.padding(horizontal = 22.dp, vertical = 8.dp), onBack = onBack, actions = actions)
+        Box(Modifier.weight(1f).fillMaxWidth()) { content() }
+    }
+}
+
 @Composable
 fun PageHeading(title: String, modifier: Modifier = Modifier, onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {}) {

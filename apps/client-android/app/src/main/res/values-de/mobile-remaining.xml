@@ -63,7 +63,6 @@
     <string name="files_identity_confirm">Beendet den Empfang und bricht unfertige Übertragungen für alle Konten und Organisationen dieser App ab. Fertige Dateien, bereitgestellte Quellen und Verlauf bleiben erhalten. Die Mesh-Geräteidentität bleibt gleich. Empfang bei Bedarf wieder aktivieren.</string>
     <string name="files_center">Übertragungen</string>
     <string name="files_settings">Übertragungseinstellungen</string>
-    <string name="files_network_hint">Innerhalb Ihres Mesh-Netzwerks</string>
     <string name="files_receive_hint">Nur Mesh-Geräte · Jede Anfrage bestätigen</string>
     <string name="files_pending">Ausstehend</string>
     <string name="files_empty_records">Keine Übertragungseinträge</string>
@@ -87,8 +86,6 @@
     <string name="files_error_integrity">Dateiprüfung fehlgeschlagen. Senden Sie die Datei erneut.</string>
     <string name="files_error_storage">Nicht genügend Speicherplatz. Geben Sie Speicherplatz frei und versuchen Sie es erneut.</string>
     <string name="files_error_storagewrite">Datei oder Aufgabeneintrag konnte nicht gespeichert werden. Prüfen Sie den Speicherort und versuchen Sie es erneut.</string>
-    <string name="files_error_save_permission">Speicherort nicht beschreibbar. Anderen Ort wählen oder Berechtigungen prüfen.</string>
-    <string name="files_error_save_cleanup">Unvollständige Zieldatei konnte nicht gelöscht werden. Vor erneutem Versuch manuell löschen.</string>
     <string name="files_error_agent">Der Dateiübertragungsdienst ist noch nicht bereit. Öffnen Sie die App erneut und versuchen Sie es noch einmal.</string>
     <string name="files_error_connection">Das andere Gerät ist nicht erreichbar. Prüfen Sie, ob es online ist und Dateien annimmt, und versuchen Sie es erneut.</string>
     <string name="files_error_limit">Das Datei- oder Aufgabenlimit ist erreicht. Entfernen Sie alte Einträge und versuchen Sie es erneut.</string>
@@ -139,13 +136,11 @@
     <string name="rdp_gestures_hint">Touchpad: Mit einem Finger den Zeiger bewegen, zum Klicken tippen. Doppeltippen und ziehen oder „Ziehen“ aktivieren, um die linke Taste zu halten. „Touchpad“ wechselt zu direkter Berührung am Fingerort. In beiden Modi: mit zwei Fingern tippen für Rechtsklick, gemeinsam bewegen zum Scrollen, auseinanderziehen zum Zoomen bis 5×. „Scrollen“ auf „Ansicht verschieben“ umstellen zum Schwenken. Die Prozentanzeige stellt Einpassen wieder her. „Tools“ enthält Tastenkürzel und die manuelle Textzwischenablage.</string>
     <string name="rdp_username">Windows-Benutzername</string>
     <string name="rdp_domain">Domäne (optional)</string>
-    <string name="rdp_credentials_hint">Windows-Kontopasswort eingeben, keine PIN. Gespeicherte Zugangsdaten werden nach erfolgreicher Verbindung auf diesem Telefon verschlüsselt. Sitzungen bleiben im Hintergrund bis zu 60 Sekunden erhalten.</string>
     <string name="rdp_background_expired">Sitzung nach 60 Sekunden im Hintergrund beendet. Zum Fortfahren neu verbinden.</string>
     <string name="rdp_identity_changed">Geräteidentität oder Mesh-Verbindung geändert. Netzwerk prüfen und neu verbinden.</string>
     <string name="rdp_reconnect">Erneut verbinden</string>
     <string name="rdp_remember_password">Passwort auf diesem Telefon merken</string>
-    <string name="rdp_forget_credentials">Gespeicherte Zugangsdaten löschen</string>
-    <string name="rdp_credentials_saved">Zugangsdaten auf diesem Telefon gespeichert</string>
+    <string name="rdp_clear_credentials">Zugangsdaten löschen</string>
     <string name="rdp_credentials_failed">Gespeicherte Zugangsdaten konnten nicht gelesen oder aktualisiert werden. Erneut eingeben oder gespeicherte Daten löschen.</string>
     <string name="rdp_wait_network">Netzwerk nicht verfügbar. Warte auf Verbindung (bis zu 60 Sekunden)…</string>
     <string name="rdp_repairing">Verbindung unterbrochen. Sichere Wiederverbindung (bis zu 60 Sekunden)…</string>
@@ -182,7 +177,6 @@
     <string name="login_totp_code">Bestätigungscode</string>
     <string name="login_totp_invalid">Dieser Code wurde nicht akzeptiert. Erneut versuchen.</string>
     <string name="login_verify">Bestätigen</string>
-    <string name="login_back">Zurück</string>
     <string name="state_not_enrolled_short">Mesh nicht aktiviert</string>
     <string name="state_not_enrolled">Diese Organisation hat das Mesh nicht aktiviert.</string>
     <string name="state_signed_out_short">Abgemeldet</string>

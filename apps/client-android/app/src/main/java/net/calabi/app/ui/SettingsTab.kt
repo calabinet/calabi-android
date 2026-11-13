@@ -38,7 +38,10 @@ fun SettingsTab(model: AppModel, onSignedOut: () -> Unit, onReplace: () -> Unit,
     var page by rememberSaveable { mutableStateOf(if (initialAccount) SettingsPage.Account else SettingsPage.Home) }
     var coreInfo by remember { mutableStateOf(JSONObject()) }
     LaunchedEffect(Unit) { coreInfo = CoreClient.call("GET", "/v1/version").json() }
-    LaunchedEffect(page) { onDetailChanged(page != SettingsPage.Home) }
+    LaunchedEffect(page) {
+        model.actions.dismissSuccess()
+        onDetailChanged(page != SettingsPage.Home)
+    }
     DisposableEffect(Unit) { onDispose { onDetailChanged(false) } }
     val pageState = rememberSaveableStateHolder()
     var renaming by rememberSaveable { mutableStateOf(false) }
@@ -67,112 +70,112 @@ fun SettingsTab(model: AppModel, onSignedOut: () -> Unit, onReplace: () -> Unit,
         SettingsPage.Organizations -> R.string.settings_org
         SettingsPage.Exit -> R.string.settings_exit
     })
-    pageState.SaveableStateProvider(page.name) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            PageHeading(title, onBack = if (page != SettingsPage.Home) ::back else null,
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp))
-            if (page != SettingsPage.Organizations && page != SettingsPage.Exit) ActionFeedback(model.actions)
-            when (page) {
-                SettingsPage.Home -> {
-                    Group {
-                        IconLinkRow(stringResource(R.string.mobile_settings_account), if (model.selfHosted) model.server else model.email, R.drawable.ic_user) { page = SettingsPage.Account }
-                        RowDivider(start = 58.dp)
-                        IconLinkRow(stringResource(R.string.mobile_settings_connection), stringResource(R.string.settings_exit) + " · " + model.exitNode.ifBlank { stringResource(R.string.settings_exit_none) }, R.drawable.ic_globe) { page = SettingsPage.Connection }
-                        RowDivider(start = 58.dp)
-                        IconLinkRow(stringResource(R.string.mobile_settings_device), model.deviceName, R.drawable.ic_phone) { page = SettingsPage.Device }
-                    }
-                    Group {
-                        IconLinkRow(stringResource(R.string.usage_title), stringResource(R.string.mobile_usage_hint), R.drawable.ic_chart) { page = SettingsPage.Usage }
-                        RowDivider(start = 58.dp)
-                        IconLinkRow(stringResource(R.string.settings_support), stringResource(R.string.settings_export_logs), R.drawable.ic_share) { page = SettingsPage.Support }
-                        RowDivider(start = 58.dp)
-                        IconLinkRow(stringResource(R.string.mobile_settings_about), BuildConfig.VERSION_NAME, R.drawable.ic_info) { page = SettingsPage.About }
-                    }
-                }
-                SettingsPage.Account -> {
-                    if (model.selfHosted) ServerGroup(model) else Group {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(model.email, style = Styles.rowTitle)
+    FixedPage(title, onBack = if (page != SettingsPage.Home) ::back else null) {
+        pageState.SaveableStateProvider(page.name) {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (page != SettingsPage.Organizations && page != SettingsPage.Exit) ActionFeedback(model.actions)
+                when (page) {
+                    SettingsPage.Home -> {
+                        Group {
+                            IconLinkRow(stringResource(R.string.mobile_settings_account), if (model.selfHosted) model.server else model.email, R.drawable.ic_user) { page = SettingsPage.Account }
+                            RowDivider(start = 58.dp)
+                            IconLinkRow(stringResource(R.string.mobile_settings_connection), stringResource(R.string.settings_exit) + " · " + model.exitNode.ifBlank { stringResource(R.string.settings_exit_none) }, R.drawable.ic_globe) { page = SettingsPage.Connection }
+                            RowDivider(start = 58.dp)
+                            IconLinkRow(stringResource(R.string.mobile_settings_device), model.deviceName, R.drawable.ic_phone) { page = SettingsPage.Device }
                         }
-                        if (model.orgs.size > 1) {
+                        Group {
+                            IconLinkRow(stringResource(R.string.usage_title), stringResource(R.string.mobile_usage_hint), R.drawable.ic_chart) { page = SettingsPage.Usage }
+                            RowDivider(start = 58.dp)
+                            IconLinkRow(stringResource(R.string.settings_support), stringResource(R.string.settings_export_logs), R.drawable.ic_share) { page = SettingsPage.Support }
+                            RowDivider(start = 58.dp)
+                            IconLinkRow(stringResource(R.string.mobile_settings_about), BuildConfig.VERSION_NAME, R.drawable.ic_info) { page = SettingsPage.About }
+                        }
+                    }
+                    SettingsPage.Account -> {
+                        if (model.selfHosted) ServerGroup(model) else Group {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(model.email, style = Styles.rowTitle)
+                            }
+                            if (model.orgs.size > 1) {
+                                RowDivider()
+                                LinkRow(stringResource(R.string.settings_org),
+                                    model.activeOrg?.let { if (it.personal) stringResource(R.string.settings_org_personal) else it.name }.orEmpty()) {
+                                    page = SettingsPage.Organizations
+                                }
+                            }
+                        }
+                        Group {
+                            ActionRow(stringResource(if (model.selfHosted) R.string.settings_leave_server else R.string.settings_sign_out),
+                                onClick = { confirmSignOut = true }, icon = R.drawable.ic_logout, color = Palette.danger)
+                        }
+                    }
+                    SettingsPage.Organizations -> {
+                        Text(stringResource(R.string.settings_org_hint), style = Styles.hint)
+                        Group { OrgChoices(model) { if (page == SettingsPage.Organizations) page = SettingsPage.Account } }
+                    }
+                    SettingsPage.Connection -> {
+                        Group {
+                            SubnetRoutesSwitch(model)
                             RowDivider()
-                            LinkRow(stringResource(R.string.settings_org),
-                                model.activeOrg?.let { if (it.personal) stringResource(R.string.settings_org_personal) else it.name }.orEmpty()) {
-                                page = SettingsPage.Organizations
+                            SwitchRow(stringResource(R.string.settings_block_incoming), stringResource(R.string.settings_block_incoming_hint),
+                                checked = model.blockIncoming, enabled = !model.actions.busy) { on ->
+                                model.actions.run(failed, saved, operation = { model.saveSettings(JSONObject().put("block_incoming", on)) })
+                            }
+                            RowDivider()
+                            LinkRow(stringResource(R.string.settings_exit), model.exitNode.ifBlank { stringResource(R.string.settings_exit_none) }) { page = SettingsPage.Exit }
+                        }
+                    }
+                    SettingsPage.Exit -> {
+                        Text(stringResource(R.string.settings_exit_hint), style = Styles.hint)
+                        ExitChoices(model) { if (page == SettingsPage.Exit) page = SettingsPage.Connection }
+                    }
+                    SettingsPage.Device -> {
+                        Group {
+                            LinkRow(stringResource(R.string.settings_device_name), model.deviceName) { model.actions.clear(); renaming = true }
+                            if (model.replaceable.isNotEmpty()) {
+                                RowDivider()
+                                ActionRow(stringResource(R.string.settings_replace), onClick = onReplace) {
+                                    Text(model.replaceable.size.toString(), style = Styles.mono)
+                                    Glyph(R.drawable.ic_chevron_right, Palette.muted, 16.dp)
+                                }
+                            }
+                            RowDivider()
+                            SwitchRow(stringResource(R.string.settings_connect_on_boot), stringResource(R.string.settings_connect_on_boot_hint), checked = connectOnBoot) { on ->
+                                AppPrefs.setConnectOnBoot(context, on); connectOnBoot = on
+                            }
+                            RowDivider()
+                            QuickTileRow()
+                            if (backgroundRow) {
+                                RowDivider()
+                                LinkRow(stringResource(R.string.settings_background), stringResource(BackgroundRun.hint())) { BackgroundRun.allow(context) }
+                                BackgroundSteps(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp))
                             }
                         }
                     }
-                    Group {
-                        ActionRow(stringResource(if (model.selfHosted) R.string.settings_leave_server else R.string.settings_sign_out),
-                            onClick = { confirmSignOut = true }, icon = R.drawable.ic_logout, color = Palette.danger)
-                    }
-                }
-                SettingsPage.Organizations -> {
-                    Text(stringResource(R.string.settings_org_hint), style = Styles.hint)
-                    Group { OrgChoices(model) { if (page == SettingsPage.Organizations) page = SettingsPage.Account } }
-                }
-                SettingsPage.Connection -> {
-                    Group {
-                        SubnetRoutesSwitch(model)
-                        RowDivider()
-                        SwitchRow(stringResource(R.string.settings_block_incoming), stringResource(R.string.settings_block_incoming_hint),
-                            checked = model.blockIncoming, enabled = !model.actions.busy) { on ->
-                            model.actions.run(failed, saved, operation = { model.saveSettings(JSONObject().put("block_incoming", on)) })
-                        }
-                        RowDivider()
-                        LinkRow(stringResource(R.string.settings_exit), model.exitNode.ifBlank { stringResource(R.string.settings_exit_none) }) { page = SettingsPage.Exit }
-                    }
-                }
-                SettingsPage.Exit -> {
-                    Text(stringResource(R.string.settings_exit_hint), style = Styles.hint)
-                    ExitChoices(model) { if (page == SettingsPage.Exit) page = SettingsPage.Connection }
-                }
-                SettingsPage.Device -> {
-                    Group {
-                        LinkRow(stringResource(R.string.settings_device_name), model.deviceName) { model.actions.clear(); renaming = true }
-                        if (model.replaceable.isNotEmpty()) {
+                    SettingsPage.Usage -> UsageSection(model, showTitle = false)
+                    SettingsPage.Support -> Group {
+                        if (BuildConfig.FILE_TRANSFER_ENABLED) {
+                            ActionRow(stringResource(R.string.files_title), onClick = onFiles) { Glyph(R.drawable.ic_chevron_right, Palette.muted, 16.dp) }
                             RowDivider()
-                            ActionRow(stringResource(R.string.settings_replace), onClick = onReplace) {
-                                Text(model.replaceable.size.toString(), style = Styles.mono)
-                                Glyph(R.drawable.ic_chevron_right, Palette.muted, 16.dp)
+                        }
+                        if (BuildConfig.DEBUG) {
+                            ActionRow(stringResource(R.string.filetest_title), onClick = onFileTest) { Glyph(R.drawable.ic_chevron_right, Palette.muted, 16.dp) }
+                            RowDivider()
+                        }
+                        ActionRow(stringResource(R.string.settings_export_logs), icon = R.drawable.ic_share, onClick = {
+                            scope.launch {
+                                val logs = CoreClient.call("GET", "/v1/logs").body
+                                context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, logs), null))
                             }
-                        }
-                        RowDivider()
-                        SwitchRow(stringResource(R.string.settings_connect_on_boot), stringResource(R.string.settings_connect_on_boot_hint), checked = connectOnBoot) { on ->
-                            AppPrefs.setConnectOnBoot(context, on); connectOnBoot = on
-                        }
-                        RowDivider()
-                        QuickTileRow()
-                        if (backgroundRow) {
-                            RowDivider()
-                            LinkRow(stringResource(R.string.settings_background), stringResource(BackgroundRun.hint())) { BackgroundRun.allow(context) }
-                            BackgroundSteps(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp))
-                        }
+                        })
                     }
-                }
-                SettingsPage.Usage -> UsageSection(model, showTitle = false)
-                SettingsPage.Support -> Group {
-                    if (BuildConfig.FILE_TRANSFER_ENABLED) {
-                        ActionRow(stringResource(R.string.files_title), onClick = onFiles) { Glyph(R.drawable.ic_chevron_right, Palette.muted, 16.dp) }
-                        RowDivider()
-                    }
-                    if (BuildConfig.DEBUG) {
-                        ActionRow(stringResource(R.string.filetest_title), onClick = onFileTest) { Glyph(R.drawable.ic_chevron_right, Palette.muted, 16.dp) }
-                        RowDivider()
-                    }
-                    ActionRow(stringResource(R.string.settings_export_logs), icon = R.drawable.ic_share, onClick = {
-                        scope.launch {
-                            val logs = CoreClient.call("GET", "/v1/logs").body
-                            context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, logs), null))
+                    SettingsPage.About -> Group {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Text("${stringResource(R.string.product_android_version)}: ${BuildConfig.VERSION_NAME}", style = Styles.row)
+                            Text("${stringResource(R.string.product_core_version)}: ${coreInfo.optString("version", "—")}", style = Styles.mono)
+                            Text("${stringResource(R.string.product_core_commit)}: ${coreInfo.optString("commit", "—")}", style = Styles.hint)
                         }
-                    })
-                }
-                SettingsPage.About -> Group {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("${stringResource(R.string.product_android_version)}: ${BuildConfig.VERSION_NAME}", style = Styles.row)
-                        Text("${stringResource(R.string.product_core_version)}: ${coreInfo.optString("version", "—")}", style = Styles.mono)
-                        Text("${stringResource(R.string.product_core_commit)}: ${coreInfo.optString("commit", "—")}", style = Styles.hint)
                     }
                 }
             }

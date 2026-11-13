@@ -63,7 +63,6 @@
     <string name="files_identity_confirm">Interrompe la ricezione e annulla i trasferimenti incompleti di tutti gli account e organizzazioni dell’app. File completati, sorgenti preparate e cronologia vengono mantenuti. L’identità mesh del dispositivo non cambia. Riattiva la ricezione quando vuoi.</string>
     <string name="files_center">Centro trasferimenti</string>
     <string name="files_settings">Impostazioni trasferimento</string>
-    <string name="files_network_hint">All’interno della rete mesh</string>
     <string name="files_receive_hint">Solo dispositivi mesh · Conferma ogni richiesta</string>
     <string name="files_pending">In attesa</string>
     <string name="files_empty_records">Nessun trasferimento registrato</string>
@@ -87,8 +86,6 @@
     <string name="files_error_integrity">Verifica del file non riuscita. Invia di nuovo il file.</string>
     <string name="files_error_storage">Spazio insufficiente. Libera spazio e riprova.</string>
     <string name="files_error_storagewrite">Impossibile salvare il file o la voce della procedura. Controlla la destinazione e riprova.</string>
-    <string name="files_error_save_permission">Impossibile scrivere nella destinazione. Scegline un’altra o controlla i permessi.</string>
-    <string name="files_error_save_cleanup">Impossibile eliminare il file di destinazione incompleto. Eliminalo manualmente prima di riprovare.</string>
     <string name="files_error_agent">Il servizio di trasferimento non è pronto. Riapri l’app e riprova.</string>
     <string name="files_error_connection">Impossibile raggiungere l’altro dispositivo. Verifica che sia online e accetti file, quindi riprova.</string>
     <string name="files_error_limit">È stato raggiunto il limite di file o attività. Elimina le voci precedenti e riprova.</string>
@@ -139,13 +136,11 @@
     <string name="rdp_gestures_hint">Trackpad: scorri con un dito per muovere il puntatore, tocca per fare clic. Tocca due volte e trascina, oppure attiva Trascina, per tenere premuto il pulsante sinistro. Tocca Trackpad per passare al tocco diretto nella posizione del dito. In entrambe le modalità: tocca con due dita per il clic destro, muovile insieme per scorrere e pizzica per ingrandire fino a 5×. Passa da Scorri a Sposta vista per spostare l’immagine. La percentuale ripristina Adatta. Strumenti include scorciatoie e appunti di testo manuali.</string>
     <string name="rdp_username">Nome utente Windows</string>
     <string name="rdp_domain">Dominio (facoltativo)</string>
-    <string name="rdp_credentials_hint">Inserisci la password dell’account Windows, non il PIN. Le credenziali memorizzate vengono cifrate sul telefono dopo una connessione riuscita. Le sessioni restano in background fino a 60 secondi.</string>
     <string name="rdp_background_expired">Sessione terminata dopo 60 secondi in background. Riconnettiti per continuare.</string>
     <string name="rdp_identity_changed">L’identità del dispositivo o la connessione mesh è cambiata. Controlla la rete e riconnettiti.</string>
     <string name="rdp_reconnect">Riconnetti</string>
     <string name="rdp_remember_password">Ricorda password su questo telefono</string>
-    <string name="rdp_forget_credentials">Dimentica credenziali salvate</string>
-    <string name="rdp_credentials_saved">Credenziali salvate su questo telefono</string>
+    <string name="rdp_clear_credentials">Cancella credenziali</string>
     <string name="rdp_credentials_failed">Impossibile leggere o aggiornare le credenziali salvate. Inseriscile di nuovo o prova a dimenticarle.</string>
     <string name="rdp_wait_network">Rete non disponibile. In attesa di connessione (fino a 60 secondi)…</string>
     <string name="rdp_repairing">Connessione interrotta. Riconnessione sicura (fino a 60 secondi)…</string>
@@ -182,7 +177,6 @@
     <string name="login_totp_code">Codice di verifica</string>
     <string name="login_totp_invalid">Il codice non è stato accettato. Riprova.</string>
     <string name="login_verify">Verifica</string>
-    <string name="login_back">Indietro</string>
     <string name="state_not_enrolled_short">Mesh non abilitata</string>
     <string name="state_not_enrolled">Questa organizzazione non ha abilitato la mesh.</string>
     <string name="state_signed_out_short">Disconnesso</string>

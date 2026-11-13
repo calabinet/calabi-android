@@ -52,7 +52,6 @@
  <string name="files_tab">传送</string>
  <string name="files_center">传送中心</string>
  <string name="files_settings">传送设置</string>
- <string name="files_network_hint">组网内安全收发</string>
  <string name="files_receive_hint">仅组网设备 · 每次接收都需确认</string>
  <string name="files_new_send">发送文件</string>
  <string name="files_pending">待确认</string>
@@ -81,8 +80,6 @@
  <string name="files_error_integrity">文件校验未通过，请重新传送。</string>
  <string name="files_error_storage">存储空间不足，请清理空间后重试。</string>
  <string name="files_error_storagewrite">无法保存文件或任务记录，请检查存储位置后重试。</string>
- <string name="files_error_save_permission">无法写入保存位置，请选择其他位置或检查该位置的权限。</string>
- <string name="files_error_save_cleanup">未能移除未完成的目标文件，请手动删除后重试。</string>
  <string name="files_error_agent">文件传送服务尚未就绪，请重新打开客户端后重试。</string>
  <string name="files_error_connection">暂时无法连接对端，请确认设备在线并开启接收后重试。</string>
  <string name="files_error_limit">文件或任务数量已达上限，请清理记录后重试。</string>

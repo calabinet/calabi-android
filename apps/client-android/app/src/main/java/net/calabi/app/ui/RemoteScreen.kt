@@ -76,52 +76,52 @@ fun RemoteScreen(model: AppModel) {
         serviceFailed -> R.string.remote_service_failed
         else -> null
     }
-    LazyVerticalGrid(columns = GridCells.Fixed(if (LocalDensity.current.fontScale >= 1.3f) 1 else 2),
-        modifier = Modifier.fillMaxSize(), state = gridState, contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        item(span = { GridItemSpan(maxLineSpan) }) { PageHeading(stringResource(R.string.remote_tab)) }
-        item(span = { GridItemSpan(maxLineSpan) }) { SectionLabel(stringResource(R.string.remote_recent)) }
-        if (!model.connected) item(span = { GridItemSpan(maxLineSpan) }) { Text(stringResource(R.string.remote_recent_connect_hint), style = Styles.hint) }
-        if (problem != null) item(span = { GridItemSpan(maxLineSpan) }) {
-            Group { Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(problem), style = Styles.hint.copy(color = Palette.danger), modifier = Modifier.weight(1f))
-                CircleButton(R.drawable.ic_refresh, stringResource(R.string.rdp_retry)) { revision++ }
-            } }
-        }
-        if (loading) item(span = { GridItemSpan(maxLineSpan) }) { Loading() }
-        else if (records.isEmpty() && problem == null) item(span = { GridItemSpan(maxLineSpan) }) {
-            Group { Column(Modifier.fillMaxWidth().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Glyph(R.drawable.ic_monitor, Palette.muted, 28.dp)
-                Text(stringResource(R.string.remote_recent_empty), style = Styles.hint)
-            } }
-        }
-        items(records, key = { "${it.deviceKey}/${it.port}" }) { record ->
-            val target = targets.find { it.optString("device_key") == record.deviceKey }
-            val available = model.connected && target?.optBoolean("available") == true && identity != null
-            val name = target?.optString("name")?.ifBlank { null } ?: record.name
-            val overlay = target?.optString("overlay")?.ifBlank { null } ?: record.overlay
-            val open = {
-                context.startActivity(Intent(context, RdpActivity::class.java).putExtra("overlay", overlay)
-                    .putExtra("device_key", record.deviceKey).putExtra("credential_scope", identity).putExtra("port", record.port))
+    FixedPage(stringResource(R.string.remote_tab), actions = {
+        if (!model.connected) StatusBadge(stringResource(R.string.state_stopped), description = stringResource(R.string.remote_recent_connect_hint))
+    }) {
+        LazyVerticalGrid(columns = GridCells.Fixed(if (LocalDensity.current.fontScale >= 1.3f) 1 else 2),
+            modifier = Modifier.fillMaxSize(), state = gridState, contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            item(span = { GridItemSpan(maxLineSpan) }) { SectionLabel(stringResource(R.string.remote_recent)) }
+            if (problem != null) item(span = { GridItemSpan(maxLineSpan) }) {
+                InlineNotice(stringResource(problem), tone = NoticeTone.Error, actionIcon = R.drawable.ic_refresh,
+                    actionLabel = stringResource(R.string.rdp_retry), onAction = { revision++ })
             }
-            Group {
-                Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).background(Palette.ink)
-                    .clickable(enabled = available, role = Role.Button, onClick = open), contentAlignment = Alignment.Center) {
-                    RemotePreview(store, identity, record, name)
-                    Box(Modifier.align(Alignment.TopEnd).size(48.dp), contentAlignment = Alignment.Center) {
-                        Box(Modifier.size(28.dp).background(Palette.surface, CircleShape))
-                        CircleButton(R.drawable.ic_close, stringResource(R.string.remote_recent_remove)) { pending = record }
-                    }
+            if (loading) item(span = { GridItemSpan(maxLineSpan) }) { Loading() }
+            else if (records.isEmpty() && problem == null) item(span = { GridItemSpan(maxLineSpan) }) {
+                Group { Column(Modifier.fillMaxWidth().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Glyph(R.drawable.ic_monitor, Palette.muted, 28.dp)
+                    Text(stringResource(R.string.remote_recent_empty), style = Styles.hint)
+                } }
+            }
+            items(records, key = { "${it.deviceKey}/${it.port}" }) { record ->
+                val target = targets.find { it.optString("device_key") == record.deviceKey }
+                val available = model.connected && target?.optBoolean("available") == true && identity != null
+                val name = target?.optString("name")?.ifBlank { null } ?: record.name
+                val overlay = target?.optString("overlay")?.ifBlank { null } ?: record.overlay
+                val open = {
+                    context.startActivity(Intent(context, RdpActivity::class.java).putExtra("overlay", overlay)
+                        .putExtra("device_key", record.deviceKey).putExtra("credential_scope", identity).putExtra("port", record.port))
                 }
-                Column(Modifier.fillMaxWidth().clickable(enabled = available, role = Role.Button, onClick = open).padding(horizontal = 10.dp, vertical = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(name, style = Styles.rowTitle, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(overlay, style = Styles.mono, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(stringResource(R.string.rdp_port) + " " + record.port, style = Styles.hint, maxLines = 1)
+                Group {
+                    Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).background(Palette.ink)
+                        .clickable(enabled = available, role = Role.Button, onClick = open), contentAlignment = Alignment.Center) {
+                        RemotePreview(store, identity, record, name)
+                        Box(Modifier.align(Alignment.TopEnd).size(48.dp), contentAlignment = Alignment.Center) {
+                            Box(Modifier.size(28.dp).background(Palette.surface, CircleShape))
+                            CircleButton(R.drawable.ic_close, stringResource(R.string.remote_recent_remove)) { pending = record }
                         }
-                        Text(formatRecent(context, Instant.ofEpochMilli(record.usedAt)), style = Styles.hint)
-                        if (model.connected && !available) Text(stringResource(RdpErrors.reason(target?.optString("reason").orEmpty())), style = Styles.hint)
+                    }
+                    Column(Modifier.fillMaxWidth().clickable(enabled = available, role = Role.Button, onClick = open).padding(horizontal = 10.dp, vertical = 10.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(name, style = Styles.rowTitle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(overlay, style = Styles.mono, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(stringResource(R.string.rdp_port) + " " + record.port, style = Styles.hint, maxLines = 1)
+                            }
+                            Text(formatRecent(context, Instant.ofEpochMilli(record.usedAt)), style = Styles.hint)
+                            if (model.connected && !available) Text(stringResource(RdpErrors.reason(target?.optString("reason").orEmpty())), style = Styles.hint)
+                    }
                 }
             }
         }

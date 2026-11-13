@@ -12,4 +12,8 @@
     <string name="remote_service_failed">Il desktop remoto non è temporaneamente disponibile. Riprova.</string>
     <string name="remote_target_unavailable">Questo dispositivo non è disponibile per il desktop remoto. Aggiorna la lista dei dispositivi e riprova.</string>
     <string name="files_send_unavailable">%1$s (%2$s)</string>
+    <string name="remote_mesh_disconnected">Non connesso alla rete</string>
+    <string name="files_open_no_app">Nessuna app disponibile per aprire questo tipo di file.</string>
+    <string name="files_open_unavailable">Impossibile leggere il file ricevuto. Riprova più tardi o ricevilo di nuovo.</string>
+    <string name="files_share_no_app">Nessuna app disponibile per condividere file.</string>
 </resources>

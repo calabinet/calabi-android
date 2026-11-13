@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -32,6 +34,7 @@ import net.calabi.app.R
  * Only then: on phones that leave a VPN alone there is nothing to allow, so it
  * is never offered up front.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun StoppedPrompt(model: AppModel) {
     if (!model.stoppedInBackground || model.connected) return
@@ -53,10 +56,10 @@ fun StoppedPrompt(model: AppModel) {
                 BackgroundSteps()
             }
         }
-        Row(
-            Modifier.fillMaxWidth().padding(start = 68.dp, end = 16.dp, top = 12.dp, bottom = 14.dp),
+        FlowRow(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Pill(onClick = { BackgroundRun.allow(context) }) {
                 Text(stringResource(R.string.background_allow), style = Styles.chip)

@@ -12,4 +12,8 @@
     <string name="remote_service_failed">Remotedesktop ist vorübergehend nicht verfügbar. Bitte erneut versuchen.</string>
     <string name="remote_target_unavailable">Dieses Gerät ist für Remotedesktop nicht verfügbar. Geräteliste aktualisieren und erneut versuchen.</string>
     <string name="files_send_unavailable">%1$s (%2$s)</string>
+    <string name="remote_mesh_disconnected">Nicht im Netzwerk verbunden</string>
+    <string name="files_open_no_app">Keine App zum Öffnen dieses Dateityps verfügbar.</string>
+    <string name="files_open_unavailable">Diese empfangene Datei kann nicht gelesen werden. Versuche es später erneut oder empfange sie noch einmal.</string>
+    <string name="files_share_no_app">Keine App zum Teilen von Dateien verfügbar.</string>
 </resources>

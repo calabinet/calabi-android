@@ -12,4 +12,8 @@
     <string name="remote_service_failed">远程桌面暂不可用，请重试。</string>
     <string name="remote_target_unavailable">此设备暂不可远程连接，请刷新设备列表后重试。</string>
     <string name="files_send_unavailable">%1$s（%2$s）</string>
+    <string name="remote_mesh_disconnected">未连接组网</string>
+    <string name="files_open_no_app">未找到可打开此类文件的应用。</string>
+    <string name="files_open_unavailable">暂时无法读取此文件，请稍后重试或重新接收。</string>
+    <string name="files_share_no_app">未找到可分享文件的应用。</string>
 </resources>

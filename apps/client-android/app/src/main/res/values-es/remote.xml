@@ -12,4 +12,8 @@
     <string name="remote_service_failed">El escritorio remoto no está disponible temporalmente. Inténtalo de nuevo.</string>
     <string name="remote_target_unavailable">Este dispositivo no está disponible para escritorio remoto. Actualiza la lista de dispositivos y vuelve a intentarlo.</string>
     <string name="files_send_unavailable">%1$s (%2$s)</string>
+    <string name="remote_mesh_disconnected">Sin conexión a la red</string>
+    <string name="files_open_no_app">No hay ninguna aplicación para abrir este tipo de archivo.</string>
+    <string name="files_open_unavailable">No se puede leer este archivo recibido. Inténtalo más tarde o vuelve a recibirlo.</string>
+    <string name="files_share_no_app">No hay ninguna aplicación para compartir archivos.</string>
 </resources>
