@@ -19,6 +19,8 @@ jobs:
           node-version: '22'
       - run: python scripts/products/product.py check android
       - run: python scripts/products/product.py prepare android --destination ../build-source
+      - run: python scripts/mobile/check-android-i18n.py
+      - run: choco install make --yes --no-progress
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

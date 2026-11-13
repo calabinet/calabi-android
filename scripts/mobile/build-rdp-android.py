@@ -91,7 +91,12 @@ def main():
     if not (sdk / 'lib/libcrypto.a').exists():
         configure = shlex.quote((ssl / 'Configure').as_posix())
         prefix = shlex.quote(sdk.as_posix())
-        script = f'perl {configure} {target} -D__ANDROID_API__=26 no-shared no-module no-tests no-apps no-docs --prefix={prefix} --libdir=lib && make -j8 && make install_sw'
+        # Git Bash must use its MSYS Perl and NDK clang, even when a Windows
+        # runner has Strawberry Perl or another LLVM earlier in its host PATH.
+        ndk_bin = shlex.quote(env['ANDROID_NDK_ROOT'] + '/toolchains/llvm/prebuilt/windows-x86_64/bin')
+        script = (f'export ANDROID_NDK_ROOT={shlex.quote(env["ANDROID_NDK_ROOT"])}; '
+                  f'export PATH={ndk_bin}:/usr/bin:"$PATH"; '
+                  f'/usr/bin/perl {configure} {target} -D__ANDROID_API__=26 no-shared no-module no-tests no-apps no-docs --prefix={prefix} --libdir=lib && make -j8 && make install_sw')
         run([bash, '--noprofile', '--norc', '-c', script], cwd=ssl_build, env=env)
     source = WORK / 'freerdp-3.33.0'
     patch_mediacodec(source, DOWNLOADS / 'freerdp-3.33.0.tar.xz')
