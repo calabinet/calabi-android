@@ -5,6 +5,9 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      ANDROID_HOME: D:/Android/Sdk
+      ANDROID_SDK_ROOT: D:/Android/Sdk
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
