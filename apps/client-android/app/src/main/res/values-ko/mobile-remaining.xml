@@ -28,7 +28,6 @@
     <string name="files_rate_eta">%1$s/초 · 약 %2$d초 남음</string>
     <string name="files_limit">콘텐츠 제공자에서 문서를 최대 32개 선택하세요.</string>
     <string name="files_title">파일 전송</string>
-    <string name="files_hint">네트워크의 온라인 기기로 보냅니다. 수신 파일은 확인이 필요합니다. 기존 직접 연결 또는 릴레이 연결을 사용합니다.</string>
     <string name="files_receiving">파일 수신 요청 허용</string>
     <string name="files_peer_disabled">파일을 받지 않음</string>
     <string name="files_preparing">파일 준비 중…</string>
@@ -55,15 +54,9 @@
     <string name="files_cancel_pending">취소됨. 상대에게 알림 대기 중(기록 삭제 가능)</string>
     <string name="files_cancelled">취소됨</string>
     <string name="files_failed">실패</string>
-    <string name="files_identity">파일 전송 ID</string>
-    <string name="files_identity_expires">인증서 만료일: %1$s</string>
-    <string name="files_identity_due">인증서가 30일 이내에 만료됩니다. 진행 중인 전송이 없을 때 갱신하세요.</string>
-    <string name="files_identity_renew">인증서 갱신</string>
-    <string name="files_identity_reset">파일 키 재설정</string>
+    <string name="files_identity_reset">파일 전송 복구</string>
     <string name="files_identity_confirm">이 앱의 모든 계정과 조직에서 수신을 중지하고 미완료 전송을 취소합니다. 완료 파일, 준비된 원본 및 기록은 유지됩니다. 메시 기기 ID는 바뀌지 않습니다. 준비되면 수신을 다시 켜세요.</string>
     <string name="files_center">전송 센터</string>
-    <string name="files_settings">전송 설정</string>
-    <string name="files_receive_hint">메시 기기만 · 요청마다 확인</string>
     <string name="files_pending">대기 중</string>
     <string name="files_empty_records">전송 기록 없음</string>
     <string name="files_from">%1$s에서 받음</string>
@@ -81,7 +74,7 @@
     <string name="files_outgoing">보낸 파일</string>
     <string name="files_notification_settings">알림 및 배너 설정</string>
     <string name="files_error_authorization">파일 전송이 승인되지 않았습니다. 두 기기가 모두 연결되어 있고 수신이 켜져 있는지 확인하세요.</string>
-    <string name="files_error_identity">파일 전송 ID가 변경되었거나 인증서를 사용할 수 없습니다. 설정에서 인증서를 확인하세요.</string>
+    <string name="files_error_identity">상대 기기를 확인할 수 없습니다. 기기 목록을 새로 고친 후 다시 시도해 주세요.</string>
     <string name="files_error_source">원본 파일이 이동, 삭제 또는 변경되었습니다. 다시 선택하세요.</string>
     <string name="files_error_integrity">파일 검증에 실패했습니다. 다시 보내세요.</string>
     <string name="files_error_storage">저장 공간이 부족합니다. 공간을 확보한 후 다시 시도하세요.</string>
@@ -416,4 +409,6 @@
     <plurals name="files_notification_count">
         <item quantity="other">파일 %1$d개 확인 대기 중</item>
     </plurals>
+ <string name="files_identity_unavailable">파일 전송을 사용할 수 없습니다. 복구를 시도해 주세요.</string>
+ <string name="files_error_clock">시스템 날짜와 시간을 확인한 후 다시 시도해 주세요.</string>
 </resources>

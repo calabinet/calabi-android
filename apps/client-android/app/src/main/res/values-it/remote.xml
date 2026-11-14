@@ -6,7 +6,6 @@
     <string name="remote_recent_remove">Rimuovi connessione recente</string>
     <string name="remote_recent_remove_hint">Verranno rimossi questa voce e la relativa anteprima. Le credenziali salvate verranno conservate.</string>
     <string name="remote_recent_failed">Impossibile caricare o salvare le connessioni recenti.</string>
-    <string name="remote_recent_connect_hint">Connettiti alla rete per accedere di nuovo a questi dispositivi.</string>
     <string name="remote_recent_preview">Anteprima del desktop di %1$s</string>
     <string name="remote_recent_no_preview">Nessuna anteprima disponibile</string>
     <string name="remote_service_failed">Il desktop remoto non è temporaneamente disponibile. Riprova.</string>
@@ -16,4 +15,6 @@
     <string name="files_open_no_app">Nessuna app disponibile per aprire questo tipo di file.</string>
     <string name="files_open_unavailable">Impossibile leggere il file ricevuto. Riprova più tardi o ricevilo di nuovo.</string>
     <string name="files_share_no_app">Nessuna app disponibile per condividere file.</string>
+    <string name="remote_recent_available">Disponibile</string>
+    <string name="remote_recent_unavailable">Non disponibile</string>
 </resources>

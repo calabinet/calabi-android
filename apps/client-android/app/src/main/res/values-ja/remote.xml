@@ -6,7 +6,6 @@
     <string name="remote_recent_remove">接続履歴を削除</string>
     <string name="remote_recent_remove_hint">この履歴とプレビューを削除します。保存済みの認証情報は保持されます。</string>
     <string name="remote_recent_failed">最近の接続を読み込みまたは保存できませんでした。</string>
-    <string name="remote_recent_connect_hint">ネットワークに接続すると、これらのデバイスに再接続できます。</string>
     <string name="remote_recent_preview">%1$s のデスクトッププレビュー</string>
     <string name="remote_recent_no_preview">デスクトップのプレビューはありません</string>
     <string name="remote_service_failed">リモートデスクトップを一時的に利用できません。再試行してください。</string>
@@ -16,4 +15,6 @@
     <string name="files_open_no_app">この種類のファイルを開けるアプリがありません。</string>
     <string name="files_open_unavailable">受信したファイルを読み取れません。後でもう一度試すか、再度受信してください。</string>
     <string name="files_share_no_app">ファイルを共有できるアプリがありません。</string>
+    <string name="remote_recent_available">接続可能</string>
+    <string name="remote_recent_unavailable">接続不可</string>
 </resources>

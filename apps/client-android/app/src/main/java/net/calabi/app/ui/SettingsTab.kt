@@ -83,6 +83,11 @@ fun SettingsTab(model: AppModel, onSignedOut: () -> Unit, onReplace: () -> Unit,
                             IconLinkRow(stringResource(R.string.mobile_settings_connection), stringResource(R.string.settings_exit) + " · " + model.exitNode.ifBlank { stringResource(R.string.settings_exit_none) }, R.drawable.ic_globe) { page = SettingsPage.Connection }
                             RowDivider(start = 58.dp)
                             IconLinkRow(stringResource(R.string.mobile_settings_device), model.deviceName, R.drawable.ic_phone) { page = SettingsPage.Device }
+                            RowDivider(start = 58.dp)
+                            IconLinkRow(stringResource(R.string.files_notification_settings), "", R.drawable.ic_notifications) {
+                                context.startActivity(Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                    .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName))
+                            }
                         }
                         Group {
                             IconLinkRow(stringResource(R.string.usage_title), stringResource(R.string.mobile_usage_hint), R.drawable.ic_chart) { page = SettingsPage.Usage }

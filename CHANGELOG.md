@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.1 — 2026-11-14
+
+- **Changed:** Notification and banner settings are accessed from the main Settings page. Transfer Center no longer has a separate settings panel.
+- **Changed:** File-transfer certificates are maintained automatically when safe, with routine certificate details hidden.
+- **Changed:** Recent Remote cards show whether a device is reachable, replacing the duplicate disconnected message beside the page title.
+
+Install over the existing official application to retain account, mesh identity, credentials and file records. The package remains net.calabi.app and uses the established signing certificate. Version 3.1.1 uses versionCode 3001001; Android 8.0 or later with a 64-bit ARM system is required.
+
 ## 3.1.0 — 2026-11-13
 
 ### Changes

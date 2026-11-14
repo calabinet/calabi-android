@@ -16,6 +16,7 @@ internal fun fileErrorText(context: Context, error: String): String {
     val text = error.lowercase(Locale.ROOT)
     fun matches(pattern: String) = Regex(pattern).containsMatchIn(text)
     val resource = when {
+        matches("system clock") -> R.string.files_error_clock
         matches("no longer authorized|not authorized|permission denied|access is denied|http (401|403)") -> R.string.files_error_authorization
         matches("certificate|x509|identity changed|file key") -> R.string.files_error_identity
         matches("source.*(changed|unavailable|missing)|no such file|cannot find the file|file.*(changed|unavailable)|size changed") -> R.string.files_error_source

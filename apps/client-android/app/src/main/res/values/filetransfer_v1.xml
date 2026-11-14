@@ -10,7 +10,6 @@
  <string name="files_rate_eta">%1$s/s · about %2$d s remaining</string>
  <string name="files_limit">Choose up to 32 documents from a content provider.</string>
  <string name="files_title">File transfers</string>
- <string name="files_hint">Send to online devices in your network. Incoming files require your confirmation. Files use your existing direct or relay connection.</string>
  <string name="files_receiving">Allow incoming file requests</string>
  <string name="files_device">Send to a device</string>
  <string name="files_no_devices">No supported online devices. Both clients and the coordinator must support file transfers.</string>
@@ -44,16 +43,10 @@
  <string name="files_cancel_pending">Cancelled; waiting to notify the peer (record can be removed)</string>
  <string name="files_cancelled">Cancelled</string>
  <string name="files_failed">Failed</string>
- <string name="files_identity">File transfer identity</string>
- <string name="files_identity_expires">Certificate expires: %1$s</string>
- <string name="files_identity_due">The certificate expires within 30 days. Renew it when transfers are idle.</string>
- <string name="files_identity_renew">Renew certificate</string>
- <string name="files_identity_reset">Reset file key</string>
+ <string name="files_identity_reset">Repair file transfers</string>
  <string name="files_identity_confirm">This stops reception and cancels unfinished file transfers for every account and organization on this app. Completed files, staged sources and history are retained. The mesh device identity is unchanged. Turn reception on again when ready.</string>
  <string name="files_tab">Transfers</string>
  <string name="files_center">Transfer center</string>
- <string name="files_settings">Transfer settings</string>
- <string name="files_receive_hint">Mesh devices only · Confirm each request</string>
  <string name="files_new_send">Send files</string>
  <string name="files_pending">Pending</string>
  <string name="files_empty_records">No transfer records</string>
@@ -76,7 +69,7 @@
  <string name="files_outgoing">Sent</string>
  <string name="files_notification_settings">Notification and banner settings</string>
  <string name="files_error_authorization">File transfer is not currently authorized. Check that both devices are connected and reception is enabled.</string>
- <string name="files_error_identity">The file transfer identity changed or its certificate is unavailable. Check the certificate in settings.</string>
+ <string name="files_error_identity">Could not verify the other device. Refresh the device list and retry.</string>
  <string name="files_error_source">The original file was moved, deleted or changed. Choose it again.</string>
  <string name="files_error_integrity">File verification failed. Please send the file again.</string>
  <string name="files_error_storage">Not enough storage space. Free up space and retry.</string>
@@ -88,4 +81,6 @@
  <string name="files_error_stale">This record is no longer available. Refresh the list and retry.</string>
  <string name="files_error_interrupted">The transfer was interrupted. You can retry.</string>
  <string name="files_error_generic">The operation could not be completed. Retry, or check diagnostic logs if the problem continues.</string>
+ <string name="files_identity_unavailable">File transfers are unavailable. Try repairing them.</string>
+ <string name="files_error_clock">Check the system date and time, then retry.</string>
 </resources>

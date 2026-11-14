@@ -65,7 +65,6 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
     var removing by remember { mutableStateOf<JSONObject?>(null) }
     var identityOperation by remember { mutableStateOf<String?>(null) }
     var sendPage by rememberSaveable { mutableStateOf(false) }
-    var settingsSheet by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(sendPage) { onSendPageChanged(sendPage) }
     DisposableEffect(Unit) { onDispose { onSendPageChanged(false) } }
 
@@ -80,7 +79,6 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
             search = ""
             direction = 1
             sendPage = false
-            settingsSheet = false
             onReviewOpened()
         }
     }
@@ -155,6 +153,7 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
     }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> scope.launch { stage(uris) } }
     val available = snapshot.optBoolean("available")
+    val identityNeedsRepair = snapshot.optJSONObject("identity")?.optBoolean("needs_repair") == true
     val reconnectNotice = isFileReconnectState(available, snapshot.optString("error"),
         listOf("received", "jobs", "sources").any { (snapshot.optJSONArray(it)?.length() ?: 0) > 0 })
     val peers = snapshot.objects("peers").sortedWith(compareBy({ it.optString("name") }, { it.optString("ip") }))
@@ -178,9 +177,7 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
             staged.any { source -> job.optJSONArray("sources")?.let { ids -> (0 until ids.length()).any { ids.optString(it) == source.optString("id") } } == true && fileMatches(source, job.optString("peer_ip")) }
     }
 
-    if (!sendPage) FixedPage(stringResource(R.string.files_center), actions = {
-        CircleButton(R.drawable.ic_settings, stringResource(R.string.files_settings), onClick = { settingsSheet = true })
-    }) {
+    if (!sendPage) FixedPage(stringResource(R.string.files_center)) {
         LazyColumn(
             Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 20.dp),
         ) {
@@ -225,7 +222,10 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
             }
             if (message.isNotBlank() || (snapshotLoaded && !available && !reconnectNotice) || (snapshot.optString("error").isNotBlank() && !reconnectNotice)) {
                 item("error") {
-                    InlineNotice(message.ifBlank { snapshotError.ifBlank { context.getString(R.string.files_unavailable) } }, tone = NoticeTone.Error, modifier = Modifier.padding(bottom = 12.dp))
+                    if (identityNeedsRepair) InlineNotice(stringResource(R.string.files_identity_unavailable), tone = NoticeTone.Error,
+                        actionIcon = R.drawable.ic_refresh, actionLabel = stringResource(R.string.files_identity_reset),
+                        onAction = { identityOperation = "reset" }, modifier = Modifier.padding(bottom = 12.dp))
+                    else InlineNotice(message.ifBlank { snapshotError.ifBlank { context.getString(R.string.files_unavailable) } }, tone = NoticeTone.Error, modifier = Modifier.padding(bottom = 12.dp))
                 }
             }
             item("tabs") {
@@ -383,28 +383,8 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
             Spacer(Modifier.height(12.dp))
         }
     }
-    if (settingsSheet) ModalBottomSheet(onDismissRequest = { settingsSheet = false }, containerColor = Palette.ground) {
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.files_settings), style = Styles.section)
-            TextButton(onClick = { context.startActivity(android.content.Intent(android.provider.Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName).putExtra(android.provider.Settings.EXTRA_CHANNEL_ID, CalabiApp.CHANNEL_FILES)) }) { Text(stringResource(R.string.files_notification_settings)) }
-            Text(stringResource(R.string.files_hint), style = Styles.hint)
-            Text(stringResource(R.string.files_receive_hint), style = Styles.hint)
-            snapshot.optJSONObject("identity")?.let { identity ->
-                Group {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(R.string.files_identity), style = Styles.rowTitle)
-                        if (identity.optLong("expires_unix") > 0) Text(stringResource(R.string.files_identity_expires, java.text.DateFormat.getDateTimeInstance().format(java.util.Date(identity.optLong("expires_unix") * 1000))), style = Styles.hint)
-                        if (identity.optString("error").isNotBlank()) InlineNotice(fileErrorText(context, identity.optString("error")), tone = NoticeTone.Error)
-                        else if (identity.optBoolean("needs_renewal")) InlineNotice(stringResource(R.string.files_identity_due), tone = NoticeTone.Warning)
-                        TextButton(enabled = !busy && identity.optString("fingerprint").isNotBlank(), onClick = { identityOperation = "renew" }) { Text(stringResource(R.string.files_identity_renew)) }
-                        TextButton(enabled = !busy && identity.optBoolean("exists"), onClick = { identityOperation = "reset" }) { Text(stringResource(R.string.files_identity_reset)) }
-                    }
-                }
-            }
-        }
-    }
     removing?.let { body -> AlertDialog(onDismissRequest = { removing = null }, title = { Text(stringResource(R.string.files_remove)) }, text = { Text(stringResource(R.string.files_remove_confirm)) }, confirmButton = { TextButton(enabled = !busy && !actionBusy, onClick = { removing = null; scope.launch { action(body) } }) { Text(stringResource(R.string.files_remove)) } }, dismissButton = { TextButton(enabled = !busy && !actionBusy, onClick = { removing = null }) { Text(stringResource(R.string.settings_cancel)) } }) }
-    identityOperation?.let { operation -> AlertDialog(onDismissRequest = { identityOperation = null }, title = { Text(stringResource(if (operation == "renew") R.string.files_identity_renew else R.string.files_identity_reset)) }, text = { Text(stringResource(R.string.files_identity_confirm)) }, confirmButton = { TextButton(onClick = { identityOperation = null; scope.launch { busy = true; try { action(JSONObject().put("action", "identity_$operation").put("confirmed", true)) } finally { busy = false } } }) { Text(stringResource(if (operation == "renew") R.string.files_identity_renew else R.string.files_identity_reset)) } }, dismissButton = { TextButton(onClick = { identityOperation = null }) { Text(stringResource(R.string.settings_cancel)) } }) }
+    identityOperation?.let { operation -> AlertDialog(onDismissRequest = { identityOperation = null }, title = { Text(stringResource(R.string.files_identity_reset)) }, text = { Text(stringResource(R.string.files_identity_confirm)) }, confirmButton = { TextButton(onClick = { identityOperation = null; scope.launch { busy = true; try { action(JSONObject().put("action", "identity_$operation").put("confirmed", true)) } finally { busy = false } } }) { Text(stringResource(R.string.files_identity_reset)) } }, dismissButton = { TextButton(onClick = { identityOperation = null }) { Text(stringResource(R.string.settings_cancel)) } }) }
 }
 
 private fun fileBytes(n: Long): String = when { n >= 1L shl 30 -> "%.2f GiB".format(n.toDouble() / (1L shl 30)); n >= 1L shl 20 -> "%.1f MiB".format(n.toDouble() / (1L shl 20)); n >= 1024 -> "%.1f KiB".format(n / 1024.0); else -> "$n B" }

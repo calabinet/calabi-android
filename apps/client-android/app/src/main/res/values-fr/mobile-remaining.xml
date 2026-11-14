@@ -28,7 +28,6 @@
     <string name="files_rate_eta">%1$s/s · Environ %2$d s restantes</string>
     <string name="files_limit">Choisissez jusqu’à 32 documents auprès d’un fournisseur de contenu.</string>
     <string name="files_title">Transferts de fichiers</string>
-    <string name="files_hint">Envoyez aux appareils en ligne de votre réseau. Les fichiers entrants exigent votre confirmation. La connexion directe ou relayée existante est utilisée.</string>
     <string name="files_receiving">Autoriser les demandes de réception de fichiers</string>
     <string name="files_peer_disabled">N’accepte pas les fichiers</string>
     <string name="files_preparing">Préparation des fichiers…</string>
@@ -55,15 +54,9 @@
     <string name="files_cancel_pending">Annulé. En attente de notification de l’autre appareil (l’entrée peut être supprimée)</string>
     <string name="files_cancelled">Annulé</string>
     <string name="files_failed">Échec</string>
-    <string name="files_identity">Identité de transfert de fichiers</string>
-    <string name="files_identity_expires">Expiration du certificat : %1$s</string>
-    <string name="files_identity_due">Le certificat expire dans moins de 30 jours. Renouvelez-le quand aucun transfert n’est en cours.</string>
-    <string name="files_identity_renew">Renouveler le certificat</string>
-    <string name="files_identity_reset">Réinitialiser la clé de transfert</string>
+    <string name="files_identity_reset">Réparer les transferts</string>
     <string name="files_identity_confirm">Arrête la réception et annule les transferts inachevés de tous les comptes et organisations de cette application. Les fichiers terminés, sources préparées et historique sont conservés. L’identité maillée de l’appareil reste inchangée. Réactivez la réception lorsque vous le souhaitez.</string>
     <string name="files_center">Centre de transfert</string>
-    <string name="files_settings">Paramètres de transfert</string>
-    <string name="files_receive_hint">Appareils maillés uniquement · Confirmer chaque demande</string>
     <string name="files_pending">En attente</string>
     <string name="files_empty_records">Aucun transfert enregistré</string>
     <string name="files_from">Depuis %1$s</string>
@@ -81,7 +74,7 @@
     <string name="files_outgoing">Envoyés</string>
     <string name="files_notification_settings">Paramètres des notifications et bannières</string>
     <string name="files_error_authorization">Le transfert n’est pas autorisé pour le moment. Vérifiez que les deux appareils sont connectés et que la réception est activée.</string>
-    <string name="files_error_identity">L’identité de transfert a changé ou son certificat est indisponible. Vérifiez le certificat dans les paramètres.</string>
+    <string name="files_error_identity">Impossible de vérifier l’autre appareil. Actualisez la liste et réessayez.</string>
     <string name="files_error_source">Le fichier d’origine a été déplacé, supprimé ou modifié. Sélectionnez-le à nouveau.</string>
     <string name="files_error_integrity">La vérification du fichier a échoué. Renvoyez le fichier.</string>
     <string name="files_error_storage">Espace de stockage insuffisant. Libérez de l’espace, puis réessayez.</string>
@@ -424,4 +417,6 @@
         <item quantity="many">%1$d fichiers en attente de confirmation</item>
         <item quantity="other">%1$d fichiers en attente de confirmation</item>
     </plurals>
+ <string name="files_identity_unavailable">Les transferts sont indisponibles. Essayez de les réparer.</string>
+ <string name="files_error_clock">Vérifiez la date et l’heure du système, puis réessayez.</string>
 </resources>

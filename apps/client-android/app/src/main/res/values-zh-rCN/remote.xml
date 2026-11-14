@@ -6,7 +6,6 @@
     <string name="remote_recent_remove">移除远程记录</string>
     <string name="remote_recent_remove_hint">将移除此条记录及其预览图，已保存的凭据会保留。</string>
     <string name="remote_recent_failed">无法读取或保存最近远程记录。</string>
-    <string name="remote_recent_connect_hint">连接组网后，即可再次远程访问这些设备。</string>
     <string name="remote_recent_preview">%1$s 的桌面预览</string>
     <string name="remote_recent_no_preview">暂无桌面预览</string>
     <string name="remote_service_failed">远程桌面暂不可用，请重试。</string>
@@ -16,4 +15,6 @@
     <string name="files_open_no_app">未找到可打开此类文件的应用。</string>
     <string name="files_open_unavailable">暂时无法读取此文件，请稍后重试或重新接收。</string>
     <string name="files_share_no_app">未找到可分享文件的应用。</string>
+    <string name="remote_recent_available">可连接</string>
+    <string name="remote_recent_unavailable">暂不可连接</string>
 </resources>

@@ -28,7 +28,6 @@
     <string name="files_rate_eta">%1$s/秒 · 預計剩余 %2$d 秒</string>
     <string name="files_limit">每次最多選擇 32 個文件，暫不支援直接檔案路徑。</string>
     <string name="files_title">檔案傳送</string>
-    <string name="files_hint">向組網內線上裝置傳送檔案，接收需逐次確認。檔案共用現有直連或中繼通道。</string>
     <string name="files_receiving">允許接收檔案請求</string>
     <string name="files_peer_disabled">對端未啟用</string>
     <string name="files_preparing">正在準備檔案…</string>
@@ -55,15 +54,9 @@
     <string name="files_cancel_pending">已取消，等待通知對端（可移除記錄）</string>
     <string name="files_cancelled">已取消</string>
     <string name="files_failed">失敗</string>
-    <string name="files_identity">檔案傳送身分</string>
-    <string name="files_identity_expires">憑證到期時間：%1$s</string>
-    <string name="files_identity_due">憑證將在 30 天內到期，請在檔案傳輸空閑時更新。</string>
-    <string name="files_identity_renew">更新憑證</string>
-    <string name="files_identity_reset">重置檔案金鑰</string>
+    <string name="files_identity_reset">修復檔案傳送</string>
     <string name="files_identity_confirm">此操作會停止接收，並取消此 App 內所有帳號、組織的未完成檔案工作。已完成檔案、已準備源檔案和歷史記錄保留，組網裝置身分不變。完成後需重新開啟接收。</string>
     <string name="files_center">傳送中心</string>
-    <string name="files_settings">傳送設定</string>
-    <string name="files_receive_hint">僅組網裝置 · 每次接收都需確認</string>
     <string name="files_pending">待確認</string>
     <string name="files_empty_records">暫無傳送記錄</string>
     <string name="files_from">來自 %1$s</string>
@@ -81,7 +74,7 @@
     <string name="files_outgoing">傳送</string>
     <string name="files_notification_settings">通知與橫幅設定</string>
     <string name="files_error_authorization">當前檔案傳送權限不可用，請確認雙方已連線且允許接收。</string>
-    <string name="files_error_identity">檔案傳送身分已變更或憑證不可用，請在設定中檢查憑證。</string>
+    <string name="files_error_identity">無法驗證對方裝置，請重新整理裝置清單後再試。</string>
     <string name="files_error_source">原檔案已移動、刪除或修改，請重新選擇檔案。</string>
     <string name="files_error_integrity">檔案校驗未通過，請重新傳送。</string>
     <string name="files_error_storage">存儲空間不足，請清理空間後重試。</string>
@@ -416,4 +409,6 @@
     <plurals name="files_notification_count">
         <item quantity="other">%1$d 個檔案等待確認</item>
     </plurals>
+ <string name="files_identity_unavailable">檔案傳送暫時無法使用，可嘗試修復。</string>
+ <string name="files_error_clock">請檢查系統日期和時間，然後重試。</string>
 </resources>

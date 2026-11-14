@@ -28,7 +28,6 @@
     <string name="files_rate_eta">%1$s/s · Cerca de %2$d s restantes</string>
     <string name="files_limit">Escolha até 32 documentos de um provedor de conteúdo.</string>
     <string name="files_title">Transferências de arquivos</string>
-    <string name="files_hint">Envie para dispositivos online da sua rede. Arquivos recebidos exigem confirmação. É usada a conexão direta ou por relay existente.</string>
     <string name="files_receiving">Permitir solicitações de recebimento de arquivos</string>
     <string name="files_peer_disabled">Não aceita arquivos</string>
     <string name="files_preparing">Preparando arquivos…</string>
@@ -55,15 +54,9 @@
     <string name="files_cancel_pending">Cancelado. Aguardando notificar o outro dispositivo (o registro pode ser removido)</string>
     <string name="files_cancelled">Cancelado</string>
     <string name="files_failed">Falhou</string>
-    <string name="files_identity">Identidade de transferência de arquivos</string>
-    <string name="files_identity_expires">O certificado expira em %1$s</string>
-    <string name="files_identity_due">O certificado expira em até 30 dias. Renove quando não houver transferências em andamento.</string>
-    <string name="files_identity_renew">Renovar certificado</string>
-    <string name="files_identity_reset">Redefinir chave de arquivos</string>
+    <string name="files_identity_reset">Reparar transferências</string>
     <string name="files_identity_confirm">Interrompe a recepção e cancela transferências incompletas de todas as contas e organizações deste app. Arquivos concluídos, fontes preparadas e histórico são mantidos. A identidade do dispositivo da malha não muda. Ative a recepção novamente quando quiser.</string>
     <string name="files_center">Central de transferências</string>
-    <string name="files_settings">Configurações de transferência</string>
-    <string name="files_receive_hint">Apenas dispositivos da malha · Confirmar cada solicitação</string>
     <string name="files_pending">Pendentes</string>
     <string name="files_empty_records">Nenhum registro de transferência</string>
     <string name="files_from">De %1$s</string>
@@ -81,7 +74,7 @@
     <string name="files_outgoing">Enviados</string>
     <string name="files_notification_settings">Configurações de notificações e banners</string>
     <string name="files_error_authorization">A transferência não está autorizada no momento. Verifique se os dois dispositivos estão conectados e se o recebimento está ativado.</string>
-    <string name="files_error_identity">A identidade de transferência mudou ou o certificado está indisponível. Verifique o certificado nas configurações.</string>
+    <string name="files_error_identity">Não foi possível verificar o outro dispositivo. Atualize a lista e tente novamente.</string>
     <string name="files_error_source">O arquivo original foi movido, excluído ou alterado. Selecione-o novamente.</string>
     <string name="files_error_integrity">A verificação do arquivo falhou. Envie o arquivo novamente.</string>
     <string name="files_error_storage">Espaço insuficiente. Libere espaço e tente novamente.</string>
@@ -424,4 +417,6 @@
         <item quantity="many">%1$d arquivos aguardando confirmação</item>
         <item quantity="other">%1$d arquivos aguardando confirmação</item>
     </plurals>
+ <string name="files_identity_unavailable">As transferências não estão disponíveis. Tente repará-las.</string>
+ <string name="files_error_clock">Verifique a data e hora do sistema e tente novamente.</string>
 </resources>

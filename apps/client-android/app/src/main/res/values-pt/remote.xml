@@ -6,7 +6,6 @@
     <string name="remote_recent_remove">Remover conexão recente</string>
     <string name="remote_recent_remove_hint">Esta entrada e sua prévia serão removidas. As credenciais salvas serão mantidas.</string>
     <string name="remote_recent_failed">Não foi possível carregar ou salvar as conexões recentes.</string>
-    <string name="remote_recent_connect_hint">Conecte-se à rede para acessar esses dispositivos novamente.</string>
     <string name="remote_recent_preview">Prévia da área de trabalho de %1$s</string>
     <string name="remote_recent_no_preview">Ainda não há prévia</string>
     <string name="remote_service_failed">A área de trabalho remota está temporariamente indisponível. Tente novamente.</string>
@@ -16,4 +15,6 @@
     <string name="files_open_no_app">Nenhum aplicativo disponível para abrir este tipo de arquivo.</string>
     <string name="files_open_unavailable">Não foi possível ler o arquivo recebido. Tente mais tarde ou receba o arquivo novamente.</string>
     <string name="files_share_no_app">Nenhum aplicativo disponível para compartilhar arquivos.</string>
+    <string name="remote_recent_available">Disponível</string>
+    <string name="remote_recent_unavailable">Indisponível</string>
 </resources>

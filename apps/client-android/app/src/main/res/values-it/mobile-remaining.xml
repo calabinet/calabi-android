@@ -28,7 +28,6 @@
     <string name="files_rate_eta">%1$s/s · Circa %2$d s rimanenti</string>
     <string name="files_limit">Scegli fino a 32 documenti da un provider di contenuti.</string>
     <string name="files_title">Trasferimenti di file</string>
-    <string name="files_hint">Invia ai dispositivi online nella tua rete. I file in arrivo richiedono conferma. Si usa la connessione diretta o tramite relay esistente.</string>
     <string name="files_receiving">Consenti richieste di ricezione file</string>
     <string name="files_peer_disabled">Non accetta file</string>
     <string name="files_preparing">Preparazione dei file…</string>
@@ -55,15 +54,9 @@
     <string name="files_cancel_pending">Annullato. Notifica all’altro dispositivo in attesa (puoi rimuovere la voce)</string>
     <string name="files_cancelled">Annullato</string>
     <string name="files_failed">Non riuscito</string>
-    <string name="files_identity">Identità di trasferimento file</string>
-    <string name="files_identity_expires">Scadenza del certificato: %1$s</string>
-    <string name="files_identity_due">Il certificato scade entro 30 giorni. Rinnovalo quando non ci sono trasferimenti in corso.</string>
-    <string name="files_identity_renew">Rinnova certificato</string>
-    <string name="files_identity_reset">Reimposta la chiave dei file</string>
+    <string name="files_identity_reset">Ripara trasferimenti</string>
     <string name="files_identity_confirm">Interrompe la ricezione e annulla i trasferimenti incompleti di tutti gli account e organizzazioni dell’app. File completati, sorgenti preparate e cronologia vengono mantenuti. L’identità mesh del dispositivo non cambia. Riattiva la ricezione quando vuoi.</string>
     <string name="files_center">Centro trasferimenti</string>
-    <string name="files_settings">Impostazioni trasferimento</string>
-    <string name="files_receive_hint">Solo dispositivi mesh · Conferma ogni richiesta</string>
     <string name="files_pending">In attesa</string>
     <string name="files_empty_records">Nessun trasferimento registrato</string>
     <string name="files_from">Da %1$s</string>
@@ -81,7 +74,7 @@
     <string name="files_outgoing">Inviati</string>
     <string name="files_notification_settings">Impostazioni notifiche e banner</string>
     <string name="files_error_authorization">Il trasferimento non è autorizzato. Verifica che entrambi i dispositivi siano connessi e che la ricezione sia attiva.</string>
-    <string name="files_error_identity">L’identità di trasferimento è cambiata o il certificato non è disponibile. Controlla il certificato nelle impostazioni.</string>
+    <string name="files_error_identity">Impossibile verificare l’altro dispositivo. Aggiorna l’elenco e riprova.</string>
     <string name="files_error_source">Il file originale è stato spostato, eliminato o modificato. Selezionalo di nuovo.</string>
     <string name="files_error_integrity">Verifica del file non riuscita. Invia di nuovo il file.</string>
     <string name="files_error_storage">Spazio insufficiente. Libera spazio e riprova.</string>
@@ -424,4 +417,6 @@
         <item quantity="many">%1$d file in attesa di conferma</item>
         <item quantity="other">%1$d file in attesa di conferma</item>
     </plurals>
+ <string name="files_identity_unavailable">I trasferimenti non sono disponibili. Prova a ripararli.</string>
+ <string name="files_error_clock">Controlla data e ora del sistema e riprova.</string>
 </resources>

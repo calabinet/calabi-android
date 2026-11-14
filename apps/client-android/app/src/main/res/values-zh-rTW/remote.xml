@@ -6,7 +6,6 @@
     <string name="remote_recent_remove">移除遠端記錄</string>
     <string name="remote_recent_remove_hint">將移除此筆記錄及其預覽圖，已儲存的認證資料會保留。</string>
     <string name="remote_recent_failed">無法讀取或儲存最近連線記錄。</string>
-    <string name="remote_recent_connect_hint">連線至網路後，即可再次遠端存取這些裝置。</string>
     <string name="remote_recent_preview">%1$s 的桌面預覽</string>
     <string name="remote_recent_no_preview">尚無桌面預覽</string>
     <string name="remote_service_failed">遠端桌面暫時無法使用，請重試。</string>
@@ -16,4 +15,6 @@
     <string name="files_open_no_app">找不到可開啟此類檔案的應用程式。</string>
     <string name="files_open_unavailable">暫時無法讀取此檔案，請稍後重試或重新接收。</string>
     <string name="files_share_no_app">找不到可分享檔案的應用程式。</string>
+    <string name="remote_recent_available">可連線</string>
+    <string name="remote_recent_unavailable">暫時無法連線</string>
 </resources>

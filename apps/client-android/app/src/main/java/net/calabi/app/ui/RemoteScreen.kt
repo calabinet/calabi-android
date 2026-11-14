@@ -76,9 +76,7 @@ fun RemoteScreen(model: AppModel) {
         serviceFailed -> R.string.remote_service_failed
         else -> null
     }
-    FixedPage(stringResource(R.string.remote_tab), actions = {
-        if (!model.connected) StatusBadge(stringResource(R.string.state_stopped), description = stringResource(R.string.remote_recent_connect_hint))
-    }) {
+    FixedPage(stringResource(R.string.remote_tab)) {
         LazyVerticalGrid(columns = GridCells.Fixed(if (LocalDensity.current.fontScale >= 1.3f) 1 else 2),
             modifier = Modifier.fillMaxSize(), state = gridState, contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -107,6 +105,16 @@ fun RemoteScreen(model: AppModel) {
                     Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).background(Palette.ink)
                         .clickable(enabled = available, role = Role.Button, onClick = open), contentAlignment = Alignment.Center) {
                         RemotePreview(store, identity, record, name)
+                        if (!available) Box(Modifier.matchParentSize().background(Palette.ink.copy(alpha = 0.22f)))
+                        Row(Modifier.align(Alignment.BottomStart).padding(8.dp)
+                            .background(if (available) Palette.accentSoft else Palette.surface.copy(alpha = 0.94f), androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Dot(if (available) Palette.accent else Palette.muted, 5.dp)
+                            Text(stringResource(if (available) R.string.remote_recent_available else R.string.remote_recent_unavailable),
+                                color = if (available) Palette.accent else Palette.muted,
+                                style = Styles.hint, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
                         Box(Modifier.align(Alignment.TopEnd).size(48.dp), contentAlignment = Alignment.Center) {
                             Box(Modifier.size(28.dp).background(Palette.surface, CircleShape))
                             CircleButton(R.drawable.ic_close, stringResource(R.string.remote_recent_remove)) { pending = record }
