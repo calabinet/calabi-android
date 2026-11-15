@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="local_device_label">本機</string>
+    <string name="local_device_address">組網 IP</string>
+    <string name="local_device_last_address">上次組網 IP</string>
+    <string name="local_device_status">連線狀態</string>
+    <string name="local_device_enabled">已啟用</string>
+    <string name="local_device_disabled">未啟用</string>
+</resources>

@@ -32,6 +32,7 @@ class CalabiApp : Application() {
             .put("state_dir", filesDir.absolutePath)
             .put("bff_url", BuildConfig.BFF_URL)
             .put("device_name", Build.MODEL ?: "")
+            .put("app_version", BuildConfig.VERSION_NAME)
             .put("coord_plaintext", BuildConfig.COORD_PLAINTEXT)
             .apply { coreCapabilities(BuildConfig.DEBUG).forEach { (key, enabled) -> put(key, enabled) } }
             .put("mesh_relay_only", BuildConfig.DEBUG && java.io.File(filesDir, "rdp-test-relay-only").exists())

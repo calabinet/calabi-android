@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.2 — 2026-11-15
+
+- **Changed:** The local device and its mesh information appear first in the device list.
+- **Fixed:** The organization selector refreshes missing organization information after account restoration, without requiring an application restart.
+- **Changed:** Mobile registration reports the application type and version separately from the bundled core version, allowing the client directory to identify phones correctly.
+
+Install over the existing official application to retain account, mesh identity, credentials and file records. The package remains net.calabi.app and uses the established signing certificate. Version 3.1.2 uses versionCode 3001002; Android 8.0 or later with a 64-bit ARM system is required.
+
 ## 3.1.1 — 2026-11-14
 
 - **Changed:** Notification and banner settings are accessed from the main Settings page. Transfer Center no longer has a separate settings panel.

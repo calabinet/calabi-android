@@ -266,10 +266,12 @@ private fun DevicesTab(
         }
     }
     val devices = model.devices
+    val local = model.localDevice
     val visibleDevices = devices.filter { (filter == 1 || it.online == (filter == 0)) && matchesListSearch(search, it.name, it.overlay, it.ownerEmail) }
     val inUseExit = model.connection?.exitNode.orEmpty().ifBlank { model.exitNode }
     FixedPage(stringResource(R.string.devices_title), actions = {
-        if (devices.isNotEmpty()) Text(stringResource(R.string.devices_online, devices.count { it.online }, devices.size), style = Styles.hint)
+        if (model.nodes != null || local.connected) Text(stringResource(R.string.devices_online,
+            devices.count { it.online } + if (local.connected) 1 else 0, devices.size + 1), style = Styles.hint)
     }) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 20.dp)) {
             item { ActionFeedback(model.actions) }
@@ -287,6 +289,7 @@ private fun DevicesTab(
                 }
             }
 
+            item("local-device") { LocalDeviceRow(model, last = visibleDevices.isEmpty()) }
             if (model.nodesNeedConnection) {
                 item {
                     Group(Modifier.padding(horizontal = 16.dp)) {
@@ -311,7 +314,7 @@ private fun DevicesTab(
                 }
             }
             itemsIndexed(visibleDevices, key = { _, d -> d.overlay + d.name }) { i, d ->
-                DeviceRow(d, first = i == 0, last = i == visibleDevices.lastIndex, isExit = d.name == inUseExit || d.overlay == inUseExit,
+                DeviceRow(d, first = false, last = i == visibleDevices.lastIndex, isExit = d.name == inUseExit || d.overlay == inUseExit,
                     fileDisabledReason = when {
                         !model.connected -> R.string.state_stopped
                         !d.online -> R.string.device_offline
@@ -395,7 +398,7 @@ private fun connectionPhase(model: AppModel): Phase = when {
 }
 
 @Composable
-private fun connectionTitle(model: AppModel): String = stringResource(when (connectionPhase(model)) {
+internal fun connectionTitle(model: AppModel): String = stringResource(when (connectionPhase(model)) {
     Phase.Off -> R.string.state_stopped
     Phase.On -> R.string.state_connected
     Phase.Busy -> if (model.connection?.state == "retrying") R.string.state_retrying else R.string.state_connecting
@@ -556,11 +559,26 @@ fun ExitChoices(model: AppModel, onPicked: () -> Unit = {}) {
 /** The organization choices, shared by the sheet and the settings tab. */
 @Composable
 fun OrgChoices(model: AppModel, onPicked: () -> Unit = {}) {
+    val scope = rememberCoroutineScope()
+    // The first startup request may precede usable Wi-Fi/VPN DNS. Reopening
+    // the choices must recover without requiring a full app restart.
+    LaunchedEffect(model) { model.refreshOrgs() }
     val failed = stringResource(R.string.settings_save_failed)
     val saved = stringResource(R.string.mobile_saved)
     val personal = stringResource(R.string.settings_org_personal)
     var pendingId by rememberSaveable { mutableStateOf<Long?>(null) }
     ActionFeedback(model.actions)
+    if (model.orgsLoading) {
+        androidx.compose.material3.LinearProgressIndicator(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            color = Palette.accent,
+        )
+    }
+    if (model.orgsFailed) {
+        InlineNotice(stringResource(R.string.load_failed), modifier = Modifier.padding(8.dp), tone = NoticeTone.Warning,
+            actionIcon = R.drawable.ic_refresh, actionLabel = stringResource(R.string.rdp_retry),
+            onAction = { scope.launch { model.refreshOrgs() } })
+    }
     model.orgs.forEach { org ->
         ChoiceRow(if (org.personal) personal else org.name, selected = org.id == model.activeOrgId, enabled = !model.actions.busy) {
             if (org.id == model.activeOrgId) onPicked()

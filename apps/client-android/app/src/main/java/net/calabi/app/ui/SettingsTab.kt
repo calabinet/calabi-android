@@ -102,12 +102,10 @@ fun SettingsTab(model: AppModel, onSignedOut: () -> Unit, onReplace: () -> Unit,
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(model.email, style = Styles.rowTitle)
                             }
-                            if (model.orgs.size > 1) {
-                                RowDivider()
-                                LinkRow(stringResource(R.string.settings_org),
-                                    model.activeOrg?.let { if (it.personal) stringResource(R.string.settings_org_personal) else it.name }.orEmpty()) {
-                                    page = SettingsPage.Organizations
-                                }
+                            RowDivider()
+                            LinkRow(stringResource(R.string.settings_org),
+                                model.activeOrg?.let { if (it.personal) stringResource(R.string.settings_org_personal) else it.name }.orEmpty()) {
+                                page = SettingsPage.Organizations
                             }
                         }
                         Group {

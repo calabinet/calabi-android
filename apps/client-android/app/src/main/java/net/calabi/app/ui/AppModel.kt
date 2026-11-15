@@ -80,6 +80,7 @@ class AppModel(val actions: UiActionState) {
         private set
     var connection by mutableStateOf<Connection?>(null)
         private set
+    private var liveRevision = 0L
     var nodes by mutableStateOf<JSONArray?>(null)
         private set
     var nodesError by mutableStateOf<String?>(null)
@@ -107,8 +108,20 @@ class AppModel(val actions: UiActionState) {
         private set
     var activeOrgId by mutableLongStateOf(0L)
         private set
-    var orgs by mutableStateOf(emptyList<Org>())
-        private set
+    private val organizationList = OrgListState {
+        val response = CoreClient.call("GET", "/v1/orgs")
+        if (!response.ok) null else response.json().optJSONArray("items")?.let { items ->
+            buildList {
+                for (i in 0 until items.length()) {
+                    val org = items.getJSONObject(i)
+                    add(Org(org.optLong("id"), org.optString("name"), org.optString("kind") == "personal"))
+                }
+            }
+        }
+    }
+    val orgs get() = organizationList.items
+    val orgsLoading get() = organizationList.loading
+    val orgsFailed get() = organizationList.failed
     var deviceName by mutableStateOf("")
         private set
     var exitNode by mutableStateOf("")
@@ -155,9 +168,12 @@ class AppModel(val actions: UiActionState) {
     val activeOrg: Org? get() = orgs.firstOrNull { it.id == activeOrgId }
 
     suspend fun refreshLive() {
-        connected = CoreClient.call("GET", "/v1/state").json().optBoolean("connected")
-        stoppedInBackground = AppPrefs.vpnStoppedFromOutside(CalabiApp.instance)
+        val revision = liveRevision
+        val requested = CoreClient.call("GET", "/v1/state").json().optBoolean("connected")
         val m = CoreClient.call("GET", "/v1/mesh").json()
+        if (revision != liveRevision) return
+        connected = requested
+        stoppedInBackground = AppPrefs.vpnStoppedFromOutside(CalabiApp.instance)
         connection = Connection(
             state = m.optString("state"), error = UserErrors.stateError(m.optString("error"), m.optString("enrollment_error")), name = m.optString("name"),
             overlay = m.optString("overlay"), selfOverlay = m.optString("self_overlay"), exitNode = m.optString("exit_node"),
@@ -197,16 +213,11 @@ class AppModel(val actions: UiActionState) {
         blockIncoming = s.optBoolean("block_incoming")
         val me = CoreClient.call("GET", "/v1/me")
         if (me.ok) role = me.json().optString("role")
-        val o = CoreClient.call("GET", "/v1/orgs")
-        if (o.ok) {
-            val items = o.json().optJSONArray("items")
-            orgs = buildList {
-                if (items != null) for (i in 0 until items.length()) {
-                    val it = items.getJSONObject(i)
-                    add(Org(it.optLong("id"), it.optString("name"), it.optString("kind") == "personal"))
-                }
-            }
-        }
+        refreshOrgs()
+    }
+
+    suspend fun refreshOrgs() {
+        if (!selfHosted) organizationList.refresh()
     }
 
     /** The user saw the notice and is not reconnecting: stop showing it. */
@@ -225,11 +236,16 @@ class AppModel(val actions: UiActionState) {
 
     suspend fun switchOrg(id: Long): ApiResult {
         val r = CoreClient.call("POST", "/v1/orgs/switch", JSONObject().put("target_org_id", id))
+        if (!r.ok) return r
+        liveRevision++
+        connection = null
+        nodes = null
         // What was shown belongs to the organization just left.
         tunnels = null
         usage = null
         replaceable = emptyList()
         refreshAccount()
+        refreshLive()
         refreshNodes()
         refreshReplaceable()
         return r

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="local_device_label">Questo dispositivo</string>
+    <string name="local_device_address">IP della rete Mesh</string>
+    <string name="local_device_last_address">Ultimo IP della rete Mesh</string>
+    <string name="local_device_status">Stato della connessione</string>
+    <string name="local_device_enabled">Attivato</string>
+    <string name="local_device_disabled">Non attivato</string>
+</resources>

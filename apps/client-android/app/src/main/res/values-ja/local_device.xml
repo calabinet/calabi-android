@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="local_device_label">この端末</string>
+    <string name="local_device_address">メッシュ IP</string>
+    <string name="local_device_last_address">前回のメッシュ IP</string>
+    <string name="local_device_status">接続状態</string>
+    <string name="local_device_enabled">有効</string>
+    <string name="local_device_disabled">無効</string>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="local_device_label">이 기기</string>
+    <string name="local_device_address">메시 IP</string>
+    <string name="local_device_last_address">이전 메시 IP</string>
+    <string name="local_device_status">연결 상태</string>
+    <string name="local_device_enabled">사용</string>
+    <string name="local_device_disabled">사용 안 함</string>
+</resources>
