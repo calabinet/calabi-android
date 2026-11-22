@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.1.3 — 2026-11-21
+
+- **Changed:** Updated the bundled Calabi core to 2.9.0 for the current mesh protocol and subnet-routing changes.
+
+Install over the existing official app to retain account, device identity, and settings. The package remains net.calabi.app and uses the established signing certificate. The version code is 3001003.
+
 ## 3.1.2 — 2026-11-15
 
 - **Changed:** The local device and its mesh information appear first in the device list.
