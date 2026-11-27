@@ -5,7 +5,7 @@
     <string name="rdp_modifiers">Ctrl / Alt / Shift</string>
     <string name="rdp_modifier_hint">用于下一次按键或点击</string>
     <string name="rdp_retry">重试</string>
-    <string name="rdp_same_owner">远程登录仅支持你本人所属的 Windows 设备。</string>
+    <string name="remote_login">远程登录</string>
     <string name="rdp_certificate_missing">电脑尚未提供已验证的远程桌面身份，请更新电脑上的 Calabi 服务并启用远程桌面。</string>
     <string name="rdp_windows_required">请选择支持远程桌面主机功能的 Windows 设备。</string>
     <string name="rdp_auth_failed">Windows 登录失败，请检查用户名、域和账号密码（不是 PIN）。</string>
@@ -40,7 +40,7 @@
     <string name="rdp_pan_mode">移动画面</string>
     <string name="rdp_fit">适应</string>
     <string name="rdp_gestures">手势</string>
-    <string name="rdp_gestures_hint">触控板模式：单指滑动移动指针，轻点点击；双击后拖动，或先点“拖动”，可按住左键拖拽。点击“触控板”可切换到按手指位置操作的“直接触控”。两种模式都支持双指轻点右键、双指滑动滚轮及双指开合缩放（最高 5 倍）。切到“移动画面”可双指平移；点击百分比恢复适应。“工具”中提供常用快捷键和手动文本剪贴板。</string>
+    <string name="rdp_gestures_hint">直触模式：单指轻点、直接滑动滚动网页或列表，长按弹出右键菜单。双指捏合可同时缩放并移动画面，放大后也可用三指直接平移。切换触控板模式可使用带速度加速的精准光标：轻点左键、长按或双指轻点右键、双指滑动带惯性滚轮、双击拖动按住左键。悬浮按钮可拖动吸附屏幕左右边缘。</string>
     <string name="rdp_username">Windows 用户名</string>
     <string name="rdp_domain">域（可选）</string>
     <string name="rdp_background_expired">会话已在后台超过 60 秒并断开，请重新连接。</string>
@@ -58,7 +58,7 @@
     <string name="rdp_quality_detail">清晰</string>
     <string name="rdp_quality_hint">省流：960 × 540、16 位、最高 15 帧；均衡：1280 × 720、最高 30 帧；清晰：1920 × 1080、最高 60 帧。连接时生效，实际格式由电脑协商。</string>
     <string name="rdp_statistics">连接详情</string>
-    <string name="rdp_statistics_value">桌面：%1$d × %2$d\n画面更新：%3$d\n输入事件：%4$d\n连接时长：%5$d 秒</string>
+    <string name="rdp_statistics_value">桌面：%1$d × %2$d\n连接时长：%3$d 秒</string>
     <string name="rdp_graphics_classic">兼容图形 · 软件解码。帧率为本机呈现上限，实际取决于电脑与网络。</string>
     <string name="rdp_connect_timeout">30 秒内未能显示桌面。请确认电脑已唤醒并启用远程桌面，然后重新连接。</string>
     <string name="rdp_hardware_prefer">优先硬件解码</string>
@@ -66,4 +66,27 @@
     <string name="rdp_graphics_gfx">RDPGFX · 兼容编码</string>
     <string name="rdp_graphics_hardware">H.264 · MediaCodec 硬件解码</string>
     <string name="rdp_graphics_fallback">兼容图形 · 硬件解码已回退</string>
+    <string name="rdp_quality_adaptive">适应显示器</string>
+    <string name="rdp_quality_adaptive_hint">按显示区域调整远端分辨率，最高 4K。远端不支持调整时使用 720p。</string>
+    <string name="rdp_play_audio">在此设备播放远程声音</string>
+    <string name="rdp_allow_file_copy">允许复制文件</string>
+    <string name="rdp_file_copy">复制文件</string>
+    <string name="rdp_file_copy_hint">选择手机文件后，在 Windows 资源管理器中粘贴。要保存到手机，请先在 Windows 复制文件，再在这里选择。</string>
+    <string name="rdp_file_copy_waiting">正在等待文件复制通道。</string>
+    <string name="rdp_file_copy_choose">选择手机文件</string>
+    <string name="rdp_file_copy_offered">可以在 Windows 资源管理器中粘贴了。</string>
+    <string name="rdp_file_copy_saved">文件已保存。</string>
+    <string name="rdp_file_copy_busy">正在传输文件…</string>
+    <string name="rdp_file_copy_failed">文件复制失败，请重试。</string>
+    <string name="rdp_statistics_rates">帧率：%1$.1f fps\n接收码率：%2$.3f Mbps</string>
+    <string name="rdp_scale">桌面缩放</string>
+    <string name="rdp_scale_auto">自动</string>
+    <string name="rdp_scale_100">100%</string>
+    <string name="rdp_scale_125">125%</string>
+    <string name="rdp_scale_150">150%</string>
+    <string name="rdp_scale_200">200%</string>
+    <string name="rdp_scale_hint">放大 Windows 文字和按钮以便手指点击。固定画质在连接时生效，适应显示器模式可实时调整。</string>
+    <string name="rdp_quick_paste">粘贴手机内容</string>
+    <string name="rdp_quick_copy_pc">取电脑剪贴板</string>
+    <string name="rdp_quick_pasted">已发送并粘贴到电脑。</string>
 </resources>

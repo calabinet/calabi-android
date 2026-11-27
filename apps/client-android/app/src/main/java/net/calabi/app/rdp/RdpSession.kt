@@ -18,7 +18,13 @@ internal data class RdpClipboardResult(val id: Int = 0, val error: Int = 0, val 
 
 /** One authorized session. Transport repair retains native credentials only until close. */
 @Keep
-internal class RdpSession(private val prepared: JSONObject, val quality: RdpQuality = RdpQuality.BALANCED, private val hardware: Boolean = true) {
+internal class RdpSession(
+    private val prepared: JSONObject,
+    val quality: RdpQuality = RdpQuality.BALANCED,
+    private val hardware: Boolean = true,
+    private val audio: Boolean = false,
+    val initialScale: Int = 100,
+) {
     companion object {
         const val BACKGROUND_TIMEOUT_MS = 60_000L
         fun terminal(code: Int) = code >= 2 && code != 6
@@ -26,7 +32,10 @@ internal class RdpSession(private val prepared: JSONObject, val quality: RdpQual
     private val lock = Any()
     private val main = Handler(Looper.getMainLooper())
     private val worker = Executors.newSingleThreadScheduledExecutor()
-    private val inputs = RdpInputQueue { kind, flags, x, y -> input(kind, flags, x, y) }
+    private val inputs = RdpInputQueue(
+        { kind, flags, x, y -> input(kind, flags, x, y) },
+        { action, pointerId, x, y -> touchNative(action, pointerId, x, y) },
+    )
     private var handle = 0L
     @Volatile private var closed = false
     @Volatile private var foreground = true
@@ -44,6 +53,9 @@ internal class RdpSession(private val prepared: JSONObject, val quality: RdpQual
     private val mutableGraphics = MutableStateFlow(0)
     val graphics = mutableGraphics.asStateFlow()
     @Keep fun onNativeGraphics(mode: Int) { main.post { if (!closed) mutableGraphics.value = mode } }
+    private val mutableTouchReady = MutableStateFlow(false)
+    val touchReady = mutableTouchReady.asStateFlow()
+    @Keep fun onNativeTouch(ready: Boolean) { main.post { if (!closed) mutableTouchReady.value = ready } }
     private val expire = Runnable { if (!foreground && !closed) close(4) }
     private val mutableState = MutableStateFlow(0 to "")
     val state = mutableState.asStateFlow()
@@ -58,6 +70,8 @@ internal class RdpSession(private val prepared: JSONObject, val quality: RdpQual
     private val framePending = AtomicBoolean()
     private val inputRepairPending = AtomicBoolean()
     val port: Int get() = prepared.optInt("port", 3389)
+    val copyEnabled: Boolean get() = prepared.optString("copy_binding").isNotEmpty()
+    val ticket: String get() = prepared.getString("token")
     var view: RdpView? = null
         set(value) { field = value; if (frameWidth > 0) value?.frame(frameWidth, frameHeight) }
 
@@ -69,9 +83,9 @@ internal class RdpSession(private val prepared: JSONObject, val quality: RdpQual
             synchronized(lock) {
                 if (closed) return@execute
                 handle = RdpNative.create(this, prepared.getString("host"), prepared.getString("local"),
-                    prepared.getString("certificate_sha256"), user, domain, password, prepared.optInt("port", 3389))
+                    prepared.getString("certificate_sha256"), user, domain, password, port, prepared.optString("copy_binding"))
                 if (handle != 0L) {
-                    if (!RdpNative.configure(handle, quality.ordinal, hardware)) { onNativeState(2, "Invalid display configuration"); return@execute }
+                    if (!RdpNative.configure(handle, quality.ordinal, hardware, audio, initialScale)) { onNativeState(2, "Invalid display configuration"); return@execute }
                     RdpNative.foreground(handle, false)
                     RdpNative.network(handle, online && foreground, recovering)
                 }
@@ -249,11 +263,29 @@ internal class RdpSession(private val prepared: JSONObject, val quality: RdpQual
         }
     }
 
+    private fun touchNative(action: Int, pointerId: Int, x: Int, y: Int) = synchronized(lock) {
+        if (handle != 0L && !closed && !RdpNative.touch(handle, action, pointerId, x, y) && inputRepairPending.compareAndSet(false, true)) {
+            main.post {
+                inputRepairPending.set(false)
+                if (!closed && foreground && mutableInteractive.value && !recovering) networkChanged(online)
+            }
+        }
+    }
+
     fun mouse(flags: Int, x: Int, y: Int) { inputs.mouse(flags, x, y) }
+    fun touch(action: Int, pointerId: Int, x: Int, y: Int) { inputs.touch(action, pointerId, x, y) }
     fun key(scan: Int, down: Boolean) { inputs.key(scan, down) }
     fun press(scan: Int) { inputs.press(scan) }
     fun shortcut(modifiers: IntArray, scan: Int) { inputs.chord(modifiers, scan) }
     fun text(text: String) { inputs.text(text) }
+
+    fun viewport(width: Int, height: Int) = synchronized(lock) {
+        if (handle != 0L && !closed) RdpNative.viewport(handle, width, height)
+    }
+
+    fun setScale(scalePercent: Int) = synchronized(lock) {
+        if (handle != 0L && !closed) RdpNative.scale(handle, RdpScale.clampDesktopScale(scalePercent))
+    }
 
     fun statistics(): LongArray = synchronized(lock) {
         if (handle != 0L && !closed) RdpNative.stats(handle) else LongArray(0)
@@ -277,6 +309,7 @@ internal class RdpSession(private val prepared: JSONObject, val quality: RdpQual
         main.removeCallbacks(connectExpire)
         networks?.close(); networks = null
         mutableInteractive.value = false
+        mutableTouchReady.value = false
         mutableState.value = code to message
         clipboardRequest = 0; clipboardAvailable.value = false; mutableClipboard.value = RdpClipboardResult()
         main.post { view?.release(); view = null }

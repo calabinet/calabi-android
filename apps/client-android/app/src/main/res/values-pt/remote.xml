@@ -17,4 +17,5 @@
     <string name="files_share_no_app">Nenhum aplicativo disponível para compartilhar arquivos.</string>
     <string name="remote_recent_available">Disponível</string>
     <string name="remote_recent_unavailable">Indisponível</string>
+    <string name="files_saved_in_calabi_downloads">Salvo em Downloads / Calabi.</string>
 </resources>

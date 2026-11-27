@@ -17,4 +17,5 @@
     <string name="files_share_no_app">找不到可分享檔案的應用程式。</string>
     <string name="remote_recent_available">可連線</string>
     <string name="remote_recent_unavailable">暫時無法連線</string>
+    <string name="files_saved_in_calabi_downloads">已儲存到「下載 / Calabi」。</string>
 </resources>

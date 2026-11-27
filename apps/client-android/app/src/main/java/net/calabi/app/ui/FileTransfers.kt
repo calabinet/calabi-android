@@ -62,6 +62,23 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
     var message by rememberSaveable { mutableStateOf("") }
     val receivedFiles = remember { ReceivedFiles.cache }
     var preparingDocument by remember { mutableStateOf<String?>(null) }
+    var savingReceivedId by rememberSaveable { mutableStateOf<String?>(null) }
+    val saveReceived = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val receivedId = savingReceivedId
+        savingReceivedId = null
+        val uri = result.data?.data
+        if (result.resultCode == android.app.Activity.RESULT_OK && receivedId != null && uri != null) {
+            busy = true
+            scope.launch {
+                try {
+                    receivedFiles.saveAs(receivedId, uri)
+                    message = context.getString(R.string.filetest_saved)
+                } catch (e: CancellationException) { throw e }
+                catch (_: Exception) { message = context.getString(R.string.files_open_unavailable) }
+                finally { busy = false }
+            }
+        }
+    }
     var removing by remember { mutableStateOf<JSONObject?>(null) }
     var identityOperation by remember { mutableStateOf<String?>(null) }
     var sendPage by rememberSaveable { mutableStateOf(false) }
@@ -256,7 +273,17 @@ fun FileTransfersScreen(initialPeer: String?, shared: List<Uri>, onShareTaken: (
                                         if (busy || actionBusy) return
                                         busy = true; preparingDocument = id; message = ""
                                         scope.launch {
-                                            try { message = receivedFiles.launch(context, id, share)?.let { context.getString(it) }.orEmpty() }
+                                            try {
+                                                val result = receivedFiles.launch(context, id, share)
+                                                val feedback = if (result == R.string.files_open_no_app) {
+                                                    receivedFiles.openInDownloads(context, id) { document ->
+                                                        savingReceivedId = id
+                                                        try { saveReceived.launch(receivedSaveIntent(document)) }
+                                                        catch (e: Exception) { savingReceivedId = null; throw e }
+                                                    }
+                                                } else result
+                                                message = feedback?.let(context::getString).orEmpty()
+                                            }
                                             finally { busy = false; preparingDocument = null }
                                         }
                                     }

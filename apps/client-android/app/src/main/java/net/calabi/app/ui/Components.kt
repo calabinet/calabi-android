@@ -34,6 +34,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -57,6 +59,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -64,6 +67,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -287,9 +291,29 @@ fun LabeledField(
     }
 }
 
+@Composable
+private fun BottomNavIcon(icon: Int, tint: Color, pendingCount: Int) {
+    BadgedBox(badge = {
+        if (pendingCount > 0) {
+            val description = pluralStringResource(R.plurals.files_notification_count, pendingCount, pendingCount)
+            Badge(
+                modifier = Modifier.widthIn(min = 16.dp).heightIn(min = 16.dp)
+                    .clearAndSetSemantics { contentDescription = description },
+                containerColor = Palette.danger,
+                contentColor = Color.White,
+            ) {
+                Text(if (pendingCount > 99) "99+" else pendingCount.toString(),
+                    fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            }
+        }
+    }) {
+        Glyph(icon, tint, 20.dp)
+    }
+}
+
 /** Equal-width tabs grow for larger text and long translations. */
 @Composable
-fun BottomNav(tab: Int, onTab: (Int) -> Unit) {
+fun BottomNav(tab: Int, pendingIncomingFileCount: Int, onTab: (Int) -> Unit) {
     val tabs = buildList {
         add(Triple(0, R.drawable.ic_mesh, R.string.tab_mesh))
         add(Triple(1, R.drawable.ic_tunnel, R.string.tab_tunnels))
@@ -311,7 +335,7 @@ fun BottomNav(tab: Int, onTab: (Int) -> Unit) {
                                 .selectable(selected = tab == index, onClick = { onTab(index) }, role = Role.Tab)
                                 .padding(horizontal = 10.dp, vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Glyph(icon, if (tab == index) Palette.accent else Palette.muted, 20.dp)
+                                BottomNavIcon(icon, if (tab == index) Palette.accent else Palette.muted, if (index == 3) pendingIncomingFileCount else 0)
                                 Text(stringResource(label), fontSize = 12.sp, lineHeight = 16.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                     color = if (tab == index) Palette.accent else Palette.muted)
                             }
@@ -328,7 +352,7 @@ fun BottomNav(tab: Int, onTab: (Int) -> Unit) {
                     .padding(horizontal = 4.dp, vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Box(Modifier.background(if (tab == index) Palette.accentSoft else Color.Transparent, RoundedCornerShape(16.dp)).padding(horizontal = 16.dp, vertical = 3.dp)) {
-                        Glyph(icon, if (tab == index) Palette.accent else Palette.muted, 20.dp)
+                        BottomNavIcon(icon, if (tab == index) Palette.accent else Palette.muted, if (index == 3) pendingIncomingFileCount else 0)
                     }
                     Text(stringResource(label), fontSize = 12.sp, lineHeight = 16.sp, color = if (tab == index) Palette.accent else Palette.muted,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center)

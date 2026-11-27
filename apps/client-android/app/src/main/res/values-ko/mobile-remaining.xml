@@ -91,7 +91,7 @@
     <string name="rdp_modifiers">Ctrl / Alt / Shift</string>
     <string name="rdp_modifier_hint">다음 키 또는 클릭</string>
     <string name="rdp_retry">다시 시도</string>
-    <string name="rdp_same_owner">원격 로그인은 본인 소유의 Windows 기기에서만 가능합니다.</string>
+    <string name="remote_login">원격 로그인</string>
     <string name="rdp_certificate_missing">컴퓨터가 검증된 RDP ID를 제공하지 않았습니다. Calabi 서비스를 업데이트하고 원격 데스크톱을 켜세요.</string>
     <string name="rdp_windows_required">원격 데스크톱 호스팅을 지원하는 Windows 기기를 선택하세요.</string>
     <string name="rdp_auth_failed">Windows 로그인에 실패했습니다. 사용자 이름, 도메인, 계정 비밀번호(PIN 아님)를 확인하세요.</string>
@@ -126,7 +126,7 @@
     <string name="rdp_pan_mode">화면 이동</string>
     <string name="rdp_fit">화면에 맞춤</string>
     <string name="rdp_gestures">제스처</string>
-    <string name="rdp_gestures_hint">트랙패드: 한 손가락으로 포인터를 옮기고 탭하여 클릭합니다. 두 번 탭한 뒤 끌거나 드래그를 켜면 왼쪽 버튼을 누른 상태가 됩니다. 트랙패드를 탭하면 손가락 위치를 가리키는 직접 터치로 전환됩니다. 두 모드 모두 두 손가락 탭은 오른쪽 클릭, 두 손가락을 함께 움직이면 스크롤, 핀치하면 최대 5배 확대됩니다. 스크롤을 화면 이동으로 바꾸면 화면을 옮깁니다. 배율을 누르면 화면에 맞춤으로 돌아갑니다. 도구에 단축키와 수동 텍스트 클립보드가 있습니다.</string>
+    <string name="rdp_gestures_hint">직접 터치: 탭하고 한 손가락으로 쓸어 Windows 화면을 자연스럽게 스크롤하며 길게 눌러 우클릭합니다. 두 손가락 핀치로 확대/축소와 이동을 함께 하고, 확대 중에는 세 손가락으로 화면을 옮길 수 있습니다. 트랙패드로 전환하면 가속 커서로 정밀 조작할 수 있으며 탭으로 좌클릭, 길게 누르기나 두 손가락 탭으로 우클릭, 두 손가락 드래그로 관성 스크롤이 됩니다. 모서리 버튼은 드래그해 좌우 가장자리에 고정할 수 있습니다.</string>
     <string name="rdp_username">Windows 사용자 이름</string>
     <string name="rdp_domain">도메인(선택 사항)</string>
     <string name="rdp_background_expired">백그라운드에서 60초가 지나 세션이 종료되었습니다. 계속하려면 다시 연결하세요.</string>
@@ -144,7 +144,7 @@
     <string name="rdp_quality_detail">선명</string>
     <string name="rdp_quality_hint">절약: 960 × 540, 16비트, 최대 15fps. 균형: 1280 × 720, 최대 30fps. 선명: 1920 × 1080, 최대 60fps. 연결 시 적용되며 컴퓨터가 다른 형식을 협상할 수 있습니다.</string>
     <string name="rdp_statistics">연결 세부 정보</string>
-    <string name="rdp_statistics_value">데스크톱: %1$d × %2$d\n업데이트: %3$d\n입력 이벤트: %4$d\n연결 시간: %5$d초</string>
+    <string name="rdp_statistics_value">데스크톱: %1$d × %2$d\n연결 시간: %3$d초</string>
     <string name="rdp_graphics_classic">호환 그래픽 · 소프트웨어 디코딩. 프레임 속도는 표시 상한이며 컴퓨터와 네트워크에 따라 달라집니다.</string>
     <string name="rdp_connect_timeout">컴퓨터가 30초 내에 데스크톱을 제공하지 않았습니다. 절전 상태가 아닌지, 원격 데스크톱이 켜져 있는지 확인하고 다시 연결하세요.</string>
     <string name="rdp_hardware_prefer">하드웨어 디코딩 우선</string>
@@ -411,4 +411,27 @@
     </plurals>
  <string name="files_identity_unavailable">파일 전송을 사용할 수 없습니다. 복구를 시도해 주세요.</string>
  <string name="files_error_clock">시스템 날짜와 시간을 확인한 후 다시 시도해 주세요.</string>
+    <string name="rdp_quality_adaptive">디스플레이에 맞춤</string>
+    <string name="rdp_quality_adaptive_hint">표시 영역에 맞춰 최대 4K까지 조정합니다. 원격 PC가 크기 변경을 지원하지 않으면 720p로 시작합니다.</string>
+    <string name="rdp_play_audio">이 기기에서 원격 오디오 재생</string>
+    <string name="rdp_allow_file_copy">파일 복사 허용</string>
+    <string name="rdp_file_copy">파일 복사</string>
+    <string name="rdp_file_copy_hint">휴대전화 파일을 선택한 뒤 Windows 파일 탐색기에 붙여넣으세요. 휴대전화에 저장하려면 Windows에서 복사한 파일을 여기서 선택하세요.</string>
+    <string name="rdp_file_copy_waiting">파일 복사 채널을 기다리는 중입니다.</string>
+    <string name="rdp_file_copy_choose">휴대전화 파일 선택</string>
+    <string name="rdp_file_copy_offered">Windows 파일 탐색기에 붙여넣을 수 있습니다.</string>
+    <string name="rdp_file_copy_saved">파일을 저장했습니다.</string>
+    <string name="rdp_file_copy_busy">파일 전송 중…</string>
+    <string name="rdp_file_copy_failed">파일을 복사하지 못했습니다. 다시 시도하세요.</string>
+    <string name="rdp_statistics_rates">프레임 속도: %1$.1f fps\n수신 비트 전송률: %2$.3f Mbps</string>
+    <string name="rdp_scale">데스크톱 배율</string>
+    <string name="rdp_scale_auto">자동</string>
+    <string name="rdp_scale_100">100%</string>
+    <string name="rdp_scale_125">125%</string>
+    <string name="rdp_scale_150">150%</string>
+    <string name="rdp_scale_200">200%</string>
+    <string name="rdp_scale_hint">손가락으로 누르기 쉽도록 Windows 글자와 버튼을 확대합니다. 연결 시 적용되며 화면 맞춤 모드에서는 즉시 반영됩니다.</string>
+    <string name="rdp_quick_paste">휴대폰 붙여넣기</string>
+    <string name="rdp_quick_copy_pc">PC 텍스트 가져오기</string>
+    <string name="rdp_quick_pasted">컴퓨터로 보내고 붙여넣었습니다.</string>
 </resources>

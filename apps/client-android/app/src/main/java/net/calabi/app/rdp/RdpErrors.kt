@@ -5,7 +5,7 @@ import net.calabi.app.R
 /** Map stable core reasons and FreeRDP codes; no credentials or raw server messages enter the UI. */
 internal object RdpErrors {
     fun reason(value: String): Int = when (value) {
-        "same_owner_required" -> R.string.rdp_same_owner
+        "same_owner_required" -> R.string.remote_target_unavailable
         "certificate_unavailable" -> R.string.rdp_certificate_missing
         "identity_unavailable", "remote_identity_changed" -> R.string.rdp_identity_changed
         "windows_required" -> R.string.rdp_windows_required

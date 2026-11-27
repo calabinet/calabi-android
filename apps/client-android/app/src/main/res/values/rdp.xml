@@ -5,7 +5,7 @@
     <string name="rdp_modifiers">Ctrl / Alt / Shift</string>
     <string name="rdp_modifier_hint">Next key or click</string>
     <string name="rdp_retry">Retry</string>
-    <string name="rdp_same_owner">Remote login is available only for your own Windows devices.</string>
+    <string name="remote_login">Remote login</string>
     <string name="rdp_certificate_missing">The computer has not provided a verified RDP identity. Update its Calabi service and enable Remote Desktop.</string>
     <string name="rdp_windows_required">Select a Windows device that supports Remote Desktop hosting.</string>
     <string name="rdp_auth_failed">Windows sign-in failed. Check the username, domain and account password (not a PIN).</string>
@@ -40,7 +40,7 @@
     <string name="rdp_pan_mode">Move canvas</string>
     <string name="rdp_fit">Fit</string>
     <string name="rdp_gestures">Gestures</string>
-    <string name="rdp_gestures_hint">Trackpad: slide one finger to move the pointer; tap to click. Double tap and drag, or arm Drag, to hold the left button. Tap Trackpad to switch to Direct touch, where the finger position is the target. In either mode, tap with two fingers for right click, move two fingers together to scroll, and pinch to zoom up to 5×. Switch Scroll to Move canvas to pan. The percentage restores Fit. Tools contains shortcuts and a manual text clipboard.</string>
+    <string name="rdp_gestures_hint">Direct touch: tap, swipe to scroll natively on Windows, or long press for right click. Pinch to zoom and pan together, or drag with three fingers to pan while zoomed. Switch to Trackpad for a precision cursor with speed acceleration; tap to click, long press or two-finger tap for right click, two-finger drag to scroll with inertia, and double-tap-drag to hold left button. Drag the corner handle to dock it on either side.</string>
     <string name="rdp_username">Windows username</string>
     <string name="rdp_domain">Domain (optional)</string>
     <string name="rdp_background_expired">The session ended after 60 seconds in the background. Reconnect to continue.</string>
@@ -58,7 +58,7 @@
     <string name="rdp_quality_detail">Sharp</string>
     <string name="rdp_quality_hint">Data saver: 960 × 540, 16-bit, up to 15 fps. Balanced: 1280 × 720, up to 30 fps. Sharp: 1920 × 1080, up to 60 fps. Applies on connection; the computer may negotiate a different format.</string>
     <string name="rdp_statistics">Connection details</string>
-    <string name="rdp_statistics_value">Desktop: %1$d × %2$d\nUpdates: %3$d\nInput events: %4$d\nConnected: %5$d s</string>
+    <string name="rdp_statistics_value">Desktop: %1$d × %2$d\nConnected: %3$d s</string>
     <string name="rdp_graphics_classic">Compatible graphics · software decoding. Frame rates are presentation limits and depend on the computer and network.</string>
     <string name="rdp_connect_timeout">The computer did not provide a desktop within 30 seconds. Check that it is awake and remote desktop is enabled, then reconnect.</string>
     <string name="rdp_hardware_prefer">Prefer hardware decoding</string>
@@ -66,4 +66,27 @@
     <string name="rdp_graphics_gfx">RDPGFX · compatible encoding</string>
     <string name="rdp_graphics_hardware">H.264 · MediaCodec hardware decoding</string>
     <string name="rdp_graphics_fallback">Compatible graphics · hardware decoding fallback</string>
+    <string name="rdp_quality_adaptive">Match display</string>
+    <string name="rdp_quality_adaptive_hint">Matches the remote desktop to the display area, up to 4K. Starts at 720p if the computer cannot resize the desktop.</string>
+    <string name="rdp_play_audio">Play remote audio on this device</string>
+    <string name="rdp_allow_file_copy">Allow file copy</string>
+    <string name="rdp_file_copy">Copy files</string>
+    <string name="rdp_file_copy_hint">Select a phone file, then paste it in Windows File Explorer. To save to the phone, copy files in Windows and select them here.</string>
+    <string name="rdp_file_copy_waiting">Waiting for the file copy channel.</string>
+    <string name="rdp_file_copy_choose">Choose phone file</string>
+    <string name="rdp_file_copy_offered">Ready to paste in Windows File Explorer.</string>
+    <string name="rdp_file_copy_saved">File saved.</string>
+    <string name="rdp_file_copy_busy">Transferring file…</string>
+    <string name="rdp_file_copy_failed">File copy failed. Please try again.</string>
+    <string name="rdp_statistics_rates">Frame rate: %1$.1f fps\nReceive bitrate: %2$.3f Mbps</string>
+    <string name="rdp_scale">Desktop scaling</string>
+    <string name="rdp_scale_auto">Auto</string>
+    <string name="rdp_scale_100">100%</string>
+    <string name="rdp_scale_125">125%</string>
+    <string name="rdp_scale_150">150%</string>
+    <string name="rdp_scale_200">200%</string>
+    <string name="rdp_scale_hint">Scales Windows text and buttons for easier finger taps. Applies on connection, or live in Match display mode.</string>
+    <string name="rdp_quick_paste">Paste phone</string>
+    <string name="rdp_quick_copy_pc">Get PC text</string>
+    <string name="rdp_quick_pasted">Sent and pasted to computer.</string>
 </resources>

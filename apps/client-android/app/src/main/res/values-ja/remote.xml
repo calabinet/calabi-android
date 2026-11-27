@@ -17,4 +17,5 @@
     <string name="files_share_no_app">ファイルを共有できるアプリがありません。</string>
     <string name="remote_recent_available">接続可能</string>
     <string name="remote_recent_unavailable">接続不可</string>
+    <string name="files_saved_in_calabi_downloads">「ダウンロード / Calabi」に保存しました。</string>
 </resources>

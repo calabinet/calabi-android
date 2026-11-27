@@ -35,10 +35,11 @@ fun DeviceActionsSheet(device: Device, fileDisabledReason: Int?, onDismiss: () -
                 ActionRow(stringResource(R.string.mobile_copy_address), icon = R.drawable.ic_copy,
                     onClick = { copyToClipboard(context, device.overlay) })
             }
-            if (device.os == "windows") {
-                PrimaryButton(stringResource(R.string.rdp_preview_title), enabled = device.online, onClick = {
+            if (device.remoteLoginKey != null) {
+                PrimaryButton(stringResource(R.string.remote_login), enabled = device.online, onClick = {
                     onDismiss()
-                    context.startActivity(Intent(context, RdpActivity::class.java).putExtra("overlay", device.overlay))
+                    context.startActivity(Intent(context, RdpActivity::class.java).putExtra("overlay", device.overlay)
+                        .putExtra("device_key", device.remoteLoginKey))
                 })
             }
             if (BuildConfig.FILE_TRANSFER_ENABLED) {

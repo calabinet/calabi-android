@@ -91,7 +91,7 @@
     <string name="rdp_modifiers">Ctrl / Alt / Shift</string>
     <string name="rdp_modifier_hint">次のキーまたはクリック</string>
     <string name="rdp_retry">再試行</string>
-    <string name="rdp_same_owner">リモートログインは自分の Windows 端末でのみ利用できます。</string>
+    <string name="remote_login">リモートログイン</string>
     <string name="rdp_certificate_missing">このコンピューターの検証済み RDP ID がありません。Calabi サービスを更新し、リモートデスクトップを有効にしてください。</string>
     <string name="rdp_windows_required">リモートデスクトップのホスト機能に対応した Windows 端末を選択してください。</string>
     <string name="rdp_auth_failed">Windows にログインできませんでした。ユーザー名、ドメイン、アカウントのパスワード（PIN ではありません）を確認してください。</string>
@@ -126,7 +126,7 @@
     <string name="rdp_pan_mode">表示を移動</string>
     <string name="rdp_fit">全体表示</string>
     <string name="rdp_gestures">ジェスチャー</string>
-    <string name="rdp_gestures_hint">トラックパッド：指 1 本でポインターを動かし、タップでクリック。ダブルタップしてドラッグするか「ドラッグ」を有効にすると左ボタンを押し続けます。「トラックパッド」をタップすると、指の位置を操作する直接タッチに切り替わります。両モードとも 2 本指タップで右クリック、2 本指を同じ方向に動かしてスクロール、ピンチで最大 5 倍に拡大できます。「スクロール」を「表示を移動」に切り替えると表示位置を動かせます。倍率を押すと全体表示に戻ります。ツールにはショートカットと手動テキストクリップボードがあります。</string>
+    <string name="rdp_gestures_hint">ダイレクトタッチ：タップ、1本指スワイプでWindowsをそのままスクロール、長押しで右クリックできます。ピンチで拡大縮小と同時に画面移動、拡大中は3本指ドラッグでも移動できます。トラックパッドに切替えると加速付きカーソルで精密操作でき、タップで左クリック、長押しまたは2本指タップで右クリック、2本指スワイプで慣性スクロールできます。隅のボタンはドラッグして左右端に配置できます。</string>
     <string name="rdp_username">Windows ユーザー名</string>
     <string name="rdp_domain">ドメイン（任意）</string>
     <string name="rdp_background_expired">バックグラウンドで 60 秒経過したためセッションが終了しました。続けるには再接続してください。</string>
@@ -144,7 +144,7 @@
     <string name="rdp_quality_detail">高精細</string>
     <string name="rdp_quality_hint">データ節約：960 × 540、16 ビット、最大 15 fps。バランス：1280 × 720、最大 30 fps。高精細：1920 × 1080、最大 60 fps。接続時に適用され、コンピューターが別の形式を選ぶ場合があります。</string>
     <string name="rdp_statistics">接続の詳細</string>
-    <string name="rdp_statistics_value">デスクトップ：%1$d × %2$d\n更新：%3$d\n入力イベント：%4$d\n接続時間：%5$d 秒</string>
+    <string name="rdp_statistics_value">デスクトップ：%1$d × %2$d\n接続時間：%3$d 秒</string>
     <string name="rdp_graphics_classic">互換グラフィックス · ソフトウェアデコード。フレームレートは表示上限であり、コンピューターやネットワークに依存します。</string>
     <string name="rdp_connect_timeout">30 秒以内にデスクトップを取得できませんでした。コンピューターが起動しており、リモートデスクトップが有効か確認して再接続してください。</string>
     <string name="rdp_hardware_prefer">ハードウェアデコードを優先</string>
@@ -411,4 +411,27 @@
     </plurals>
  <string name="files_identity_unavailable">ファイル転送を利用できません。修復をお試しください。</string>
  <string name="files_error_clock">システムの日付と時刻を確認して再試行してください。</string>
+    <string name="rdp_quality_adaptive">画面に合わせる</string>
+    <string name="rdp_quality_adaptive_hint">表示領域に合わせて最大 4K まで調整します。接続先でサイズ変更ができない場合は 720p になります。</string>
+    <string name="rdp_play_audio">このデバイスでリモート音声を再生</string>
+    <string name="rdp_allow_file_copy">ファイルのコピーを許可</string>
+    <string name="rdp_file_copy">ファイルをコピー</string>
+    <string name="rdp_file_copy_hint">スマートフォンのファイルを選び、Windows のエクスプローラーで貼り付けます。スマートフォンに保存するには、Windows でコピーしてからここで選択してください。</string>
+    <string name="rdp_file_copy_waiting">ファイルコピーチャネルを待機しています。</string>
+    <string name="rdp_file_copy_choose">スマートフォンのファイルを選択</string>
+    <string name="rdp_file_copy_offered">Windows のエクスプローラーで貼り付けできます。</string>
+    <string name="rdp_file_copy_saved">ファイルを保存しました。</string>
+    <string name="rdp_file_copy_busy">ファイルを転送中…</string>
+    <string name="rdp_file_copy_failed">ファイルのコピーに失敗しました。再試行してください。</string>
+    <string name="rdp_statistics_rates">フレームレート：%1$.1f fps\n受信ビットレート：%2$.3f Mbps</string>
+    <string name="rdp_scale">デスクトップ倍率</string>
+    <string name="rdp_scale_auto">自動</string>
+    <string name="rdp_scale_100">100%</string>
+    <string name="rdp_scale_125">125%</string>
+    <string name="rdp_scale_150">150%</string>
+    <string name="rdp_scale_200">200%</string>
+    <string name="rdp_scale_hint">Windowsの文字やボタンを指で押しやすく拡大します。接続時に適用され、画面に合わせるモードでは即座に反映されます。</string>
+    <string name="rdp_quick_paste">スマホから貼付</string>
+    <string name="rdp_quick_copy_pc">PCから取得</string>
+    <string name="rdp_quick_pasted">PCへ送信して貼り付けました。</string>
 </resources>

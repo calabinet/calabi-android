@@ -3,8 +3,11 @@ package net.calabi.app.rdp
 import java.util.concurrent.Executors
 import java.util.concurrent.RejectedExecutionException
 
-/** Preserve UI event order across IME commits, control keys and pointer events. */
-internal class RdpInputQueue(private val emit: (Int, Int, Int, Int) -> Unit) {
+/** Preserve UI event order across IME commits, control keys, touch and pointer events. */
+internal class RdpInputQueue(
+    private val emit: (Int, Int, Int, Int) -> Unit,
+    private val emitTouch: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
+) {
     private val executor = Executors.newSingleThreadExecutor()
     @Volatile private var closed = false
     @Volatile private var enabled = true
@@ -20,6 +23,7 @@ internal class RdpInputQueue(private val emit: (Int, Int, Int, Int) -> Unit) {
     }
 
     fun mouse(flags: Int, x: Int, y: Int) = enqueue { emit(0, flags, x, y) }
+    fun touch(action: Int, pointerId: Int, x: Int, y: Int) = enqueue { emitTouch(action, pointerId, x, y) }
     private fun sendKey(scan: Int, down: Boolean) {
         emit(1, (if (down) 0 else 0x8000) or (if (scan > 255) 0x0100 else 0), scan and 255, 0)
     }

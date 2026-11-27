@@ -1,6 +1,8 @@
 package net.calabi.app.rdp
 
 import android.os.Bundle
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.view.WindowManager
@@ -14,6 +16,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -28,9 +31,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
@@ -92,6 +97,11 @@ class RdpActivity : ComponentActivity() {
         if (hasFocus && desktopPresentation) enterFullscreen()
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        session?.view?.let { view -> view.post { view.refreshRemoteViewport() } }
+    }
+
     override fun onResume() { super.onResume(); resumed = true; session?.foreground() }
     override fun onPause() {
         resumed = false
@@ -120,32 +130,40 @@ class RdpActivity : ComponentActivity() {
         var clearingCredentials by remember { mutableStateOf(false) }
         var portText by rememberSaveable(overlay) { mutableStateOf("3389") }
         val selectedPort = portText.toIntOrNull()?.takeIf { it in 1..65535 }
+        val loginPorts = target?.optJSONArray("login_ports")?.let { ports ->
+            List(ports.length()) { ports.getInt(it) }
+        }.orEmpty()
+        val authorizedPort = loginPorts.isEmpty() || selectedPort != null && selectedPort in loginPorts
         var pendingPort by remember { mutableIntStateOf(3389) }
         val portPrefs = remember { getSharedPreferences("rdp-ports", MODE_PRIVATE) }
         var credentialMessage by remember { mutableStateOf("") }
         var pendingSave by remember { mutableStateOf<RdpCredentials?>(null) }
-        var rightClick by remember { mutableStateOf(false) }
-        var panMode by remember { mutableStateOf(false) }
         var zoom by remember { mutableStateOf(1f) }
         var help by remember { mutableStateOf(false) }
-        var trackpad by remember { mutableStateOf(true) }
-        var drag by remember { mutableStateOf(false) }
+        val displayPrefs = remember { getSharedPreferences("rdp-display", MODE_PRIVATE) }
+        var trackpad by remember { mutableStateOf(displayPrefs.getBoolean("trackpad", false)) }
+        var preferredPortrait by remember { mutableStateOf(displayPrefs.getBoolean("portrait", false)) }
+        var fabRight by remember { mutableStateOf(displayPrefs.getBoolean("fab_right", true)) }
+        var fabYFraction by remember { mutableFloatStateOf(displayPrefs.getFloat("fab_y", 0.82f)) }
         var tools by remember { mutableStateOf(false) }
         var connectionOptions by remember { mutableStateOf(false) }
-        var toolTab by rememberSaveable { mutableIntStateOf(0) }
         var controlsVisible by remember { mutableStateOf(false) }
         var confirmDisconnect by remember { mutableStateOf(false) }
         var shortcuts by remember { mutableStateOf(false) }
         var clipboard by remember { mutableStateOf(false) }
-        var modifierBar by remember { mutableStateOf(false) }
+        var fileClipboard by remember { mutableStateOf(false) }
+        var playAudio by remember { mutableStateOf(false) }
+        var allowFileCopy by remember { mutableStateOf(true) }
         var modifiers by remember { mutableStateOf(0) }
         var originalSize by remember { mutableStateOf(false) }
-        val displayPrefs = remember { getSharedPreferences("rdp-display", MODE_PRIVATE) }
         var quality by remember { mutableStateOf(RdpQuality.from(
-            if (BuildConfig.DEBUG && intent.hasExtra("quality")) intent.getIntExtra("quality", 1) else displayPrefs.getInt("quality", 1))) }
+            if (BuildConfig.DEBUG && intent.hasExtra("quality")) intent.getIntExtra("quality", 1) else displayPrefs.getInt("quality", RdpQuality.ADAPTIVE.ordinal))) }
+        var scaleOption by remember { mutableStateOf(RdpScale.from(displayPrefs.getInt("scale", RdpScale.AUTO.ordinal))) }
         var statistics by remember { mutableStateOf(false) }
         var hardware by remember { mutableStateOf(displayPrefs.getBoolean("hardware", true) &&
             !(BuildConfig.DEBUG && intent.getBooleanExtra("classic", false))) }
+        var quickClipMode by remember { mutableIntStateOf(0) } // 0=none, 1=send&paste, 2=pullToPhone
+        var quickClipRequest by remember { mutableIntStateOf(0) }
         val storageFailed = stringResource(R.string.rdp_credentials_failed)
         val failed = stringResource(R.string.remote_service_failed)
         LaunchedEffect(overlay, reload) {
@@ -173,8 +191,12 @@ class RdpActivity : ComponentActivity() {
                 target = null; error = getString(R.string.rdp_identity_changed)
             }
             val key = target?.optString("device_key").orEmpty()
-            if (identity != null && key.isNotBlank()) portText = intent.getIntExtra("port", 0).takeIf { it in 1..65535 }?.toString()
-                ?: portPrefs.getInt(store.file(identity, key).name, 3389).takeIf { it in 1..65535 }?.toString() ?: "3389"
+            if (identity != null && key.isNotBlank()) {
+                val grants = target?.optJSONArray("login_ports")?.let { ports -> List(ports.length()) { ports.getInt(it) } }.orEmpty()
+                val preferred = listOf(intent.getIntExtra("port", 0), portPrefs.getInt(store.file(identity, key).name, 3389))
+                portText = (preferred.firstOrNull { it in 1..65535 && (grants.isEmpty() || it in grants) }
+                    ?: grants.firstOrNull() ?: 3389).toString()
+            }
         }
         LaunchedEffect(needsMesh) {
             while (needsMesh) {
@@ -199,26 +221,99 @@ class RdpActivity : ComponentActivity() {
             }
         }
         fun rotateDisplay() {
-            requestedOrientation = if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
+            val nextPortrait = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+            preferredPortrait = nextPortrait
+            displayPrefs.edit().putBoolean("portrait", nextPortrait).apply()
+            requestedOrientation = if (nextPortrait)
                 ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT else ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
         }
-        fun toggleKeyboard() {
+        fun resolveScale(targetQuality: RdpQuality): Int {
+            val dm = resources.displayMetrics
+            return scaleOption.resolve(dm.density, targetQuality, maxOf(dm.widthPixels, dm.heightPixels))
+        }
+        fun hideKeyboard() {
+            active?.view?.let { view ->
+                val ime = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                ime.hideSoftInputFromWindow(view.windowToken, 0)
+            }
+        }
+        fun toggleKeyboard(currentlyVisible: Boolean = false) {
             active?.view?.let { view ->
                 view.requestFocus()
                 val ime = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-                if (androidx.core.view.ViewCompat.getRootWindowInsets(view)?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true) ime.hideSoftInputFromWindow(view.windowToken, 0)
-                else ime.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+                if (currentlyVisible || androidx.core.view.ViewCompat.getRootWindowInsets(view)?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true) {
+                    ime.hideSoftInputFromWindow(view.windowToken, 0)
+                } else {
+                    ime.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+                }
             }
         }
         val running = active
         if (running != null) {
             val status by running.state.collectAsState()
             val interactive by running.interactive.collectAsState()
+            val touchReady by running.touchReady.collectAsState()
+            val clipboardReady by running.clipboardReady.collectAsState()
+            val clipboardResult by running.clipboardResult.collectAsState()
+            val clipboardManager = remember { getSystemService(CLIPBOARD_SERVICE) as ClipboardManager }
+            fun quickPasteFromPhone() {
+                if (!clipboardReady) {
+                    net.calabi.app.ui.toast(this@RdpActivity, getString(R.string.rdp_clip_unavailable))
+                    return
+                }
+                val clip = clipboardManager.primaryClip
+                val text = if (clip != null && clip.itemCount > 0) clip.getItemAt(0).text?.toString() else null
+                if (text.isNullOrEmpty()) {
+                    net.calabi.app.ui.toast(this@RdpActivity, getString(R.string.rdp_clip_no_text))
+                    return
+                }
+                val outgoing = runCatching { RdpClipboardText.windows(text) }.getOrNull()
+                if (outgoing == null) {
+                    net.calabi.app.ui.toast(this@RdpActivity, getString(R.string.rdp_clip_invalid))
+                    return
+                }
+                quickClipMode = 1
+                quickClipRequest = running.clipboard(outgoing)
+            }
+            fun quickPullFromComputer() {
+                if (!clipboardReady) {
+                    net.calabi.app.ui.toast(this@RdpActivity, getString(R.string.rdp_clip_unavailable))
+                    return
+                }
+                quickClipMode = 2
+                quickClipRequest = running.clipboard()
+            }
+            LaunchedEffect(clipboardResult.id) {
+                if (quickClipMode != 0 && clipboardResult.id != 0 && clipboardResult.id == quickClipRequest) {
+                    val mode = quickClipMode
+                    quickClipMode = 0
+                    quickClipRequest = 0
+                    if (clipboardResult.error == 0) {
+                        if (mode == 1) {
+                            running.view?.shortcut(intArrayOf(0x1d), 0x2f)
+                            net.calabi.app.ui.toast(this@RdpActivity, getString(R.string.rdp_quick_pasted))
+                        } else if (mode == 2 && clipboardResult.text != null) {
+                            clipboardManager.setPrimaryClip(ClipData.newPlainText("Calabi", clipboardResult.text))
+                            net.calabi.app.ui.toast(this@RdpActivity, getString(R.string.rdp_clip_copied))
+                        }
+                    } else {
+                        val msg = when (clipboardResult.error) {
+                            2 -> R.string.rdp_clip_no_text
+                            3 -> R.string.rdp_clip_invalid
+                            4 -> R.string.rdp_clip_timeout
+                            5 -> R.string.rdp_clip_changed
+                            else -> R.string.rdp_clip_unavailable
+                        }
+                        net.calabi.app.ui.toast(this@RdpActivity, getString(msg))
+                    }
+                }
+            }
+            if (running.copyEnabled) RdpFileCopy(running, fileClipboard) { fileClipboard = false }
             LaunchedEffect(resumed) {
-                if (!resumed) { tools = false; help = false; shortcuts = false; clipboard = false; drag = false; rightClick = false }
+                if (!resumed) { tools = false; help = false; shortcuts = false; clipboard = false; quickClipMode = 0 }
             }
             LaunchedEffect(interactive) {
-                if (!interactive) { tools = false; shortcuts = false; clipboard = false; drag = false; rightClick = false; modifiers = 0 }
+                if (!interactive) { tools = false; shortcuts = false; clipboard = false; modifiers = 0; quickClipMode = 0 }
             }
             LaunchedEffect(running, interactive, credentialScope, deviceKey) {
                 val identity = credentialScope
@@ -245,7 +340,8 @@ class RdpActivity : ComponentActivity() {
                 if (status.first == 1) {
                     if (!desktopPresentation) {
                         desktopPresentation = true
-                        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
+                        requestedOrientation = if (preferredPortrait)
+                            ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT else ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
                         enterFullscreen()
                     }
                     val credentials = pendingSave
@@ -270,16 +366,33 @@ class RdpActivity : ComponentActivity() {
                 } else if (RdpSession.terminal(status.first)) pendingSave = null
             }
             val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-            val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-            LaunchedEffect(keyboardVisible, modifierBar) {
-                if (!keyboardVisible && !modifierBar) modifiers = 0
+            val density = LocalDensity.current
+            // Android 10 (API 29) suppresses WindowInsets.ime when FLAG_FULLSCREEN is set;
+            // fall back to getWindowVisibleDisplayFrame so the keyboard bar and IME focus still work.
+            var legacyImePx by remember { mutableIntStateOf(0) }
+            DisposableEffect(window.decorView) {
+                val decor = window.decorView
+                val rect = android.graphics.Rect()
+                val listener = android.view.ViewTreeObserver.OnGlobalLayoutListener {
+                    decor.getWindowVisibleDisplayFrame(rect)
+                    val covered = (decor.height - rect.bottom).coerceAtLeast(0)
+                    legacyImePx = if (decor.height > 0 && covered > decor.height * 0.15f) covered else 0
+                }
+                decor.viewTreeObserver.addOnGlobalLayoutListener(listener)
+                onDispose { decor.viewTreeObserver.removeOnGlobalLayoutListener(listener) }
             }
-            Column(Modifier.fillMaxSize().background(Color.Black).safeDrawingPadding().imePadding()) {
-                if (controlsVisible || status.first != 1) Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            val insetImePx = WindowInsets.ime.getBottom(density)
+            val fallbackImePadding = with(density) { if (insetImePx == 0) legacyImePx.toDp() else 0.dp }
+            val keyboardVisible = insetImePx > 0 || legacyImePx > 0
+            LaunchedEffect(keyboardVisible) {
+                if (!keyboardVisible) modifiers = 0
+                running.view?.setImeVisible(keyboardVisible)
+            }
+            Column(Modifier.fillMaxSize().background(Color.Black).safeDrawingPadding().imePadding().padding(bottom = fallbackImePadding)) {
+                if (status.first != 1) Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     RdpIconControl(R.drawable.ic_chevron_left, stringResource(R.string.back), tint = Color.White, onClick = { confirmDisconnect = true })
                     Text(target?.optString("name").orEmpty().ifBlank { overlay } + ":" + running.port, color = Color.White,
                         maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                    RdpIconControl(R.drawable.ic_rdp_rotate, stringResource(R.string.rdp_rotate_display), tint = Color.White, onClick = ::rotateDisplay)
                 }
                 if (credentialMessage.isNotEmpty()) InlineNotice(credentialMessage, tone = NoticeTone.Error, onDark = true, modifier = Modifier.padding(horizontal = 12.dp))
                 if (status.first != 1) InlineNotice(
@@ -290,115 +403,134 @@ class RdpActivity : ComponentActivity() {
                     running.close(); session = null; active = null; pendingSave = null
                     showLogin()
                     tools = false; shortcuts = false; clipboard = false; help = false
-                    rightClick = false; drag = false; zoom = 1f; panMode = false; reload++
+                    zoom = 1f; reload++
                 }, modifier = Modifier.padding(horizontal = 12.dp)) { Text(stringResource(R.string.rdp_reconnect)) }
-                Box(Modifier.fillMaxWidth().weight(1f)) {
+                BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
+                val containerWidthPx = constraints.maxWidth.toFloat()
+                val containerHeightPx = constraints.maxHeight.toFloat()
                 AndroidView(factory = { context -> RdpView(context, running).also { view ->
-                    view.onZoomChanged = { zoom = it; originalSize = view.viewport.originalSize; if (it <= 1.001f && !originalSize) panMode = false }
+                    view.onZoomChanged = { zoom = it; originalSize = view.viewport.originalSize }
                     view.onModifiersChanged = { modifiers = it }
-                    view.onRightClickConsumed = { rightClick = false }
-                    view.onDragConsumed = { drag = false }
                     running.view = view; view.requestFocus()
                 } }, update = { view ->
                     view.interactive = interactive && status.first == 1
                     view.modifiers = modifiers
-                    view.trackpadMode = trackpad; view.dragMode = drag
-                    view.rightClickMode = rightClick; view.panMode = panMode
+                    view.trackpadMode = trackpad
+                    view.nativeTouchMode = touchReady
                 },
                     modifier = Modifier.fillMaxSize())
+                if (!keyboardVisible && (zoom > 1.001f || originalSize)) {
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(12.dp)
+                            .consumeControlTouches()
+                            .clickable(role = Role.Button) { running.view?.fitScreen() },
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        color = Palette.surface.copy(alpha = 0.85f),
+                        shadowElevation = 4.dp,
+                    ) {
+                        Text(
+                            text = (if (originalSize && zoom < 1.001f) "1:1" else "${(zoom * 100).toInt()}%") + " ↺",
+                            style = Styles.mono,
+                            fontSize = 12.sp,
+                            color = Palette.ink,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        )
+                    }
+                }
                 if (!keyboardVisible) {
                     if (controlsVisible) Surface(Modifier.align(if (landscape) Alignment.BottomEnd else Alignment.BottomCenter).padding(16.dp).consumeControlTouches(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp), color = Palette.surface, shadowElevation = 8.dp) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        if (rightClick || drag) Row(Modifier.widthIn(max = 280.dp).padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text(stringResource(if (rightClick) R.string.rdp_right_click else R.string.rdp_drag), color = Palette.accent)
-                                Text(stringResource(R.string.mobile_next_click), style = Styles.hint)
-                            }
-                            RdpIconControl(R.drawable.ic_close, stringResource(R.string.settings_cancel), onClick = { rightClick = false; drag = false })
-                        }
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp), color = Palette.surface, shadowElevation = 8.dp) {
                         Row(Modifier.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            RdpIconControl(R.drawable.ic_rdp_keyboard, stringResource(R.string.rdp_keyboard), enabled = interactive && status.first == 1, onClick = ::toggleKeyboard)
+                            RdpIconControl(R.drawable.ic_rdp_keyboard, stringResource(R.string.rdp_keyboard), enabled = interactive && status.first == 1, onClick = { toggleKeyboard(keyboardVisible) })
                             RdpIconControl(if (trackpad) R.drawable.ic_rdp_touchpad else R.drawable.ic_rdp_touch,
                                 stringResource(if (trackpad) R.string.rdp_trackpad else R.string.rdp_direct_touch),
                                 enabled = interactive && status.first == 1, selected = trackpad,
-                                onClick = { trackpad = !trackpad; drag = false; rightClick = false
+                                onClick = { trackpad = !trackpad
+                                    displayPrefs.edit().putBoolean("trackpad", trackpad).apply()
                                     android.widget.Toast.makeText(this@RdpActivity, getString(if (trackpad) R.string.rdp_trackpad else R.string.rdp_direct_touch), android.widget.Toast.LENGTH_SHORT).show() })
+                            RdpIconControl(R.drawable.ic_copy, stringResource(R.string.rdp_quick_paste),
+                                enabled = interactive && status.first == 1 && clipboardReady,
+                                onClick = ::quickPasteFromPhone)
                             RdpIconControl(R.drawable.ic_rdp_sliders, stringResource(R.string.rdp_tools), onClick = { tools = true })
-                            RdpIconControl(R.drawable.ic_chevron_down, stringResource(R.string.mobile_hide_controls), onClick = { controlsVisible = false; modifiers = 0; modifierBar = false; rightClick = false; drag = false })
+                            RdpIconControl(R.drawable.ic_chevron_down, stringResource(R.string.mobile_hide_controls), onClick = { controlsVisible = false; modifiers = 0 })
                         }
-                        }
-                    } else Surface(Modifier.align(Alignment.BottomEnd).padding(16.dp).consumeControlTouches(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp), color = Palette.surface, shadowElevation = 6.dp) {
-                        RdpIconControl(R.drawable.ic_rdp_controls, stringResource(R.string.mobile_show_controls), onClick = { controlsVisible = true })
-                    }
+                    } else RdpFloatingHandle(
+                        containerWidthPx = containerWidthPx,
+                        containerHeightPx = containerHeightPx,
+                        snapRight = fabRight,
+                        yFraction = fabYFraction,
+                        onOpen = { controlsVisible = true },
+                        onPositionSaved = { right, y ->
+                            fabRight = right; fabYFraction = y
+                            displayPrefs.edit().putBoolean("fab_right", right).putFloat("fab_y", y).apply()
+                        },
+                    )
                 }
                 }
-                // IME helper keys occupy their own space; never cover the remote input area.
-                if ((keyboardVisible || modifierBar) && controlsVisible && interactive && status.first == 1) {
-                    Row(Modifier.fillMaxWidth().background(Palette.ground)) {
-                        listOf("Tab" to 0x0f, "Esc" to 0x01, "Enter" to 0x1c, "⌫" to 0x0e).forEach { (label, key) ->
-                            TextButton(contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp), onClick = { running.view?.press(key) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text(label) }
-                        }
-                    }
-                    Row(Modifier.fillMaxWidth().background(Palette.ground), verticalAlignment = Alignment.CenterVertically) {
-                        listOf("Ctrl" to 1, "Alt" to 2, "Shift" to 4).forEach { (label, bit) ->
-                            FilterChip(selected = modifiers and bit != 0, onClick = { modifiers = modifiers xor bit },
-                                label = { Text(label) }, modifier = Modifier.weight(1f).padding(horizontal = 4.dp).heightIn(min = 48.dp))
-                        }
-                        RdpIconControl(R.drawable.ic_chevron_down, stringResource(if (keyboardVisible) R.string.rdp_hide_keyboard else R.string.mobile_hide_controls), onClick = {
-                            if (keyboardVisible) toggleKeyboard() else { modifierBar = false; modifiers = 0 }
-                        })
-                    }
+                // Compact single-row IME helper bar always available when typing.
+                if (keyboardVisible && interactive && status.first == 1) {
+                    RdpKeyboardBar(
+                        modifiers = modifiers,
+                        keyboardVisible = true,
+                        clipboardReady = clipboardReady,
+                        onToggleModifier = { bit -> modifiers = modifiers xor bit },
+                        onPress = { scan -> running.view?.press(scan) },
+                        onPasteFromPhone = ::quickPasteFromPhone,
+                        onHide = ::hideKeyboard,
+                    )
                 }
             }
 
-            BackHandler(enabled = !tools && !help && !shortcuts && !clipboard && !statistics && !confirmDisconnect && !keyboardVisible) {
-                confirmDisconnect = true
+            BackHandler(enabled = !tools && !help && !shortcuts && !clipboard && !fileClipboard && !statistics && !confirmDisconnect && !keyboardVisible) {
+                if (controlsVisible) {
+                    modifiers = 0; controlsVisible = false
+                } else {
+                    confirmDisconnect = true
+                }
             }
             if (tools) ModalBottomSheet(modifier = Modifier.statusBarsPadding(), onDismissRequest = { tools = false }, containerColor = Palette.ground,
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
                 Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.rdp_tools), style = Styles.section, modifier = Modifier.weight(1f))
+                        Text(target?.optString("name").orEmpty().ifBlank { overlay } + ":" + running.port, style = Styles.section,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                         RdpIconControl(R.drawable.ic_close, stringResource(R.string.mobile_dismiss), onClick = { tools = false })
                     }
-                    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(R.string.mobile_input, R.string.mobile_display, R.string.rdp_session_tools).forEachIndexed { index, label ->
-                            FilterChip(selected = toolTab == index, onClick = { toolTab = index }, label = { Text(stringResource(label)) }, modifier = Modifier.heightIn(min = 48.dp))
-                        }
-                    }
-                    if ((!interactive || status.first != 1) && toolTab != 2) Text(
+                    if (!interactive || status.first != 1) Text(
                         stringResource(if (status.second == "offline") R.string.rdp_wait_network else R.string.rdp_repairing), style = Styles.hint)
-                    if (interactive && status.first == 1 && toolTab == 0) {
-                        RdpToolGrid(listOf(
+                    if (interactive && status.first == 1) {
+                        RdpToolGrid(listOfNotNull(
                             RdpToolAction(R.drawable.ic_rdp_keyboard, stringResource(R.string.rdp_shortcuts)) { tools = false; shortcuts = true },
                             RdpToolAction(R.drawable.ic_copy, stringResource(R.string.rdp_clipboard)) { tools = false; clipboard = true },
-                            RdpToolAction(if (trackpad) R.drawable.ic_rdp_touch else R.drawable.ic_rdp_touchpad,
-                                stringResource(if (trackpad) R.string.rdp_direct_touch else R.string.rdp_trackpad)) { trackpad = !trackpad; rightClick = false; drag = false; tools = false },
-                            RdpToolAction(R.drawable.ic_rdp_mouse, stringResource(R.string.rdp_right_click), selected = rightClick) { rightClick = !rightClick; drag = false; tools = false; controlsVisible = true },
-                            RdpToolAction(R.drawable.ic_rdp_drag, stringResource(R.string.rdp_drag), enabled = trackpad, selected = drag) { drag = !drag; rightClick = false; tools = false; controlsVisible = true },
-                            RdpToolAction(R.drawable.ic_rdp_keyboard, stringResource(R.string.rdp_modifiers), selected = modifierBar) { modifierBar = !modifierBar; modifiers = 0; tools = false; controlsVisible = true },
-                        ))
-                        Text(stringResource(R.string.rdp_modifier_hint), style = Styles.hint)
-                    }
-                    if (interactive && status.first == 1 && toolTab == 1) {
-                        Text(if (originalSize && zoom < 1.001f) "1:1" else "${(zoom * 100).toInt()}%", style = Styles.mono)
-                        RdpToolGrid(listOf(
-                            RdpToolAction(R.drawable.ic_scan, stringResource(R.string.rdp_fit)) { running.view?.fitScreen(); tools = false },
-                            RdpToolAction(R.drawable.ic_monitor, stringResource(R.string.rdp_original_pixels)) { running.view?.actualPixels(); tools = false },
+                            if (running.copyEnabled) RdpToolAction(R.drawable.ic_file, stringResource(R.string.rdp_file_copy)) { tools = false; fileClipboard = true } else null,
                             RdpToolAction(R.drawable.ic_rdp_rotate, stringResource(R.string.rdp_rotate_display)) { tools = false; rotateDisplay() },
-                            RdpToolAction(R.drawable.ic_rdp_drag, stringResource(R.string.rdp_pan_mode), selected = panMode) { panMode = !panMode; tools = false },
-                            RdpToolAction(R.drawable.ic_rdp_zoom_out, stringResource(R.string.rdp_zoom_out), enabled = zoom > 1.001f) { running.view?.zoomBy(1f / 1.25f) },
-                            RdpToolAction(R.drawable.ic_rdp_zoom_in, stringResource(R.string.rdp_zoom_in), enabled = zoom < 4.999f) { running.view?.zoomBy(1.25f) },
                         ))
+                        if (running.quality == RdpQuality.ADAPTIVE) {
+                            Text(stringResource(R.string.rdp_scale), style = Styles.section)
+                            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                RdpScale.entries.forEach { option ->
+                                    FilterChip(
+                                        selected = scaleOption == option,
+                                        onClick = {
+                                            scaleOption = option
+                                            displayPrefs.edit().putInt("scale", option.ordinal).apply()
+                                            running.setScale(resolveScale(running.quality))
+                                        },
+                                        label = { Text(stringResource(option.title)) },
+                                        modifier = Modifier.heightIn(min = 48.dp),
+                                    )
+                                }
+                            }
+                        }
                     }
-                    if (toolTab == 2) Group {
+                    Group {
                         ActionRow(stringResource(R.string.rdp_gestures), onClick = { tools = false; help = true })
                         ActionRow(stringResource(R.string.rdp_statistics), onClick = { tools = false; statistics = true })
                     }
-                    if (toolTab == 2) OutlinedButton(onClick = { tools = false; confirmDisconnect = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                    OutlinedButton(onClick = { tools = false; confirmDisconnect = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                         Text(stringResource(R.string.rdp_disconnect), color = Palette.danger)
                     }
                 }
@@ -413,19 +545,28 @@ class RdpActivity : ComponentActivity() {
                 text = { Text(stringResource(R.string.rdp_gestures_hint), modifier = Modifier.verticalScroll(rememberScrollState())) },
                 confirmButton = { TextButton(contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp), onClick = { help = false }) { Text(stringResource(android.R.string.ok)) } })
             if (shortcuts) RdpShortcutDialog(running) { shortcuts = false }
-            if (clipboard) RdpClipboardDialog(running) { clipboard = false }
+            if (clipboard) RdpClipboardDialog(running, ::quickPasteFromPhone, ::quickPullFromComputer) { clipboard = false }
             if (statistics) {
                 val graphics by running.graphics.collectAsState()
                 var sample by remember(running) { mutableStateOf(LongArray(0)) }
+                var rates by remember(running) { mutableStateOf<RdpRates?>(null) }
                 LaunchedEffect(running) {
-                    while (true) { sample = running.statistics(); delay(1000) }
+                    while (true) {
+                        val next = running.statistics()
+                        rates = RdpRates.between(sample, next)
+                        sample = next
+                        delay(1000)
+                    }
                 }
                 AlertDialog(onDismissRequest = { statistics = false },
                     title = { Text(stringResource(R.string.rdp_statistics)) },
                     text = { Column(Modifier.verticalScroll(rememberScrollState())) {
                         Text(stringResource(running.quality.title))
+                        rates?.let {
+                            Text(stringResource(R.string.rdp_statistics_rates, it.framesPerSecond, it.megabitsPerSecond))
+                        }
                         if (sample.size >= 8) Text(stringResource(R.string.rdp_statistics_value,
-                            sample[0], sample[1], sample[2], sample[4], sample[7] / 1000))
+                            sample[0], sample[1], sample[7] / 1000))
                         Text(stringResource(when (graphics) {
                             1 -> R.string.rdp_graphics_gfx
                             2 -> R.string.rdp_graphics_hardware
@@ -458,8 +599,11 @@ class RdpActivity : ComponentActivity() {
                 OutlinedTextField(shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp), value = password, enabled = !busy, onValueChange = { password = it }, label = { Text(stringResource(R.string.login_password)) }, singleLine = true,
                     visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = portText, onValueChange = { value -> if (value.length <= 5 && value.all(Char::isDigit)) portText = value },
-                    enabled = !busy && !clearingCredentials, isError = selectedPort == null, label = { Text(stringResource(R.string.rdp_port)) },
-                    supportingText = { if (selectedPort == null) Text(stringResource(R.string.rdp_port_invalid)) },
+                    enabled = !busy && !clearingCredentials, isError = selectedPort == null || !authorizedPort, label = { Text(stringResource(R.string.rdp_port)) },
+                    supportingText = {
+                        if (selectedPort == null) Text(stringResource(R.string.rdp_port_invalid))
+                        else if (loginPorts.isNotEmpty()) Text(loginPorts.joinToString())
+                    },
                     singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth())
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -481,6 +625,14 @@ class RdpActivity : ComponentActivity() {
                         }) { Text(stringResource(R.string.rdp_clear_credentials)) }
                 }
                 net.calabi.app.ui.LinkRow(stringResource(R.string.rdp_connection_options), stringResource(quality.title), onClick = { if (!busy) connectionOptions = true })
+                if (BuildConfig.FILE_TRANSFER_ENABLED) Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = allowFileCopy, enabled = !busy, onCheckedChange = { allowFileCopy = it })
+                    Text(stringResource(R.string.rdp_allow_file_copy))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = playAudio, enabled = !busy, onCheckedChange = { playAudio = it })
+                    Text(stringResource(R.string.rdp_play_audio))
+                }
                 if (credentialMessage.isNotEmpty()) InlineNotice(credentialMessage, tone = NoticeTone.Error)
                 if (error.isNotEmpty()) InlineNotice(error, tone = NoticeTone.Error, actionIcon = R.drawable.ic_refresh,
                     actionLabel = stringResource(R.string.rdp_retry), onAction = { if (!busy) reload++ })
@@ -488,11 +640,11 @@ class RdpActivity : ComponentActivity() {
                 Column(Modifier.fillMaxWidth().padding(20.dp)) {
                 Button(modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Palette.accent, contentColor = Color.White), enabled = !busy && !clearingCredentials && selectedPort != null && user.isNotBlank() && password.isNotEmpty() && target?.optBoolean("available") == true && error.isEmpty(), onClick = {
+                    colors = ButtonDefaults.buttonColors(containerColor = Palette.accent, contentColor = Color.White), enabled = !busy && !clearingCredentials && selectedPort != null && authorizedPort && user.isNotBlank() && password.isNotEmpty() && target?.optBoolean("available") == true && error.isEmpty(), onClick = {
                     val connectionPort = selectedPort ?: return@Button
                     busy = true
                     scope.launch {
-                        val result = CoreClient.call("POST", "/v1/remote/rdp/prepare", JSONObject().put("device_key", target!!.getString("device_key")).put("port", connectionPort))
+                        val result = CoreClient.call("POST", "/v1/remote/rdp/prepare", JSONObject().put("device_key", target!!.getString("device_key")).put("port", connectionPort).put("copy_files", allowFileCopy))
                         if (!result.ok) { busy = false; error = result.error(failed); return@launch }
                         val identity = credentialScope
                         val currentIdentity = RdpCredentialStore.scope(CoreClient.call("GET", "/v1/state").json(), BuildConfig.BFF_URL)
@@ -508,7 +660,9 @@ class RdpActivity : ComponentActivity() {
                         pendingPort = connectionPort
                         portPrefs.edit().putInt(store.file(identity, target!!.getString("device_key")).name, connectionPort).apply()
                         pendingSave = if (rememberPassword) RdpCredentials(user.trim(), domain.trim(), password) else null
-                        val connection = RdpSession(result.json(), quality, hardware)
+                        val connection = RdpSession(result.json(), quality, hardware, playAudio, resolveScale(quality))
+                        playAudio = false
+                        fileClipboard = false
                         session = connection
                         active = connection
                         connection.start(user.trim(), domain.trim(), password)
@@ -539,8 +693,18 @@ class RdpActivity : ComponentActivity() {
                     }
                 }
                 Text(stringResource(R.string.rdp_quality_hint), style = Styles.hint)
+                if (quality == RdpQuality.ADAPTIVE) Text(stringResource(R.string.rdp_quality_adaptive_hint), style = Styles.hint)
+                Text(stringResource(R.string.rdp_scale), style = Styles.section)
+                FlowRow(Modifier.fillMaxWidth()) {
+                    RdpScale.entries.forEach { option ->
+                        FilterChip(selected = scaleOption == option, enabled = !busy, onClick = {
+                            scaleOption = option; displayPrefs.edit().putInt("scale", option.ordinal).apply()
+                        }, label = { Text(stringResource(option.title)) }, modifier = Modifier.padding(end = 8.dp).heightIn(min = 48.dp))
+                    }
+                }
+                Text(stringResource(R.string.rdp_scale_hint), style = Styles.hint)
                 Row {
-                    Checkbox(checked = hardware, enabled = !busy && quality != RdpQuality.ECONOMY && RdpHardware.decoder.isNotEmpty(), onCheckedChange = {
+                    Checkbox(checked = hardware && quality != RdpQuality.ADAPTIVE, enabled = !busy && quality != RdpQuality.ECONOMY && quality != RdpQuality.ADAPTIVE && RdpHardware.decoder.isNotEmpty(), onCheckedChange = {
                         hardware = it; displayPrefs.edit().putBoolean("hardware", it).apply()
                     })
                     Text(stringResource(R.string.rdp_hardware_prefer), modifier = Modifier.weight(1f).padding(top = 12.dp))

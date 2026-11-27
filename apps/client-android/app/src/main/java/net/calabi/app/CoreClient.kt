@@ -27,6 +27,7 @@ data class ApiResult(val status: Int, val body: String) {
 object CoreClient {
     internal val session = SessionExpiryState()
     val sessionExpired = session.expired
+    val pendingIncomingFileCount = session.pendingIncomingFileCount
 
     suspend fun call(method: String, path: String, body: JSONObject? = null): ApiResult =
         withContext(Dispatchers.IO) { callBlocking(method, path, body) }
@@ -48,9 +49,16 @@ internal class SessionExpiryState {
     private var generation = 0L
     private val mutableExpired = MutableStateFlow(false)
     val expired = mutableExpired.asStateFlow()
+    private val mutablePendingIncomingFileCount = MutableStateFlow(0)
+    val pendingIncomingFileCount = mutablePendingIncomingFileCount.asStateFlow()
 
     @Synchronized
     fun requestGeneration(): Long = generation
+
+    @Synchronized
+    fun recordPendingIncomingFileCount(requestGeneration: Long, count: Int) {
+        if (requestGeneration == generation && !mutableExpired.value) mutablePendingIncomingFileCount.value = count
+    }
 
     @Synchronized
     fun record(requestGeneration: Long, method: String, path: String, status: Int) {
@@ -62,6 +70,7 @@ internal class SessionExpiryState {
             // Old requests must not sign out a newly authenticated session or network.
             generation++
             mutableExpired.value = false
+            mutablePendingIncomingFileCount.value = 0
         } else if (status == 401 && (
                 (method == "GET" && (route in setOf(
                     "/v1/me", "/v1/orgs", "/v1/mesh/nodes", "/v1/mesh/replaceable",
@@ -71,6 +80,7 @@ internal class SessionExpiryState {
             )) {
             // Login/TOTP failures, self-hosted probes and peer file denials are unrelated.
             mutableExpired.value = true
+            mutablePendingIncomingFileCount.value = 0
         }
     }
 }

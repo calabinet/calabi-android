@@ -91,7 +91,7 @@
     <string name="rdp_modifiers">Ctrl / Alt / Shift</string>
     <string name="rdp_modifier_hint">Próxima tecla ou clique</string>
     <string name="rdp_retry">Tentar novamente</string>
-    <string name="rdp_same_owner">O acesso remoto está disponível apenas nos seus próprios dispositivos Windows.</string>
+    <string name="remote_login">Início de sessão remoto</string>
     <string name="rdp_certificate_missing">O computador não forneceu uma identidade RDP verificada. Atualize o serviço Calabi e ative a Área de Trabalho Remota.</string>
     <string name="rdp_windows_required">Selecione um dispositivo Windows que possa hospedar a Área de Trabalho Remota.</string>
     <string name="rdp_auth_failed">Falha ao entrar no Windows. Verifique usuário, domínio e senha da conta (não o PIN).</string>
@@ -126,7 +126,7 @@
     <string name="rdp_pan_mode">Mover visualização</string>
     <string name="rdp_fit">Ajustar</string>
     <string name="rdp_gestures">Gestos</string>
-    <string name="rdp_gestures_hint">Trackpad: deslize um dedo para mover o ponteiro e toque para clicar. Toque duas vezes e arraste, ou ative Arrastar, para segurar o botão esquerdo. Toque em Trackpad para mudar para Toque direto na posição do dedo. Nos dois modos: toque com dois dedos para clique direito, mova-os juntos para rolar e faça pinça para ampliar até 5×. Mude Rolar para Mover visualização para deslocar a imagem. A porcentagem restaura Ajustar. Ferramentas inclui atalhos e área de transferência de texto manual.</string>
+    <string name="rdp_gestures_hint">Toque direto: toque, deslize para rolar nativamente no Windows ou pressione e segure para clique direito. Faça pinça para dar zoom e mover a tela juntos, ou arraste com três dedos para mover. Mude para Trackpad para um cursor preciso com aceleração: toque para clique esquerdo, segure ou toque com dois dedos para clique direito e arraste com dois dedos para rolagem suave. Arraste o botão flutuante para qualquer borda.</string>
     <string name="rdp_username">Nome de usuário do Windows</string>
     <string name="rdp_domain">Domínio (opcional)</string>
     <string name="rdp_background_expired">A sessão terminou após 60 segundos em segundo plano. Reconecte para continuar.</string>
@@ -144,7 +144,7 @@
     <string name="rdp_quality_detail">Nítida</string>
     <string name="rdp_quality_hint">Economia: 960 × 540, 16 bits, até 15 fps. Equilibrada: 1280 × 720, até 30 fps. Nítida: 1920 × 1080, até 60 fps. Aplicado ao conectar; o computador pode negociar outro formato.</string>
     <string name="rdp_statistics">Detalhes da conexão</string>
-    <string name="rdp_statistics_value">Área de trabalho: %1$d × %2$d\nAtualizações: %3$d\nEventos de entrada: %4$d\nConectado: %5$d s</string>
+    <string name="rdp_statistics_value">Área de trabalho: %1$d × %2$d\nConectado: %3$d s</string>
     <string name="rdp_graphics_classic">Gráficos compatíveis · Decodificação por software. As taxas são limites de exibição e dependem do computador e da rede.</string>
     <string name="rdp_connect_timeout">O computador não forneceu uma área de trabalho em 30 segundos. Verifique se está ativo e com Área de Trabalho Remota habilitada, e reconecte.</string>
     <string name="rdp_hardware_prefer">Preferir decodificação por hardware</string>
@@ -419,4 +419,27 @@
     </plurals>
  <string name="files_identity_unavailable">As transferências não estão disponíveis. Tente repará-las.</string>
  <string name="files_error_clock">Verifique a data e hora do sistema e tente novamente.</string>
+    <string name="rdp_quality_adaptive">Ajustar à tela</string>
+    <string name="rdp_quality_adaptive_hint">Ajusta a área de trabalho remota à área visível, até 4K. Se o computador não puder redimensionar a área, inicia em 720p.</string>
+    <string name="rdp_play_audio">Reproduzir áudio remoto neste dispositivo</string>
+    <string name="rdp_allow_file_copy">Permitir cópia de arquivos</string>
+    <string name="rdp_file_copy">Copiar arquivos</string>
+    <string name="rdp_file_copy_hint">Escolha um arquivo do telefone e cole no Explorador de Arquivos do Windows. Para salvar no telefone, copie arquivos no Windows e selecione-os aqui.</string>
+    <string name="rdp_file_copy_waiting">Aguardando o canal de cópia de arquivos.</string>
+    <string name="rdp_file_copy_choose">Escolher arquivo do telefone</string>
+    <string name="rdp_file_copy_offered">Pronto para colar no Explorador de Arquivos do Windows.</string>
+    <string name="rdp_file_copy_saved">Arquivo salvo.</string>
+    <string name="rdp_file_copy_busy">Transferindo arquivo…</string>
+    <string name="rdp_file_copy_failed">Falha ao copiar o arquivo. Tente novamente.</string>
+    <string name="rdp_statistics_rates">Taxa de quadros: %1$.1f fps\nTaxa de bits recebida: %2$.3f Mbps</string>
+    <string name="rdp_scale">Escala da área de trabalho</string>
+    <string name="rdp_scale_auto">Automático</string>
+    <string name="rdp_scale_100">100%</string>
+    <string name="rdp_scale_125">125%</string>
+    <string name="rdp_scale_150">150%</string>
+    <string name="rdp_scale_200">200%</string>
+    <string name="rdp_scale_hint">Aumenta textos e botões do Windows para facilitar o toque. Aplica ao conectar ou na hora no modo Ajustar à tela.</string>
+    <string name="rdp_quick_paste">Colar do celular</string>
+    <string name="rdp_quick_copy_pc">Pegar do PC</string>
+    <string name="rdp_quick_pasted">Enviado e colado no computador.</string>
 </resources>

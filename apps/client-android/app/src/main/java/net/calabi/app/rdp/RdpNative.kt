@@ -11,9 +11,11 @@ internal object RdpNative {
 
     private external fun initialize(directory: String, decoder: String): Boolean
 
-    external fun create(callback: RdpSession, host: String, local: String, pin: String, user: String, domain: String, password: String, port: Int = 3389): Long
+    external fun create(callback: RdpSession, host: String, local: String, pin: String, user: String, domain: String, password: String, port: Int = 3389, binding: String = ""): Long
     external fun start(handle: Long): Boolean
-    external fun configure(handle: Long, quality: Int, hardware: Boolean): Boolean
+    external fun configure(handle: Long, quality: Int, hardware: Boolean, audio: Boolean, scale: Int): Boolean
+    external fun viewport(handle: Long, width: Int, height: Int)
+    external fun scale(handle: Long, scale: Int)
     external fun graphicsStats(handle: Long): LongArray
     external fun failGraphics(handle: Long)
     external fun stats(handle: Long): LongArray
@@ -22,6 +24,7 @@ internal object RdpNative {
     external fun network(handle: Long, available: Boolean, changed: Boolean)
     external fun destroy(handle: Long)
     external fun input(handle: Long, kind: Int, flags: Int, x: Int, y: Int): Boolean
+    external fun touch(handle: Long, action: Int, pointerId: Int, x: Int, y: Int): Boolean
     external fun blit(handle: Long, bitmap: android.graphics.Bitmap): Boolean
     external fun clipboard(handle: Long, command: Int, text: String?, requestId: Int): Boolean
 }

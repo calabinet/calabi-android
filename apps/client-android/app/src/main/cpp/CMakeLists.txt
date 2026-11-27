@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.22)
 project(calabi_rdp LANGUAGES C)
 set(CMAKE_C_STANDARD 11)
 add_library(calabi-rdp SHARED rdp_android.c rdp_clipboard.c rdp_graphics.c)
-target_include_directories(calabi-rdp PRIVATE "${CALABI_RDP_SDK}/include/freerdp3" "${CALABI_RDP_SDK}/include/winpr3" "${CALABI_RDP_SDK}/include")
+target_include_directories(calabi-rdp PRIVATE "${CALABI_RDP_SDK}/include/freerdp3" "${CALABI_RDP_SDK}/include/winpr3" "${CALABI_RDP_SDK}/include"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../tools/rdp-p0")
 foreach(lib freerdp3 winpr3 freerdp-client3)
   add_library(${lib} SHARED IMPORTED)
   set_target_properties(${lib} PROPERTIES IMPORTED_LOCATION "${CALABI_RDP_SDK}/lib/lib${lib}.so")
@@ -11,11 +12,16 @@ target_link_libraries(calabi-rdp freerdp-client3 freerdp3 winpr3 android jnigrap
 target_compile_options(calabi-rdp PRIVATE -Wall -Wextra -Werror=implicit-function-declaration -Werror=incompatible-pointer-types)
 target_link_options(calabi-rdp PRIVATE "-Wl,-z,max-page-size=16384")
 
-option(CALABI_RDP_TESTS "Build the standalone Android clipboard regression executable" OFF)
+option(CALABI_RDP_TESTS "Build the standalone Android clipboard and audio regression executables" OFF)
 if(CALABI_RDP_TESTS)
   add_executable(calabi-rdp-clipboard-test ../../test/cpp/rdp_clipboard_test.c rdp_clipboard.c)
   target_include_directories(calabi-rdp-clipboard-test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
     "${CALABI_RDP_SDK}/include/freerdp3" "${CALABI_RDP_SDK}/include/winpr3")
   target_link_libraries(calabi-rdp-clipboard-test freerdp3 winpr3)
   target_compile_options(calabi-rdp-clipboard-test PRIVATE -UNDEBUG)
+  add_executable(calabi-rdp-audio-test ../../test/cpp/rdp_audio_test.c)
+  target_include_directories(calabi-rdp-audio-test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+    "${CALABI_RDP_SDK}/include/freerdp3" "${CALABI_RDP_SDK}/include/winpr3")
+  target_link_libraries(calabi-rdp-audio-test freerdp-client3 freerdp3 winpr3)
+  target_compile_options(calabi-rdp-audio-test PRIVATE -UNDEBUG)
 endif()

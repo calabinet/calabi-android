@@ -28,8 +28,13 @@ static UINT present(RdpgfxClientContext* channel) {
 }
 static UINT surface(RdpgfxClientContext* channel, const RDPGFX_SURFACE_COMMAND* cmd) {
     CalabiGraphics* g = graphics(channel);
-    if (cmd->codecId == RDPGFX_CODECID_AVC444 || cmd->codecId == RDPGFX_CODECID_AVC444v2) {
-        atomic_store(&g->failed, TRUE); return ERROR_NOT_SUPPORTED;
+    if ((cmd->codecId == RDPGFX_CODECID_AVC444 || cmd->codecId == RDPGFX_CODECID_AVC444v2) &&
+        cmd->extra && atomic_load_explicit(&g->avc, memory_order_relaxed) < 8) {
+        const RDPGFX_AVC444_BITMAP_STREAM* stream = cmd->extra;
+        __android_log_print(ANDROID_LOG_INFO, "CalabiRdp",
+            "gfx_avc444 codec=%u op=%u surface=%u rect=%u,%u,%u,%u regions=%u/%u",
+            cmd->codecId, stream->LC, cmd->surfaceId, cmd->left, cmd->top, cmd->right, cmd->bottom,
+            stream->bitstream[0].meta.numRegionRects, stream->bitstream[1].meta.numRegionRects);
     }
     UINT rc = g->surface(channel, cmd);
     if (rc != CHANNEL_RC_OK) { atomic_store(&g->failed, TRUE); return rc; }
@@ -84,6 +89,6 @@ BOOL calabi_gfx_configure(CalabiGraphics* g, rdpSettings* settings, BOOL enabled
         freerdp_settings_set_bool(settings, FreeRDP_SupportGraphicsPipeline, enabled) &&
         freerdp_settings_set_bool(settings, FreeRDP_GfxH264, enabled) &&
         freerdp_settings_set_bool(settings, FreeRDP_GfxThinClient, enabled) &&
-        freerdp_settings_set_bool(settings, FreeRDP_GfxAVC444, FALSE) &&
-        freerdp_settings_set_bool(settings, FreeRDP_GfxAVC444v2, FALSE);
+        freerdp_settings_set_bool(settings, FreeRDP_GfxAVC444, enabled) &&
+        freerdp_settings_set_bool(settings, FreeRDP_GfxAVC444v2, enabled);
 }

@@ -102,6 +102,34 @@ def apply(source, archive):
     relative = 'libfreerdp/codec/yuv.c'
     with tarfile.open(archive) as bundle:
         text = bundle.extractfile('freerdp-3.33.0/' + relative).read().decode('utf-8')
+    # MS-RDPEGFX 3.3.8.3.3 renders a main-view rectangle as YUV420 until
+    # its auxiliary view arrives. The combined planes still cache that main
+    # view for subsequent chroma-only updates.
+    before = '\tpYUVCDstData[0] = pYUVDstData[0];'
+    if text.count(before) != 1:
+        raise RuntimeError('Pinned AVC444 main-view conversion patch no longer matches')
+    text = text.replace(
+        before,
+        '\tif (type == AVC444_LUMA)\n'
+        '\t\treturn pool_decode(context, yuv420_process_work_callback, pYUVData, iStride,\n'
+        '\t\t                   srcYuvHeight, DstFormat, dest, nDstStep, regionRects, numRegionRects);\n\n'
+        + before,
+    )
+    target = source / relative
+    if target.read_text(encoding='utf-8') != text:
+        target.write_text(text, encoding='utf-8', newline='\n')
+    relative = 'libfreerdp/codec/CMakeLists.txt'
+    with tarfile.open(archive) as bundle:
+        text = bundle.extractfile('freerdp-3.33.0/' + relative).read().decode('utf-8')
+    before = '  find_library(MEDIACODEC mediandk REQUIRED)\n  list(APPEND CODEC_LIBS ${MEDIACODEC})'
+    if text.count(before) != 1:
+        raise RuntimeError('Pinned MediaCodec CMake linkage patch no longer matches')
+    text = text.replace(
+        before,
+        '  find_library(MEDIACODEC mediandk REQUIRED)\n'
+        '  find_library(ANDROID_LIB android REQUIRED)\n'
+        '  list(APPEND CODEC_LIBS ${MEDIACODEC} ${ANDROID_LIB})',
+    )
     target = source / relative
     if target.read_text(encoding='utf-8') != text:
         target.write_text(text, encoding='utf-8', newline='\n')

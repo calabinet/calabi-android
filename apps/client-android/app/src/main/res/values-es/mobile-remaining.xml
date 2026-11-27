@@ -91,7 +91,7 @@
     <string name="rdp_modifiers">Ctrl / Alt / Shift</string>
     <string name="rdp_modifier_hint">Siguiente tecla o clic</string>
     <string name="rdp_retry">Reintentar</string>
-    <string name="rdp_same_owner">El acceso remoto solo está disponible en tus propios dispositivos Windows.</string>
+    <string name="remote_login">Inicio de sesión remoto</string>
     <string name="rdp_certificate_missing">El equipo no ha proporcionado una identidad RDP verificada. Actualiza su servicio Calabi y activa Escritorio remoto.</string>
     <string name="rdp_windows_required">Selecciona un dispositivo Windows que admita alojar Escritorio remoto.</string>
     <string name="rdp_auth_failed">Error al iniciar sesión en Windows. Comprueba usuario, dominio y contraseña de la cuenta (no el PIN).</string>
@@ -126,7 +126,7 @@
     <string name="rdp_pan_mode">Mover lienzo</string>
     <string name="rdp_fit">Ajustar</string>
     <string name="rdp_gestures">Gestos</string>
-    <string name="rdp_gestures_hint">Panel táctil: desliza un dedo para mover el puntero y toca para hacer clic. Toca dos veces y arrastra, o activa Arrastrar, para mantener el botón izquierdo. Toca Panel táctil para cambiar a Toque directo, que apunta donde tocas. En ambos modos, toca con dos dedos para clic derecho, muévelos juntos para desplazar y pellizca para ampliar hasta 5×. Cambia Desplazar a Mover lienzo para mover la vista. El porcentaje restaura Ajustar. Herramientas incluye atajos y portapapeles de texto manual.</string>
+    <string name="rdp_gestures_hint">Toque directo: toca, desliza para desplazarte de forma nativa en Windows o mantén pulsado para clic derecho. Pellizca para hacer zoom y mover la vista a la vez, o arrastra con tres dedos para desplazarla. Cambia a Panel táctil para usar un cursor preciso con aceleración: toca para clic izquierdo, mantén pulsado o toca con dos dedos para clic derecho y desliza con dos dedos para desplazamiento suave. Arrastra el botón flotante a cualquier borde.</string>
     <string name="rdp_username">Usuario de Windows</string>
     <string name="rdp_domain">Dominio (opcional)</string>
     <string name="rdp_background_expired">La sesión terminó tras 60 segundos en segundo plano. Reconecta para continuar.</string>
@@ -144,7 +144,7 @@
     <string name="rdp_quality_detail">Nítida</string>
     <string name="rdp_quality_hint">Ahorro: 960 × 540, 16 bits, hasta 15 fps. Equilibrada: 1280 × 720, hasta 30 fps. Nítida: 1920 × 1080, hasta 60 fps. Se aplica al conectar; el equipo puede negociar otro formato.</string>
     <string name="rdp_statistics">Detalles de conexión</string>
-    <string name="rdp_statistics_value">Escritorio: %1$d × %2$d\nActualizaciones: %3$d\nEventos de entrada: %4$d\nConectado: %5$d s</string>
+    <string name="rdp_statistics_value">Escritorio: %1$d × %2$d\nConectado: %3$d s</string>
     <string name="rdp_graphics_classic">Gráficos compatibles · Decodificación por software. Las tasas son límites de presentación y dependen del equipo y la red.</string>
     <string name="rdp_connect_timeout">El equipo no mostró un escritorio en 30 segundos. Comprueba que esté activo y tenga Escritorio remoto habilitado, y reconecta.</string>
     <string name="rdp_hardware_prefer">Preferir decodificación por hardware</string>
@@ -419,4 +419,27 @@
     </plurals>
  <string name="files_identity_unavailable">Las transferencias no están disponibles. Intente repararlas.</string>
  <string name="files_error_clock">Compruebe la fecha y hora del sistema e inténtelo de nuevo.</string>
+    <string name="rdp_quality_adaptive">Ajustar a la pantalla</string>
+    <string name="rdp_quality_adaptive_hint">Ajusta el escritorio remoto al área visible, hasta 4K. Si el equipo no puede cambiar el tamaño, inicia a 720p.</string>
+    <string name="rdp_play_audio">Reproducir audio remoto en este dispositivo</string>
+    <string name="rdp_allow_file_copy">Permitir copiar archivos</string>
+    <string name="rdp_file_copy">Copiar archivos</string>
+    <string name="rdp_file_copy_hint">Selecciona un archivo del teléfono y pégalo en el Explorador de Windows. Para guardarlo en el teléfono, copia archivos en Windows y selecciónalos aquí.</string>
+    <string name="rdp_file_copy_waiting">Esperando el canal de copia de archivos.</string>
+    <string name="rdp_file_copy_choose">Elegir archivo del teléfono</string>
+    <string name="rdp_file_copy_offered">Listo para pegar en el Explorador de Windows.</string>
+    <string name="rdp_file_copy_saved">Archivo guardado.</string>
+    <string name="rdp_file_copy_busy">Transfiriendo archivo…</string>
+    <string name="rdp_file_copy_failed">No se pudo copiar el archivo. Inténtalo de nuevo.</string>
+    <string name="rdp_statistics_rates">Fotogramas por segundo: %1$.1f fps\nTasa de bits recibida: %2$.3f Mbps</string>
+    <string name="rdp_scale">Escala del escritorio</string>
+    <string name="rdp_scale_auto">Automático</string>
+    <string name="rdp_scale_100">100%</string>
+    <string name="rdp_scale_125">125%</string>
+    <string name="rdp_scale_150">150%</string>
+    <string name="rdp_scale_200">200%</string>
+    <string name="rdp_scale_hint">Amplía el texto y los botones de Windows para tocarlos mejor. Se aplica al conectar o al instante en Ajustar pantalla.</string>
+    <string name="rdp_quick_paste">Pegar del móvil</string>
+    <string name="rdp_quick_copy_pc">Traer del PC</string>
+    <string name="rdp_quick_pasted">Enviado y pegado en el equipo.</string>
 </resources>

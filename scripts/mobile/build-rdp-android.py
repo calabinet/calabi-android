@@ -117,8 +117,9 @@ def main():
          f'-DOPENSSL_SSL_LIBRARY={(sdk / "lib/libssl.a").as_posix()}',
          '-DBUILD_SHARED_LIBS=ON', '-DWITH_OPENSSL=ON', '-DWITH_JSON_DISABLED=ON', '-DWITH_MEDIACODEC=ON',
          '-DWITH_CLIENT_COMMON=ON', '-DWITH_CHANNELS=ON', '-DWITH_CLIENT_CHANNELS=ON',
+         '-DWITH_AAUDIO=OFF', '-DWITH_OPENSLES=ON',
          '-DCHANNEL_CLIPRDR_CLIENT=ON', '-DCHANNEL_CLIPRDR_SERVER=OFF',
-         *[f'-DCHANNEL_{p.parent.name.upper()}={"ON" if p.parent.name in ("cliprdr", "drdynvc", "rdpgfx") else "OFF"}'
+         *[f'-DCHANNEL_{p.parent.name.upper()}={"ON" if p.parent.name in ("cliprdr", "drdynvc", "rdpgfx", "disp", "rdpdr", "rdpsnd", "rdpei") else "OFF"}'
            for p in sorted((source / 'channels').glob('*/ChannelOptions.cmake'))],
          '-DWITHOUT_FREERDP_3x_DEPRECATED=ON', *[f'-D{option}=OFF' for option in disabled]])
     run(['cmake', '--build', obj, '--target', 'freerdp-client', '--parallel', '8'])
@@ -141,9 +142,12 @@ def main():
     shutil.copy2(ssl / 'LICENSE.txt', licenses / 'OpenSSL.txt')
     (output.parent / 'build.json').write_text(json.dumps({
         'abi': args.abi, 'ndk': tools['ndk'], 'sources': {name: digest for name, _, digest in SOURCES},
-        'channels': ['cliprdr (manual Unicode text only)', 'drdynvc', 'rdpgfx (AVC420 / named hardware MediaCodec)'],
+        'channels': ['cliprdr (manual Unicode text)', 'drdynvc', 'disp',
+                     'rdpgfx (AVC420 / AVC444v2 / named hardware MediaCodec)', 'rdpdr (no local devices)', 'rdpsnd (OpenSL ES)',
+                     'rdpei (native multi-touch input)'],
         'mediacodec_patch_sha256': hashlib.sha256((ROOT / 'scripts/mobile/rdp_mediacodec_patch.py').read_bytes()).hexdigest(),
         'mediacodec_surface_sha256': hashlib.sha256((ROOT / 'scripts/mobile/rdp_mediacodec_surface.c.inc').read_bytes()).hexdigest(),
+        'avc444_enabled': True,
         'libraries': {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in output.glob('*.so')},
     }, indent=2) + '\n')
     print('Android RDP native libraries ready:', output, flush=True)

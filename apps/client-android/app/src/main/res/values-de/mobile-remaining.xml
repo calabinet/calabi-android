@@ -91,7 +91,7 @@
     <string name="rdp_modifiers">Ctrl / Alt / Shift</string>
     <string name="rdp_modifier_hint">Nächste Taste oder Klick</string>
     <string name="rdp_retry">Erneut versuchen</string>
-    <string name="rdp_same_owner">Remote-Anmeldung nur auf eigenen Windows-Geräten verfügbar.</string>
+    <string name="remote_login">Remote-Anmeldung</string>
     <string name="rdp_certificate_missing">Der Computer hat keine verifizierte RDP-Identität bereitgestellt. Seinen Calabi-Dienst aktualisieren und Remotedesktop aktivieren.</string>
     <string name="rdp_windows_required">Ein Windows-Gerät mit Unterstützung als Remotedesktop-Host wählen.</string>
     <string name="rdp_auth_failed">Windows-Anmeldung fehlgeschlagen. Benutzername, Domäne und Kontopasswort prüfen (keine PIN).</string>
@@ -126,7 +126,7 @@
     <string name="rdp_pan_mode">Ansicht verschieben</string>
     <string name="rdp_fit">Einpassen</string>
     <string name="rdp_gestures">Gesten</string>
-    <string name="rdp_gestures_hint">Touchpad: Mit einem Finger den Zeiger bewegen, zum Klicken tippen. Doppeltippen und ziehen oder „Ziehen“ aktivieren, um die linke Taste zu halten. „Touchpad“ wechselt zu direkter Berührung am Fingerort. In beiden Modi: mit zwei Fingern tippen für Rechtsklick, gemeinsam bewegen zum Scrollen, auseinanderziehen zum Zoomen bis 5×. „Scrollen“ auf „Ansicht verschieben“ umstellen zum Schwenken. Die Prozentanzeige stellt Einpassen wieder her. „Tools“ enthält Tastenkürzel und die manuelle Textzwischenablage.</string>
+    <string name="rdp_gestures_hint">Direkttouch: Tippen, wischen zum nativen Scrollen in Windows oder lang drücken für Rechtsklick. Mit zwei Fingern zoomen und gleichzeitig verschieben oder mit drei Fingern verschieben. Im Trackpad-Modus steuert ein beschleunigter Zeiger: Tippen für Linksklick, lang drücken oder Zwei-Finger-Tipp für Rechtsklick, Zwei-Finger-Ziehen für sanftes Scrollen und Doppeltipp-Ziehen zum Halten. Den Eckknopf an den Rand ziehen.</string>
     <string name="rdp_username">Windows-Benutzername</string>
     <string name="rdp_domain">Domäne (optional)</string>
     <string name="rdp_background_expired">Sitzung nach 60 Sekunden im Hintergrund beendet. Zum Fortfahren neu verbinden.</string>
@@ -144,7 +144,7 @@
     <string name="rdp_quality_detail">Scharf</string>
     <string name="rdp_quality_hint">Datensparend: 960 × 540, 16 Bit, bis 15 fps. Ausgewogen: 1280 × 720, bis 30 fps. Scharf: 1920 × 1080, bis 60 fps. Gilt beim Verbinden; der Computer kann ein anderes Format aushandeln.</string>
     <string name="rdp_statistics">Verbindungsdetails</string>
-    <string name="rdp_statistics_value">Desktop: %1$d × %2$d\nAktualisierungen: %3$d\nEingaben: %4$d\nVerbunden: %5$d s</string>
+    <string name="rdp_statistics_value">Desktop: %1$d × %2$d\nVerbunden: %3$d s</string>
     <string name="rdp_graphics_classic">Kompatible Grafik · Softwaredekodierung. Bildraten sind Anzeigelimits und hängen von Computer und Netzwerk ab.</string>
     <string name="rdp_connect_timeout">Computer hat in 30 Sekunden keinen Desktop geliefert. Prüfen, ob er aktiv und Remotedesktop eingeschaltet ist, dann neu verbinden.</string>
     <string name="rdp_hardware_prefer">Hardwaredekodierung bevorzugen</string>
@@ -415,4 +415,27 @@
     </plurals>
  <string name="files_identity_unavailable">Die Dateiübertragung ist nicht verfügbar. Versuchen Sie eine Reparatur.</string>
  <string name="files_error_clock">Prüfen Sie Datum und Uhrzeit des Systems und versuchen Sie es erneut.</string>
+    <string name="rdp_quality_adaptive">An Anzeige anpassen</string>
+    <string name="rdp_quality_adaptive_hint">Passt den Remotedesktop an die Anzeigefläche an, bis zu 4K. Ohne Größenanpassung startet er mit 720p.</string>
+    <string name="rdp_play_audio">Remoteton auf diesem Gerät abspielen</string>
+    <string name="rdp_allow_file_copy">Dateikopie zulassen</string>
+    <string name="rdp_file_copy">Dateien kopieren</string>
+    <string name="rdp_file_copy_hint">Eine Datei auf dem Telefon wählen und im Windows-Explorer einfügen. Zum Speichern auf dem Telefon Dateien in Windows kopieren und hier auswählen.</string>
+    <string name="rdp_file_copy_waiting">Der Dateikopierkanal wird vorbereitet.</string>
+    <string name="rdp_file_copy_choose">Datei auf dem Telefon wählen</string>
+    <string name="rdp_file_copy_offered">Bereit zum Einfügen im Windows-Explorer.</string>
+    <string name="rdp_file_copy_saved">Datei gespeichert.</string>
+    <string name="rdp_file_copy_busy">Datei wird übertragen…</string>
+    <string name="rdp_file_copy_failed">Dateikopie fehlgeschlagen. Bitte erneut versuchen.</string>
+    <string name="rdp_statistics_rates">Bildrate: %1$.1f fps\nEmpfangsbitrate: %2$.3f Mbps</string>
+    <string name="rdp_scale">Desktop-Skalierung</string>
+    <string name="rdp_scale_auto">Automatisch</string>
+    <string name="rdp_scale_100">100%</string>
+    <string name="rdp_scale_125">125%</string>
+    <string name="rdp_scale_150">150%</string>
+    <string name="rdp_scale_200">200%</string>
+    <string name="rdp_scale_hint">Vergrößert Windows-Text und Schaltflächen für einfacheres Tippen. Gilt beim Verbinden oder live bei Anzeige anpassen.</string>
+    <string name="rdp_quick_paste">Vom Handy einfügen</string>
+    <string name="rdp_quick_copy_pc">PC-Text holen</string>
+    <string name="rdp_quick_pasted">Gesendet und auf dem Computer eingefügt.</string>
 </resources>

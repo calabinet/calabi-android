@@ -91,7 +91,7 @@
     <string name="rdp_modifiers">Ctrl / Alt / Shift</string>
     <string name="rdp_modifier_hint">Prochaine touche ou clic</string>
     <string name="rdp_retry">Réessayer</string>
-    <string name="rdp_same_owner">La connexion distante est réservée à vos propres appareils Windows.</string>
+    <string name="remote_login">Connexion à distance</string>
     <string name="rdp_certificate_missing">L’ordinateur n’a pas fourni d’identité RDP vérifiée. Mettez à jour son service Calabi et activez le Bureau à distance.</string>
     <string name="rdp_windows_required">Choisissez un appareil Windows prenant en charge l’hébergement du Bureau à distance.</string>
     <string name="rdp_auth_failed">Échec de la connexion Windows. Vérifiez le nom d’utilisateur, le domaine et le mot de passe du compte (pas le code PIN).</string>
@@ -126,7 +126,7 @@
     <string name="rdp_pan_mode">Déplacer la vue</string>
     <string name="rdp_fit">Ajuster</string>
     <string name="rdp_gestures">Gestes</string>
-    <string name="rdp_gestures_hint">Pavé tactile : glissez un doigt pour déplacer le pointeur, touchez pour cliquer. Touchez deux fois puis glissez, ou activez Glisser, pour maintenir le bouton gauche. Touchez Pavé tactile pour passer au toucher direct à la position du doigt. Dans les deux modes : touchez à deux doigts pour le clic droit, déplacez-les ensemble pour défiler et pincez pour zoomer jusqu’à 5×. Passez de Défiler à Déplacer la vue pour déplacer l’affichage. Le pourcentage rétablit Ajuster. Outils contient les raccourcis et le presse-papiers texte manuel.</string>
+    <string name="rdp_gestures_hint">Toucher direct : touchez, glissez pour faire défiler nativement sous Windows ou appuyez longuement pour un clic droit. Pincez pour zoomer et déplacer la vue ensemble, ou glissez à trois doigts pour la déplacer. Passez en Pavé tactile pour un curseur précis avec accélération : toucher pour clic gauche, appui long ou deux doigts pour clic droit, glisser à deux doigts pour défiler avec inertie. Glissez le bouton flottant sur un bord.</string>
     <string name="rdp_username">Nom d’utilisateur Windows</string>
     <string name="rdp_domain">Domaine (facultatif)</string>
     <string name="rdp_background_expired">La session s’est terminée après 60 secondes en arrière-plan. Reconnectez-vous pour continuer.</string>
@@ -144,7 +144,7 @@
     <string name="rdp_quality_detail">Nette</string>
     <string name="rdp_quality_hint">Économie : 960 × 540, 16 bits, jusqu’à 15 i/s. Équilibrée : 1280 × 720, jusqu’à 30 i/s. Nette : 1920 × 1080, jusqu’à 60 i/s. Appliqué à la connexion ; l’ordinateur peut négocier un autre format.</string>
     <string name="rdp_statistics">Détails de la connexion</string>
-    <string name="rdp_statistics_value">Bureau : %1$d × %2$d\nMises à jour : %3$d\nÉvénements d’entrée : %4$d\nConnecté : %5$d s</string>
+    <string name="rdp_statistics_value">Bureau : %1$d × %2$d\nConnecté : %3$d s</string>
     <string name="rdp_graphics_classic">Graphismes compatibles · Décodage logiciel. Les cadences sont des limites d’affichage et dépendent de l’ordinateur et du réseau.</string>
     <string name="rdp_connect_timeout">L’ordinateur n’a pas fourni de bureau sous 30 secondes. Vérifiez qu’il est éveillé et que le Bureau à distance est activé, puis reconnectez-vous.</string>
     <string name="rdp_hardware_prefer">Privilégier le décodage matériel</string>
@@ -419,4 +419,27 @@
     </plurals>
  <string name="files_identity_unavailable">Les transferts sont indisponibles. Essayez de les réparer.</string>
  <string name="files_error_clock">Vérifiez la date et l’heure du système, puis réessayez.</string>
+    <string name="rdp_quality_adaptive">Adapter à l’écran</string>
+    <string name="rdp_quality_adaptive_hint">Adapte le bureau distant à la zone visible, jusqu’à 4K. Il démarre en 720p si le PC ne peut pas le redimensionner.</string>
+    <string name="rdp_play_audio">Lire l’audio distant sur cet appareil</string>
+    <string name="rdp_allow_file_copy">Autoriser la copie de fichiers</string>
+    <string name="rdp_file_copy">Copier des fichiers</string>
+    <string name="rdp_file_copy_hint">Choisissez un fichier du téléphone, puis collez-le dans l’Explorateur Windows. Pour enregistrer sur le téléphone, copiez des fichiers dans Windows et sélectionnez-les ici.</string>
+    <string name="rdp_file_copy_waiting">En attente du canal de copie de fichiers.</string>
+    <string name="rdp_file_copy_choose">Choisir un fichier du téléphone</string>
+    <string name="rdp_file_copy_offered">Prêt à coller dans l’Explorateur Windows.</string>
+    <string name="rdp_file_copy_saved">Fichier enregistré.</string>
+    <string name="rdp_file_copy_busy">Transfert du fichier…</string>
+    <string name="rdp_file_copy_failed">Échec de la copie. Réessayez.</string>
+    <string name="rdp_statistics_rates">Images par seconde : %1$.1f fps\nDébit en réception : %2$.3f Mbit/s</string>
+    <string name="rdp_scale">Mise à l’échelle du bureau</string>
+    <string name="rdp_scale_auto">Automatique</string>
+    <string name="rdp_scale_100">100%</string>
+    <string name="rdp_scale_125">125%</string>
+    <string name="rdp_scale_150">150%</string>
+    <string name="rdp_scale_200">200%</string>
+    <string name="rdp_scale_hint">Agrandit le texte et les boutons Windows pour faciliter le toucher. S’applique à la connexion ou en direct en mode Adapter à l’écran.</string>
+    <string name="rdp_quick_paste">Coller du mobile</string>
+    <string name="rdp_quick_copy_pc">Copier du PC</string>
+    <string name="rdp_quick_pasted">Envoyé et collé sur l’ordinateur.</string>
 </resources>

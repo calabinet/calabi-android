@@ -35,6 +35,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
@@ -92,6 +93,7 @@ fun HomeScreen(onConnect: () -> Unit, onDisconnect: () -> Unit, onSignedOut: () 
     var filePeer by rememberSaveable { mutableStateOf<String?>(null) }
     var fileReview by rememberSaveable { mutableStateOf(false) }
     var fileSending by remember { mutableStateOf(false) }
+    val pendingIncomingFileCount by CoreClient.pendingIncomingFileCount.collectAsState()
     val screenState = rememberSaveableStateHolder()
     var settingsDetail by remember { mutableStateOf(false) }
     LaunchedEffect(tab, route, sheet, fileSending, model.mode, model.server, model.activeOrgId) {
@@ -143,7 +145,14 @@ fun HomeScreen(onConnect: () -> Unit, onDisconnect: () -> Unit, onSignedOut: () 
             Header(model, onAccount = { if (model.selfHosted) { tab = 2; route = Route.Account } else sheet = Sheet.Account },
                 onConnection = { sheet = Sheet.Connection })
         }
-    }, bottomBar = { if (!imeVisible && route == null && !(tab == 3 && fileSending) && !(tab == 2 && settingsDetail)) BottomNav(tab) { tab = it } }) { padding ->
+    }, bottomBar = {
+        if (!imeVisible && route == null && !(tab == 3 && fileSending) && !(tab == 2 && settingsDetail)) {
+            BottomNav(tab, pendingIncomingFileCount) {
+                tab = it
+                if (it == 3 && pendingIncomingFileCount > 0) fileReview = true
+            }
+        }
+    }) { padding ->
         Box(Modifier.padding(padding).imePadding().fillMaxSize()) {
             val screenKey = when (val r = route) {
                 Route.Account -> "account"
@@ -204,6 +213,7 @@ fun HomeScreen(onConnect: () -> Unit, onDisconnect: () -> Unit, onSignedOut: () 
                         SheetTitle(stringResource(R.string.mesh_network_settings), stringResource(R.string.mobile_settings_connection))
                         ActionFeedback(model.actions)
                         ConnectionSummary(model)
+                        NatCompactCard(model)
                         Group {
                             LinkRow(stringResource(R.string.settings_exit), model.exitNode.ifBlank { stringResource(R.string.settings_exit_none) }) { sheet = Sheet.Exit }
                             RowDivider()
@@ -489,8 +499,9 @@ private fun DeviceRow(d: Device, first: Boolean, last: Boolean, isExit: Boolean,
                     Trailing(d)
                 }
             }
-            if (d.online && d.os == "windows") CircleButton(R.drawable.ic_monitor, stringResource(R.string.mesh_desktop)) {
-                context.startActivity(android.content.Intent(context, net.calabi.app.rdp.RdpActivity::class.java).putExtra("overlay", d.overlay))
+            if (d.online && d.remoteLoginKey != null) CircleButton(R.drawable.ic_monitor, stringResource(R.string.remote_login)) {
+                context.startActivity(android.content.Intent(context, net.calabi.app.rdp.RdpActivity::class.java)
+                    .putExtra("overlay", d.overlay).putExtra("device_key", d.remoteLoginKey))
             } else Glyph(R.drawable.ic_chevron_right, Palette.muted, 16.dp)
         }
         if (!last) RowDivider(start = 68.dp)

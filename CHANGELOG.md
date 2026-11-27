@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.2.0 — 2026-11-26
+
+- **Added:** Network and NAT diagnostics in the top-right connection sheet and Settings → Connection, displaying NAT1–NAT4 classification, peer-to-peer hole-punching guidance, network carrier, and default-masked external IP addresses in all ten languages.
+- **Added:** Redesigned Remote Desktop touch and input experience with native multi-touch (MS-RDPEI), Windows DPI scaling, single-row keyboard toolbar with automatic IME focus on Android 10+, streamlined 5-action floating pill, and default AVC444v2 hardware decoding.
+- **Added:** Remote Desktop audio playback, file copy, adaptive display resizing, and authorized cross-member remote login.
+- **Fixed:** Chroma alignment for 720p AVC444 streams on Kirin hardware decoders.
+- **Fixed:** File transfers now tolerate up to ±5 minutes of clock skew between devices.
+- **Changed:** Updated the bundled Calabi core to 2.10.0.
+
+Install over the existing official app to retain account, device identity, and settings. The package remains net.calabi.app and uses the established signing certificate. The version code is 3002000.
+
 ## 3.1.3 — 2026-11-21
 
 - **Changed:** Updated the bundled Calabi core to 2.9.0 for the current mesh protocol and subnet-routing changes.

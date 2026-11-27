@@ -23,23 +23,28 @@
 #include <freerdp/codec/color.h>
 #include <freerdp/crypto/certificate.h>
 #include <freerdp/client/channels.h>
+#include <freerdp/client/disp.h>
+#include <freerdp/client/rdpei.h>
 #include <freerdp/client/cmdline.h>
 #include <freerdp/channels/channels.h>
 #include <freerdp/addin.h>
 #include "rdp_clipboard.h"
+#include "rdp_audio.h"
 #include "rdp_graphics.h"
 #include <winpr/synch.h>
 #include <winpr/sysinfo.h>
 #include <winpr/string.h>
 #include <winpr/wlog.h>
+#include "copy_binding_channel.h"
 
-#define MAX_PIXELS (1920u * 1080u)
-#define QUEUE_SIZE 256
-typedef struct { int kind, flags, x, y; } Input;
+#define MAX_PIXELS (3840u * 2160u)
+#define QUEUE_SIZE 512
+#define MAX_TOUCH_CONTACTS 16
+typedef struct { int kind, flags, x, y, id; } Input;
 typedef struct Session {
     JavaVM* vm;
     jobject callback;
-    jmethodID state_cb, frame_cb, verify_cb, clipboard_cb, recovery_cb, graphics_cb;
+    jmethodID state_cb, frame_cb, verify_cb, clipboard_cb, recovery_cb, graphics_cb, touch_cb;
     JNIEnv* worker_env;
     freerdp* rdp;
     rdpSettings* initial_settings;
@@ -57,6 +62,17 @@ typedef struct Session {
     uint64_t ready_at;
     uint64_t repair_deadline;
     BOOL output_visible;
+    BOOL adaptive_display;
+    DispClientContext* display;
+    RdpeiClientContext* touch;
+    BOOL touch_active[MAX_TOUCH_CONTACTS];
+    INT32 touch_external_id[MAX_TOUCH_CONTACTS];
+    INT32 touch_last_x[MAX_TOUCH_CONTACTS];
+    INT32 touch_last_y[MAX_TOUCH_CONTACTS];
+    UINT64 display_area, display_ready_at, display_sent_at, viewport_changed_at;
+    UINT32 viewport_width, viewport_height, display_width, display_height;
+    UINT32 desktop_scale_factor, device_scale_factor, display_scale;
+    BOOL display_scale_dirty;
     BOOL keys[512];
     UINT16 buttons, pointer_x, pointer_y, unicode_down;
     int port, started, width, height, certificate_verified, certificate_rejected;
@@ -64,7 +80,11 @@ typedef struct Session {
     size_t frame_bytes;
     uint64_t frames, rendered, begun;
     uint64_t input_count, event_checks, copied_bytes;
+    uint64_t presented_frames;
+    atomic_uint_fast64_t received_bytes;
+    pTransportRead read_bytes;
     char host[INET_ADDRSTRLEN], local[INET_ADDRSTRLEN], pin[65];
+    char copy_key[65];
     Input queue[QUEUE_SIZE];
     unsigned read_pos, write_pos;
     CalabiClipboard clipboard;
@@ -74,29 +94,98 @@ typedef struct { rdpContext base; Session* session; } Context;
 static Session* session_of(rdpContext* context) { return ((Context*)context)->session; }
 CalabiGraphics* calabi_gfx_from_context(rdpContext* context) { return &session_of(context)->graphics; }
 static BOOL paint_end(rdpContext* context);
+static UINT32 clamp_desktop_scale(int scale) {
+    if (scale < 100) return 100;
+    if (scale > 500) return 500;
+    return (UINT32)scale;
+}
+static UINT32 device_scale_for(UINT32 desktop_scale) {
+    if (desktop_scale <= 100) return 100;
+    if (desktop_scale <= 150) return 140;
+    return 180;
+}
+static void touch_notify(Session* s, BOOL ready) {
+    if (!s->worker_env || !s->touch_cb) return;
+    __android_log_print(ANDROID_LOG_INFO, "CalabiRdp", "rdpei_ready=%d", ready ? 1 : 0);
+    (*s->worker_env)->CallVoidMethod(s->worker_env, s->callback, s->touch_cb, ready ? JNI_TRUE : JNI_FALSE);
+    if ((*s->worker_env)->ExceptionCheck(s->worker_env)) { (*s->worker_env)->ExceptionClear(s->worker_env); atomic_store(&s->stopped, TRUE); }
+}
 static void graphics_notify(rdpContext* context, int mode) {
     Session* s = session_of(context);
     __android_log_print(ANDROID_LOG_INFO, "CalabiRdp", "graphics_mode=%d", mode);
     (*s->worker_env)->CallVoidMethod(s->worker_env, s->callback, s->graphics_cb, mode);
     if ((*s->worker_env)->ExceptionCheck(s->worker_env)) { (*s->worker_env)->ExceptionClear(s->worker_env); atomic_store(&s->stopped, TRUE); }
 }
+static UINT display_caps(DispClientContext* display, UINT32 monitors, UINT32 factor_a, UINT32 factor_b) {
+    Session* s = display->custom;
+    pthread_mutex_lock(&s->lock);
+    if (s->display == display) {
+        s->display_area = monitors ? (UINT64)factor_a * factor_b : 0;
+        s->display_ready_at = GetTickCount64() + 500;
+        s->display_width = s->display_height = 0;
+        s->display_scale = 0;
+    }
+    pthread_mutex_unlock(&s->lock);
+    return CHANNEL_RC_OK;
+}
+
 static void channel_connected(void* context, const ChannelConnectedEventArgs* args) {
     if (args) __android_log_print(ANDROID_LOG_INFO, "CalabiRdp", "channel_connected name=%s interface=%d", args->name, args->pInterface != NULL);
     if (args && strcmp(args->name, CLIPRDR_SVC_CHANNEL_NAME) == 0 && args->pInterface) {
         calabi_clip_connected(&session_of(context)->clipboard, args->pInterface);
+    }
+    if (args && args->pInterface && strcmp(args->name, DISP_DVC_CHANNEL_NAME) == 0) {
+        Session* s = session_of(context);
+        pthread_mutex_lock(&s->lock);
+        s->display = args->pInterface;
+        s->display->custom = s;
+        s->display->DisplayControlCaps = display_caps;
+        s->display_area = 0;
+        s->display_width = s->display_height = 0;
+        s->display_scale = 0;
+        pthread_mutex_unlock(&s->lock);
+    }
+    if (args && args->pInterface && strcmp(args->name, RDPEI_DVC_CHANNEL_NAME) == 0) {
+        Session* s = session_of(context);
+        pthread_mutex_lock(&s->lock);
+        s->touch = args->pInterface;
+        memset(s->touch_active, 0, sizeof(s->touch_active));
+        pthread_mutex_unlock(&s->lock);
+        touch_notify(s, TRUE);
     }
     calabi_gfx_connected(context, args);
 }
 static void channel_disconnected(void* context, const ChannelDisconnectedEventArgs* args) {
     if (args && strcmp(args->name, CLIPRDR_SVC_CHANNEL_NAME) == 0)
         calabi_clip_disconnected(&session_of(context)->clipboard);
+    if (args && strcmp(args->name, DISP_DVC_CHANNEL_NAME) == 0) {
+        Session* s = session_of(context);
+        pthread_mutex_lock(&s->lock);
+        if (s->display == args->pInterface) {
+            s->display = NULL;
+            s->display_area = 0;
+        }
+        pthread_mutex_unlock(&s->lock);
+    }
+    if (args && strcmp(args->name, RDPEI_DVC_CHANNEL_NAME) == 0) {
+        Session* s = session_of(context);
+        BOOL notified = FALSE;
+        pthread_mutex_lock(&s->lock);
+        if (s->touch == args->pInterface) {
+            s->touch = NULL;
+            memset(s->touch_active, 0, sizeof(s->touch_active));
+            notified = TRUE;
+        }
+        pthread_mutex_unlock(&s->lock);
+        if (notified) touch_notify(s, FALSE);
+    }
     calabi_gfx_disconnected(context, args);
 }
-static BOOL load_static(rdpContext* ctx, const char* name) {
+static BOOL load_static(rdpContext* ctx, const char* name, void* data) {
     PVIRTUALCHANNELENTRY entry = freerdp_load_channel_addin_entry(name, NULL, NULL,
         FREERDP_ADDIN_CHANNEL_STATIC | FREERDP_ADDIN_CHANNEL_ENTRYEX);
     PVIRTUALCHANNELENTRYEX extended = WINPR_FUNC_PTR_CAST(entry, PVIRTUALCHANNELENTRYEX);
-    return extended && freerdp_channels_client_load_ex(ctx->channels, ctx->settings, extended, NULL) == CHANNEL_RC_OK;
+    return extended && freerdp_channels_client_load_ex(ctx->channels, ctx->settings, extended, data) == CHANNEL_RC_OK;
 }
 // FreeRDP 3 rebuilds context->channels after PreConnect. Load into the final manager.
 static BOOL load_channels(freerdp* instance) {
@@ -107,15 +196,76 @@ static BOOL load_channels(freerdp* instance) {
             PubSub_SubscribeChannelDisconnected(ctx->pubSub, channel_disconnected) != CHANNEL_RC_OK) return FALSE;
         s->subscribed = TRUE;
     }
-    if (!load_static(ctx, CLIPRDR_SVC_CHANNEL_NAME)) return FALSE;
+    if (!load_static(ctx, CLIPRDR_SVC_CHANNEL_NAME, NULL)) return FALSE;
+    if (s->copy_key[0] && copy_binding_load(instance, (UINT16)s->port, s->copy_key) != CHANNEL_RC_OK)
+        __android_log_write(ANDROID_LOG_WARN, "CalabiRdp", "File copy binding channel unavailable");
+    if (!calabi_rdp_load_audio(ctx, load_static)) {
+        __android_log_write(ANDROID_LOG_WARN, "CalabiRdp", "Audio playback channel unavailable");
+        if (!freerdp_settings_set_bool(ctx->settings, FreeRDP_AudioPlayback, FALSE)) return FALSE;
+    }
+    if (s->adaptive_display) {
+        const char* args[] = { DISP_CHANNEL_NAME };
+        if (!freerdp_client_add_dynamic_channel(ctx->settings, 1, args)) return FALSE;
+    }
+    {
+        const char* args[] = { RDPEI_CHANNEL_NAME };
+        if (!freerdp_client_add_dynamic_channel(ctx->settings, 1, args))
+            __android_log_write(ANDROID_LOG_WARN, "CalabiRdp", "RDPEI dynamic channel unavailable");
+    }
     if (s->graphics.enabled) {
         __android_log_print(ANDROID_LOG_INFO, "CalabiRdp", "gfx_advertise avc=%d avc444=%d", freerdp_settings_get_bool(ctx->settings, FreeRDP_GfxH264), freerdp_settings_get_bool(ctx->settings, FreeRDP_GfxAVC444));
         const char* args[] = {RDPGFX_CHANNEL_NAME};
-        if (!freerdp_client_add_dynamic_channel(ctx->settings, 1, args) || !load_static(ctx, "drdynvc")) {
+        if (!freerdp_client_add_dynamic_channel(ctx->settings, 1, args)) {
             atomic_store(&s->graphics.failed, TRUE); return FALSE;
         }
     }
+    if (!load_static(ctx, "drdynvc", ctx->settings)) {
+        if (s->graphics.enabled) atomic_store(&s->graphics.failed, TRUE);
+        if (s->adaptive_display || s->graphics.enabled) return FALSE;
+    }
     return TRUE;
+}
+
+static void poll_display(Session* s) {
+    const UINT64 now = GetTickCount64();
+    if (!s->adaptive_display || !atomic_load(&s->foreground)) return;
+    pthread_mutex_lock(&s->lock);
+    if (!s->display || !s->display->SendMonitorLayout || now < s->display_ready_at ||
+        now < s->display_sent_at + 500 || s->display_area < 40000) goto done;
+    UINT32 width = s->viewport_width, height = s->viewport_height;
+    if (width < 200 || height < 200 || (!s->display_scale_dirty && now < s->viewport_changed_at + 350)) goto done;
+    const UINT32 max_width = width >= height ? 3840 : 2160;
+    const UINT32 max_height = width >= height ? 2160 : 3840;
+    if (width > max_width) { height = (UINT32)((UINT64)height * max_width / width); width = max_width; }
+    if (height > max_height) { width = (UINT32)((UINT64)width * max_height / height); height = max_height; }
+    while ((UINT64)width * height > s->display_area && width > 200 && height > 200) {
+        width = width * 9 / 10;
+        height = height * 9 / 10;
+    }
+    width &= ~1u;
+    const UINT32 desktop_scale = clamp_desktop_scale((int)s->desktop_scale_factor);
+    const UINT32 device_scale = device_scale_for(desktop_scale);
+    if (width < 200 || height < 200 || (UINT64)width * height > s->display_area ||
+        (width == s->display_width && height == s->display_height && !s->display_scale_dirty && s->display_scale == desktop_scale)) goto done;
+    DISPLAY_CONTROL_MONITOR_LAYOUT layout = {0};
+    layout.Flags = DISPLAY_CONTROL_MONITOR_PRIMARY;
+    layout.Width = width;
+    layout.Height = height;
+    layout.PhysicalWidth = width * 254 / 960;
+    layout.PhysicalHeight = height * 254 / 960;
+    layout.DesktopScaleFactor = desktop_scale;
+    layout.DeviceScaleFactor = device_scale;
+    s->display_sent_at = now;
+    const UINT result = s->display->SendMonitorLayout(s->display, 1, &layout);
+    __android_log_print(ANDROID_LOG_INFO, "CalabiRdp", "display_layout=%ux%u scale=%u/%u result=%u", width, height, desktop_scale, device_scale, result);
+    if (result == CHANNEL_RC_OK) {
+        s->display_width = width;
+        s->display_height = height;
+        s->display_scale = desktop_scale;
+        s->display_scale_dirty = FALSE;
+    }
+done:
+    pthread_mutex_unlock(&s->lock);
 }
 static void state(Session* s, int code, const char* text) {
     JNIEnv* env = s->worker_env;
@@ -195,6 +345,7 @@ static BOOL paint_end(rdpContext* context) {
     if (!atomic_load(&s->foreground) && !(s->awaiting_frame && atomic_load(&s->network_ready))) return TRUE;
     rdpGdi* g = context->gdi;
     if (!g || !g->primary_buffer || g->width <= 0 || g->height <= 0 ||
+        g->width > 3840 || g->height > 3840 ||
         (uint64_t)g->width * g->height > MAX_PIXELS || atomic_load(&s->stopped)) return FALSE;
     if (!s->graphics.committing && g->primary && g->primary->hdc && g->primary->hdc->hwnd && g->primary->hdc->hwnd->invalid->null) return TRUE;
     size_t bytes = (size_t)g->width * g->height * 4;
@@ -231,7 +382,7 @@ static BOOL desktop_resize(rdpContext* context) {
     Session* s = session_of(context);
     UINT32 width = freerdp_settings_get_uint32(context->settings, FreeRDP_DesktopWidth);
     UINT32 height = freerdp_settings_get_uint32(context->settings, FreeRDP_DesktopHeight);
-    if (!width || !height || (uint64_t)width * height > MAX_PIXELS) {
+    if (!width || !height || width > 3840 || height > 3840 || (uint64_t)width * height > MAX_PIXELS) {
         atomic_store(&s->graphics.failed, TRUE); return FALSE;
     }
     return context->gdi && gdi_resize(context->gdi, width, height);
@@ -253,6 +404,47 @@ static BOOL connected(freerdp* instance) {
     return TRUE;
 }
 
+static int find_touch_slot(Session* s, INT32 external_id, BOOL allocate) {
+    int empty = -1;
+    for (int i = 0; i < MAX_TOUCH_CONTACTS; i++) {
+        if (s->touch_active[i] && s->touch_external_id[i] == external_id) return i;
+        if (!s->touch_active[i] && empty < 0) empty = i;
+    }
+    return allocate ? empty : -1;
+}
+
+static BOOL send_rdpei_touch(Session* s, int action, INT32 external_id, INT32 x, INT32 y) {
+    pthread_mutex_lock(&s->lock);
+    RdpeiClientContext* touch = s->touch;
+    pthread_mutex_unlock(&s->lock);
+    if (!touch) return TRUE;
+    INT32 contact_id = 0;
+    if (action == 0) {
+        int slot = find_touch_slot(s, external_id, TRUE);
+        if (slot < 0) return TRUE;
+        s->touch_active[slot] = TRUE;
+        s->touch_external_id[slot] = external_id;
+        s->touch_last_x[slot] = x;
+        s->touch_last_y[slot] = y;
+        if (touch->TouchBegin) (void)touch->TouchBegin(touch, external_id, x, y, &contact_id);
+        return TRUE;
+    }
+    int slot = find_touch_slot(s, external_id, FALSE);
+    if (slot < 0) return TRUE;
+    s->touch_last_x[slot] = x;
+    s->touch_last_y[slot] = y;
+    if (action == 1) {
+        if (touch->TouchUpdate) (void)touch->TouchUpdate(touch, external_id, x, y, &contact_id);
+    } else if (action == 2) {
+        s->touch_active[slot] = FALSE;
+        if (touch->TouchEnd) (void)touch->TouchEnd(touch, external_id, x, y, &contact_id);
+    } else if (action == 3) {
+        s->touch_active[slot] = FALSE;
+        if (touch->TouchCancel) (void)touch->TouchCancel(touch, external_id, x, y, &contact_id);
+    }
+    return TRUE;
+}
+
 static BOOL drain_inputs(Session* s) {
     for (;;) {
         pthread_mutex_lock(&s->lock);
@@ -264,7 +456,8 @@ static BOOL drain_inputs(Session* s) {
         BOOL ok;
         if (in.kind == 0) ok = freerdp_input_send_mouse_event(s->rdp->context->input, in.flags, in.x, in.y);
         else if (in.kind == 1) ok = freerdp_input_send_keyboard_event(s->rdp->context->input, in.flags, in.x);
-        else ok = freerdp_input_send_unicode_keyboard_event(s->rdp->context->input, in.flags, in.x);
+        else if (in.kind == 2) ok = freerdp_input_send_unicode_keyboard_event(s->rdp->context->input, in.flags, in.x);
+        else ok = send_rdpei_touch(s, in.flags, in.id, in.x, in.y);
         if (!ok) return FALSE;
         pthread_mutex_lock(&s->lock); s->input_count++; pthread_mutex_unlock(&s->lock);
         if (in.kind == 0 && (in.flags & 0x7000)) {
@@ -281,9 +474,19 @@ static BOOL drain_inputs(Session* s) {
 static BOOL update_visibility(Session* s) {
     const BOOL visible = atomic_load(&s->foreground) || (s->awaiting_frame && atomic_load(&s->network_ready));
     const BOOL release = atomic_exchange(&s->release_pending, FALSE);
-    int released_keys = 0, released_buttons = 0;
+    int released_keys = 0, released_buttons = 0, released_touches = 0;
     if (visible == s->output_visible && !release) return TRUE;
     if (!visible || release) {
+        pthread_mutex_lock(&s->lock);
+        RdpeiClientContext* touch = s->touch;
+        pthread_mutex_unlock(&s->lock);
+        for (int i = 0; i < MAX_TOUCH_CONTACTS; i++) if (s->touch_active[i]) {
+            INT32 contact_id = 0;
+            if (touch && touch->TouchCancel)
+                (void)touch->TouchCancel(touch, s->touch_external_id[i], s->touch_last_x[i], s->touch_last_y[i], &contact_id);
+            s->touch_active[i] = FALSE;
+            released_touches++;
+        }
         for (int i = 0; i < 512; i++) if (s->keys[i]) {
             if (!freerdp_input_send_keyboard_event(s->rdp->context->input, 0x8000 | (i > 255 ? 0x100 : 0), i & 255)) return FALSE;
             s->keys[i] = FALSE;
@@ -314,7 +517,7 @@ static BOOL update_visibility(Session* s) {
         if (!s->rdp->context->update->RefreshRect(s->rdp->context, 1, &rect)) return FALSE;
     }
     s->output_visible = visible;
-    __android_log_print(ANDROID_LOG_INFO, "CalabiRdp", "output_visible=%d released_keys=%d released_buttons=%d frames=%llu", visible, released_keys, released_buttons, (unsigned long long)s->frames);
+    __android_log_print(ANDROID_LOG_INFO, "CalabiRdp", "output_visible=%d released_keys=%d released_buttons=%d released_touches=%d frames=%llu", visible, released_keys, released_buttons, released_touches, (unsigned long long)s->frames);
     return TRUE;
 }
 
@@ -340,6 +543,26 @@ static int authority(Session* s) {
     if ((*s->worker_env)->ExceptionCheck(s->worker_env)) { (*s->worker_env)->ExceptionClear(s->worker_env); return -1; }
     return result;
 }
+
+static SSIZE_T counted_read(rdpTransport* transport, BYTE* buffer, size_t size) {
+    Session* s = session_of(transport_get_context(transport));
+    SSIZE_T size_read = s->read_bytes(transport, buffer, size);
+    if (size_read > 0)
+        atomic_fetch_add_explicit(&s->received_bytes, (uint64_t)size_read, memory_order_relaxed);
+    return size_read;
+}
+
+static BOOL configure_transport(Session* s) {
+    rdpContext* context = s->rdp->context;
+    const rdpTransportIo* defaults = freerdp_get_io_callbacks(context);
+    if (!defaults || !defaults->ReadBytes) return FALSE;
+    rdpTransportIo io = *defaults;
+    s->read_bytes = io.ReadBytes;
+    io.ReadBytes = counted_read;
+    io.TCPConnect = mesh_connect;
+    return freerdp_set_io_callbacks(context, &io);
+}
+
 // Rebuild only the local graphics attempt; all connection settings (including
 // credentials) stay in native memory and every new TLS socket is verified again.
 static BOOL rebuild_classic(Session* s) {
@@ -351,6 +574,7 @@ static BOOL rebuild_classic(Session* s) {
         freerdp_free(s->rdp);
     }
     s->rdp = NULL; s->subscribed = FALSE; s->graphics.channel = NULL;
+    s->touch = NULL; memset(s->touch_active, 0, sizeof(s->touch_active));
     s->graphics.enabled = FALSE; atomic_store(&s->graphics.failed, FALSE);
     s->certificate_verified = s->certificate_rejected = 0;
     BOOL ok = !atomic_load(&s->stopped) && (s->rdp = freerdp_new()) &&
@@ -359,10 +583,8 @@ static BOOL rebuild_classic(Session* s) {
         ((Context*)s->rdp->context)->session = s;
         s->rdp->PostConnect = connected; s->rdp->LoadChannels = load_channels; s->rdp->VerifyX509Certificate = verify;
         ok = freerdp_settings_copy(s->rdp->context->settings, s->initial_settings) &&
-            calabi_gfx_configure(&s->graphics, s->rdp->context->settings, FALSE);
-        const rdpTransportIo* defaults = freerdp_get_io_callbacks(s->rdp->context);
-        rdpTransportIo io = *defaults; io.TCPConnect = mesh_connect;
-        ok = ok && freerdp_set_io_callbacks(s->rdp->context, &io);
+            calabi_gfx_configure(&s->graphics, s->rdp->context->settings, FALSE) &&
+            configure_transport(s);
     }
     pthread_mutex_unlock(&s->lock);
     return ok;
@@ -370,7 +592,9 @@ static BOOL rebuild_classic(Session* s) {
 static void* worker(void* value) {
     Session* s = value;
     if ((*s->vm)->AttachCurrentThread(s->vm, &s->worker_env, NULL) != JNI_OK) return NULL;
+    pthread_mutex_lock(&s->lock);
     s->begun = GetTickCount64();
+    pthread_mutex_unlock(&s->lock);
     s->initial_settings = freerdp_settings_clone(s->rdp->context->settings);
     BOOL ok = s->initial_settings && !atomic_load(&s->stopped) && freerdp_connect(s->rdp);
     BOOL had_connection = ok;
@@ -396,6 +620,7 @@ static void* worker(void* value) {
                 }
                 if (announced && atomic_load(&s->foreground)) s->awaiting_frame = FALSE;
                 if (!n || (active && (!update_visibility(s) || !drain_inputs(s)))) break;
+                if (active) poll_display(s);
                 calabi_clip_poll(&s->clipboard, s->worker_env, s->callback, s->clipboard_cb);
                 DWORD wait = WaitForMultipleObjects(n, events, FALSE, 16);
                 pthread_mutex_lock(&s->lock); s->event_checks++; pthread_mutex_unlock(&s->lock);
@@ -468,6 +693,7 @@ static void* worker(void* value) {
     snprintf(message, sizeof(message), "RDP 0x%08x", error);
     __android_log_print(ANDROID_LOG_INFO, "CalabiRdp", "session_end error=0x%08x frames=%llu", error, (unsigned long long)s->frames);
     state(s, atomic_load(&s->stopped) ? 3 : s->certificate_rejected ? 8 : terminal, message);
+    s->worker_env = NULL;
     (*s->vm)->DetachCurrentThread(s->vm);
     return NULL;
 }
@@ -493,7 +719,7 @@ JNIEXPORT jboolean JNICALL Java_net_calabi_app_rdp_RdpNative_initialize(JNIEnv* 
 }
 
 JNIEXPORT jlong JNICALL Java_net_calabi_app_rdp_RdpNative_create(JNIEnv* env, jobject self, jobject callback,
-        jstring host, jstring local, jstring pin, jstring user, jstring domain, jstring password, jint port) {
+        jstring host, jstring local, jstring pin, jstring user, jstring domain, jstring password, jint port, jstring binding) {
     (void)self;
     if (port < 1 || port > 65535) return 0;
     Session* s = calloc(1, sizeof(Session));
@@ -502,6 +728,7 @@ JNIEXPORT jlong JNICALL Java_net_calabi_app_rdp_RdpNative_create(JNIEnv* env, jo
     atomic_init(&s->foreground, TRUE);
     atomic_init(&s->network_ready, TRUE);
     atomic_init(&s->repair_requested, FALSE);
+    atomic_init(&s->received_bytes, 0);
     s->output_visible = TRUE;
     pthread_mutex_init(&s->lock, NULL);
     calabi_clip_init(&s->clipboard);
@@ -515,12 +742,17 @@ JNIEXPORT jlong JNICALL Java_net_calabi_app_rdp_RdpNative_create(JNIEnv* env, jo
     s->clipboard_cb = (*env)->GetMethodID(env, cls, "onNativeClipboard", "(ILjava/lang/String;I)V");
     s->recovery_cb = (*env)->GetMethodID(env, cls, "recoveryAuthorization", "()I");
     s->graphics_cb = (*env)->GetMethodID(env, cls, "onNativeGraphics", "(I)V");
+    s->touch_cb = (*env)->GetMethodID(env, cls, "onNativeTouch", "(Z)V");
     (*env)->DeleteLocalRef(env, cls);
     char *h = string_copy(env, host), *l = string_copy(env, local), *p = string_copy(env, pin);
     char *u = string_copy(env, user), *d = string_copy(env, domain), *pw = string_copy(env, password);
+    char *key = string_copy(env, binding);
     BOOL ok = h && l && p && u && d && pw && strlen(h) < sizeof(s->host) && strlen(l) < sizeof(s->local) && strlen(p) == 64;
     struct in_addr parsed;
     if (ok) ok = inet_pton(AF_INET, h, &parsed) == 1 && inet_pton(AF_INET, l, &parsed) == 1 && strspn(p, "0123456789abcdefABCDEF") == 64;
+    if (key && strlen(key) == 64 && strspn(key, "0123456789abcdef") == 64)
+        memcpy(s->copy_key, key, sizeof(s->copy_key));
+    if (key) { SecureZeroMemory(key, strlen(key)); free(key); }
     int stage = ok ? 1 : 0;
     if (ok) { strcpy(s->host, h); strcpy(s->local, l); strcpy(s->pin, p); }
     WLog_SetLogLevel(WLog_GetRoot(), WLOG_ERROR);
@@ -537,10 +769,7 @@ JNIEXPORT jlong JNICALL Java_net_calabi_app_rdp_RdpNative_create(JNIEnv* env, jo
         s->rdp->LoadChannels = load_channels;
         s->rdp->VerifyX509Certificate = verify;
         rdpSettings* settings = s->rdp->context->settings;
-        const rdpTransportIo* defaults = freerdp_get_io_callbacks(s->rdp->context);
-        rdpTransportIo transport = *defaults;
-        transport.TCPConnect = mesh_connect;
-        ok = freerdp_set_io_callbacks(s->rdp->context, &transport) &&
+        ok = configure_transport(s) &&
              freerdp_settings_set_string(settings, FreeRDP_ServerHostname, h) &&
              freerdp_settings_set_uint32(settings, FreeRDP_ServerPort, (UINT32)s->port) &&
              freerdp_settings_set_string(settings, FreeRDP_Username, u) &&
@@ -579,16 +808,31 @@ JNIEXPORT jboolean JNICALL Java_net_calabi_app_rdp_RdpNative_start(JNIEnv* env, 
     return s->started;
 }
 
-JNIEXPORT jboolean JNICALL Java_net_calabi_app_rdp_RdpNative_configure(JNIEnv* env, jobject self, jlong handle, jint quality, jboolean hardware) {
+JNIEXPORT jboolean JNICALL Java_net_calabi_app_rdp_RdpNative_configure(JNIEnv* env, jobject self, jlong handle, jint quality, jboolean hardware, jboolean audio, jint scale) {
     (void)env; (void)self; Session* s = (Session*)(uintptr_t)handle;
-    if (!s || s->started || quality < 0 || quality > 2) return JNI_FALSE;
-    const UINT32 widths[] = {960, 1280, 1920}, heights[] = {540, 720, 1080};
+    if (!s || s->started || quality < 0 || quality > 3) return JNI_FALSE;
+    const UINT32 widths[] = {960, 1280, 1920, 1280}, heights[] = {540, 720, 1080, 720};
+    s->adaptive_display = quality == 3;
+    s->desktop_scale_factor = clamp_desktop_scale(scale);
+    s->device_scale_factor = device_scale_for(s->desktop_scale_factor);
+    s->display_scale_dirty = FALSE;
     rdpSettings* settings = s->rdp->context->settings;
     const char* decoder = getenv("CALABI_RDP_ANDROID_AVC_DECODER");
     WLog_SetLogLevel(WLog_Get("com.freerdp.codec.h264"), WLOG_INFO);
-    return calabi_gfx_configure(&s->graphics, settings, hardware && quality != 0 && decoder && decoder[0]) &&
+    return calabi_gfx_configure(&s->graphics, settings, hardware && quality != 0 && !s->adaptive_display && decoder && decoder[0]) &&
+        freerdp_settings_set_bool(settings, FreeRDP_AudioPlayback, audio) &&
+        freerdp_settings_set_bool(settings, FreeRDP_AudioCapture, FALSE) &&
+        freerdp_settings_set_bool(settings, FreeRDP_RemoteConsoleAudio, FALSE) &&
+        freerdp_settings_set_bool(settings, FreeRDP_DesktopResize, TRUE) &&
+        freerdp_settings_set_bool(settings, FreeRDP_SupportDisplayControl, s->adaptive_display) &&
+        freerdp_settings_set_bool(settings, FreeRDP_DynamicResolutionUpdate, s->adaptive_display) &&
+        freerdp_settings_set_bool(settings, FreeRDP_SupportDynamicChannels, TRUE) &&
         freerdp_settings_set_uint32(settings, FreeRDP_DesktopWidth, widths[quality]) &&
         freerdp_settings_set_uint32(settings, FreeRDP_DesktopHeight, heights[quality]) &&
+        freerdp_settings_set_uint32(settings, FreeRDP_DesktopPhysicalWidth, widths[quality] * 254 / 960) &&
+        freerdp_settings_set_uint32(settings, FreeRDP_DesktopPhysicalHeight, heights[quality] * 254 / 960) &&
+        freerdp_settings_set_uint32(settings, FreeRDP_DesktopScaleFactor, s->desktop_scale_factor) &&
+        freerdp_settings_set_uint32(settings, FreeRDP_DeviceScaleFactor, s->device_scale_factor) &&
         freerdp_settings_set_uint32(settings, FreeRDP_ColorDepth, quality == 0 ? 16 : 32) &&
         freerdp_settings_set_bool(settings, FreeRDP_DisableWallpaper, TRUE) &&
         freerdp_settings_set_bool(settings, FreeRDP_DisableFullWindowDrag, quality == 0) &&
@@ -597,6 +841,31 @@ JNIEXPORT jboolean JNICALL Java_net_calabi_app_rdp_RdpNative_configure(JNIEnv* e
         freerdp_settings_set_uint32(settings, FreeRDP_PerformanceFlags,
             PERF_DISABLE_WALLPAPER | PERF_DISABLE_MENUANIMATIONS |
             (quality == 0 ? PERF_DISABLE_FULLWINDOWDRAG | PERF_DISABLE_THEMING : 0));
+}
+
+JNIEXPORT void JNICALL Java_net_calabi_app_rdp_RdpNative_scale(JNIEnv* env, jobject self, jlong handle, jint scale) {
+    (void)env; (void)self; Session* s = (Session*)(uintptr_t)handle;
+    if (!s || !s->adaptive_display) return;
+    const UINT32 desktop_scale = clamp_desktop_scale(scale);
+    pthread_mutex_lock(&s->lock);
+    if (s->desktop_scale_factor != desktop_scale) {
+        s->desktop_scale_factor = desktop_scale;
+        s->device_scale_factor = device_scale_for(desktop_scale);
+        s->display_scale_dirty = TRUE;
+    }
+    pthread_mutex_unlock(&s->lock);
+}
+
+JNIEXPORT void JNICALL Java_net_calabi_app_rdp_RdpNative_viewport(JNIEnv* env, jobject self, jlong handle, jint width, jint height) {
+    (void)env; (void)self; Session* s = (Session*)(uintptr_t)handle;
+    if (!s || !s->adaptive_display || width < 200 || height < 200) return;
+    pthread_mutex_lock(&s->lock);
+    if (s->viewport_width != (UINT32)width || s->viewport_height != (UINT32)height) {
+        s->viewport_width = (UINT32)width;
+        s->viewport_height = (UINT32)height;
+        s->viewport_changed_at = GetTickCount64();
+    }
+    pthread_mutex_unlock(&s->lock);
 }
 
 JNIEXPORT jlongArray JNICALL Java_net_calabi_app_rdp_RdpNative_graphicsStats(JNIEnv* env, jobject self, jlong handle) {
@@ -618,10 +887,12 @@ JNIEXPORT jlongArray JNICALL Java_net_calabi_app_rdp_RdpNative_stats(JNIEnv* env
     if (!s) return NULL;
     pthread_mutex_lock(&s->lock);
     const jlong values[] = {s->width, s->height, s->frames, s->rendered, s->input_count,
-        s->event_checks, s->copied_bytes, s->begun ? GetTickCount64() - s->begun : 0};
+        s->event_checks, s->copied_bytes, s->begun ? GetTickCount64() - s->begun : 0,
+        s->presented_frames, atomic_load_explicit(&s->received_bytes, memory_order_relaxed)};
     pthread_mutex_unlock(&s->lock);
-    jlongArray result = (*env)->NewLongArray(env, 8);
-    if (result) (*env)->SetLongArrayRegion(env, result, 0, 8, values);
+    const jsize length = sizeof(values) / sizeof(values[0]);
+    jlongArray result = (*env)->NewLongArray(env, length);
+    if (result) (*env)->SetLongArrayRegion(env, result, 0, length, values);
     return result;
 }
 
@@ -664,7 +935,7 @@ JNIEXPORT void JNICALL Java_net_calabi_app_rdp_RdpNative_destroy(JNIEnv* env, jo
     calabi_clip_free(&s->clipboard);
     freerdp_settings_free(s->initial_settings);
     (*env)->DeleteGlobalRef(env, s->callback);
-    free(s->frame); pthread_mutex_destroy(&s->lock); free(s);
+    free(s->frame); pthread_mutex_destroy(&s->lock); SecureZeroMemory(s->copy_key, sizeof(s->copy_key)); free(s);
 }
 
 JNIEXPORT jboolean JNICALL Java_net_calabi_app_rdp_RdpNative_clipboard(JNIEnv* env, jobject self,
@@ -683,14 +954,14 @@ JNIEXPORT jboolean JNICALL Java_net_calabi_app_rdp_RdpNative_input(JNIEnv* env, 
     if (kind == 0 && flags == 0x0800 && s->read_pos != s->write_pos) {
         unsigned previous = (s->write_pos + QUEUE_SIZE - 1) % QUEUE_SIZE;
         if (s->queue[previous].kind == 0 && s->queue[previous].flags == 0x0800) {
-            s->queue[previous] = (Input){kind, flags, x, y};
+            s->queue[previous] = (Input){kind, flags, x, y, 0};
             pthread_mutex_unlock(&s->lock);
             return JNI_TRUE;
         }
     }
     unsigned next = (s->write_pos + 1) % QUEUE_SIZE;
     BOOL ok = next != s->read_pos;
-    if (ok) { s->queue[s->write_pos] = (Input){kind, flags, x, y}; s->write_pos = next; }
+    if (ok) { s->queue[s->write_pos] = (Input){kind, flags, x, y, 0}; s->write_pos = next; }
     else {
         s->read_pos = s->write_pos;
         atomic_store(&s->foreground, FALSE);
@@ -700,6 +971,32 @@ JNIEXPORT jboolean JNICALL Java_net_calabi_app_rdp_RdpNative_input(JNIEnv* env, 
     pthread_mutex_unlock(&s->lock);
     // Never replay an overflowed batch or silently lose a release: repair the
     // stream and reset remote modifiers before accepting any new input.
+    return ok;
+}
+
+JNIEXPORT jboolean JNICALL Java_net_calabi_app_rdp_RdpNative_touch(JNIEnv* env, jobject self, jlong handle, jint action, jint pointerId, jint x, jint y) {
+    (void)env; (void)self; Session* s = (Session*)(uintptr_t)handle;
+    if (!s || atomic_load(&s->stopped) || action < 0 || action > 3 || x < 0 || x > 65535 || y < 0 || y > 65535) return JNI_FALSE;
+    pthread_mutex_lock(&s->lock);
+    if (!atomic_load(&s->foreground)) { pthread_mutex_unlock(&s->lock); return JNI_FALSE; }
+    if (action == 1 && s->read_pos != s->write_pos) {
+        unsigned previous = (s->write_pos + QUEUE_SIZE - 1) % QUEUE_SIZE;
+        if (s->queue[previous].kind == 3 && s->queue[previous].flags == 1 && s->queue[previous].id == pointerId) {
+            s->queue[previous] = (Input){3, action, x, y, pointerId};
+            pthread_mutex_unlock(&s->lock);
+            return JNI_TRUE;
+        }
+    }
+    unsigned next = (s->write_pos + 1) % QUEUE_SIZE;
+    BOOL ok = next != s->read_pos;
+    if (ok) { s->queue[s->write_pos] = (Input){3, action, x, y, pointerId}; s->write_pos = next; }
+    else {
+        s->read_pos = s->write_pos;
+        atomic_store(&s->foreground, FALSE);
+        atomic_store(&s->release_pending, TRUE);
+        atomic_store(&s->repair_requested, TRUE);
+    }
+    pthread_mutex_unlock(&s->lock);
     return ok;
 }
 
@@ -714,6 +1011,7 @@ JNIEXPORT jboolean JNICALL Java_net_calabi_app_rdp_RdpNative_blit(JNIEnv* env, j
     if (ok && AndroidBitmap_lockPixels(env, bitmap, &pixels) == ANDROID_BITMAP_RESULT_SUCCESS) {
         for (int row = 0; row < s->height; row++) memcpy((BYTE*)pixels + row * info.stride, s->frame + (size_t)row * s->width * 4, (size_t)s->width * 4);
         AndroidBitmap_unlockPixels(env, bitmap);
+        if (s->rendered != s->frames) s->presented_frames++;
         s->rendered = s->frames;
     } else ok = FALSE;
     pthread_mutex_unlock(&s->lock);

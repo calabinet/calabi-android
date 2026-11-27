@@ -24,6 +24,7 @@ data class Device(
     val path: String?,
     val rttMicros: Long,
     val ownerEmail: String = "",
+    val remoteLoginKey: String? = null,
 )
 
 /** This phone's own connection (GET /v1/mesh). */
@@ -81,6 +82,7 @@ class AppModel(val actions: UiActionState) {
     var connection by mutableStateOf<Connection?>(null)
         private set
     private var liveRevision = 0L
+    private var remoteLoginKeys by mutableStateOf<Map<String, String>>(emptyMap())
     var nodes by mutableStateOf<JSONArray?>(null)
         private set
     var nodesError by mutableStateOf<String?>(null)
@@ -146,6 +148,13 @@ class AppModel(val actions: UiActionState) {
     /** The VPN was left on and the phone stopped the app since (AppPrefs.vpnStoppedFromOutside). */
     var stoppedInBackground by mutableStateOf(false)
         private set
+    /** On-demand NAT & local/public IP check (GET /v1/netcheck); cached until re-check. */
+    var netCheck by mutableStateOf<NetCheckReport?>(null)
+        private set
+    var netCheckLoading by mutableStateOf(false)
+        private set
+    var netCheckError by mutableStateOf<String?>(null)
+        private set
 
     val selfHosted: Boolean get() = mode == "self_hosted"
 
@@ -164,14 +173,23 @@ class AppModel(val actions: UiActionState) {
     /** Owners, admins and auditors see the org's tunnels; everyone else their own. */
     val seesOnlyOwnTunnels: Boolean get() = role.isNotBlank() && role !in setOf("owner", "admin", "auditor")
 
-    val devices: List<Device> get() = joinDevices(nodes, connection)
+    val devices: List<Device> get() = joinDevices(nodes, connection, remoteLoginKeys)
     val activeOrg: Org? get() = orgs.firstOrNull { it.id == activeOrgId }
 
     suspend fun refreshLive() {
         val revision = liveRevision
         val requested = CoreClient.call("GET", "/v1/state").json().optBoolean("connected")
         val m = CoreClient.call("GET", "/v1/mesh").json()
+        val loginTargets = if (requested && m.optString("state") == "connected") {
+            CoreClient.call("GET", "/v1/remote/rdp/targets").json().optJSONArray("items")
+        } else null
         if (revision != liveRevision) return
+        remoteLoginKeys = buildMap {
+            for (i in 0 until (loginTargets?.length() ?: 0)) {
+                val target = loginTargets?.optJSONObject(i) ?: continue
+                if (target.optBoolean("available")) put(target.optString("overlay"), target.optString("device_key"))
+            }
+        }
         connected = requested
         stoppedInBackground = AppPrefs.vpnStoppedFromOutside(CalabiApp.instance)
         connection = Connection(
@@ -239,6 +257,7 @@ class AppModel(val actions: UiActionState) {
         if (!r.ok) return r
         liveRevision++
         connection = null
+        remoteLoginKeys = emptyMap()
         nodes = null
         // What was shown belongs to the organization just left.
         tunnels = null
@@ -314,6 +333,25 @@ class AppModel(val actions: UiActionState) {
         }
     }
 
+    suspend fun runNetCheck(force: Boolean = false) {
+        if (!force && netCheck != null) return
+        if (netCheckLoading) return
+        netCheckLoading = true
+        netCheckError = null
+        try {
+            val r = CoreClient.call("GET", "/v1/netcheck")
+            if (r.ok) {
+                netCheck = NetCheckReport.fromJson(r.json())
+            } else {
+                netCheckError = r.error("HTTP ${r.status}")
+            }
+        } catch (e: Exception) {
+            netCheckError = e.message ?: "netcheck failed"
+        } finally {
+            netCheckLoading = false
+        }
+    }
+
     /** Deletes the old device and gives its name to this phone. */
     suspend fun replace(old: OldDevice): ApiResult {
         // Completing this choice handles the whole notice, even if other old
@@ -334,7 +372,7 @@ class AppModel(val actions: UiActionState) {
  * The org's devices (GET /v1/mesh/nodes), whether or not this phone is connected,
  * annotated with this phone's live path to each.
  */
-private fun joinDevices(nodes: JSONArray?, connection: Connection?): List<Device> {
+private fun joinDevices(nodes: JSONArray?, connection: Connection?, remoteLoginKeys: Map<String, String>): List<Device> {
     val peersByOverlay = HashMap<String, JSONObject>()
     connection?.peers?.let { peers ->
         for (i in 0 until peers.length()) {
@@ -364,6 +402,7 @@ private fun joinDevices(nodes: JSONArray?, connection: Connection?): List<Device
             online = n.optBoolean("online"), offersExit = offersExit,
             path = peer?.optString("path"), rttMicros = peer?.optLong("rtt_micros") ?: 0,
             ownerEmail = n.optString("owner_email"),
+            remoteLoginKey = remoteLoginKeys[overlay],
         )
     }
     return out.sortedWith(compareByDescending<Device> { it.online }.thenBy { it.name })

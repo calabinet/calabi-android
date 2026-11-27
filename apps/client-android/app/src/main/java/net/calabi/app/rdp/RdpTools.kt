@@ -74,7 +74,12 @@ internal object RdpClipboardText {
 }
 
 @OptIn(ExperimentalLayoutApi::class)
-@Composable internal fun RdpClipboardDialog(session: RdpSession, dismiss: () -> Unit) {
+@Composable internal fun RdpClipboardDialog(
+    session: RdpSession,
+    onQuickPaste: () -> Unit,
+    onQuickPull: () -> Unit,
+    dismiss: () -> Unit,
+) {
     val manager = LocalContext.current.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     val ready by session.clipboardReady.collectAsState()
     val result by session.clipboardResult.collectAsState()
@@ -100,9 +105,16 @@ internal object RdpClipboardText {
     LaunchedEffect(ready) { if (!ready && busy) { session.cancelClipboard(); busy = false; message = R.string.rdp_clip_unavailable } }
     AlertDialog(onDismissRequest = dismiss, title = { Text(stringResource(R.string.rdp_clipboard)) }, text = {
         Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(enabled = ready && !busy, onClick = { dismiss(); onQuickPaste() }, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.rdp_quick_paste))
+            }
+            OutlinedButton(enabled = ready && !busy, onClick = { dismiss(); onQuickPull() }, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.rdp_quick_copy_pc))
+            }
+            HorizontalDivider(Modifier.padding(vertical = 4.dp))
             Text(stringResource(R.string.rdp_clip_hint), style = MaterialTheme.typography.bodySmall)
             OutlinedTextField(value = text, onValueChange = { if (it.length <= RdpClipboardText.MAX) text = it else message = R.string.rdp_clip_invalid },
-                enabled = !busy, label = { Text(stringResource(R.string.rdp_clip_text)) }, minLines = 3, maxLines = 6, modifier = Modifier.fillMaxWidth())
+                enabled = !busy, label = { Text(stringResource(R.string.rdp_clip_text)) }, minLines = 2, maxLines = 5, modifier = Modifier.fillMaxWidth())
             FlowRow {
                 TextButton(enabled = !busy, onClick = {
                     val clip = manager.primaryClip
@@ -115,14 +127,11 @@ internal object RdpClipboardText {
                     manager.setPrimaryClip(ClipData.newPlainText("Calabi", text)); message = R.string.rdp_clip_copied
                 }) { Text(stringResource(R.string.rdp_clip_copy_phone)) }
             }
-            Button(enabled = ready && !busy, onClick = {
+            OutlinedButton(enabled = ready && !busy && text.isNotEmpty(), onClick = {
                 val outgoing = runCatching { RdpClipboardText.windows(text) }.getOrNull()
                 if (outgoing == null) message = R.string.rdp_clip_invalid
                 else { busy = true; message = 0; request = session.clipboard(outgoing) }
             }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.rdp_clip_send)) }
-            OutlinedButton(enabled = ready && !busy, onClick = {
-                busy = true; message = 0; request = session.clipboard()
-            }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.rdp_clip_get)) }
             if (!ready && message == 0) InlineNotice(stringResource(R.string.rdp_clip_unavailable), tone = NoticeTone.Warning)
             if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
             if (message != 0) InlineNotice(stringResource(message), tone = if (message in setOf(R.string.rdp_clip_sent, R.string.rdp_clip_received, R.string.rdp_clip_copied)) NoticeTone.Info else NoticeTone.Warning)

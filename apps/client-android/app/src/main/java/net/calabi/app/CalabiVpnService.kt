@@ -29,6 +29,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * The VPN. It keeps the process in the foreground while connected, lends the Go
@@ -120,7 +121,10 @@ class CalabiVpnService : VpnService() {
         fileNotifications.clear()
         disconnecting = true
         stopWatchingNetworks()
-        if (app.vpnService === this) app.vpnService = null
+        if (app.vpnService === this) {
+            clearPendingFiles()
+            app.vpnService = null
+        }
         worker.shutdown()
         ConnectTileService.refresh(this)
         super.onDestroy()
@@ -129,6 +133,7 @@ class CalabiVpnService : VpnService() {
     private fun disconnect() {
         if (disconnecting) return
         disconnecting = true
+        if (app.vpnService === this) clearPendingFiles()
         AppPrefs.markVpnDown(this)
         stopWatchingNetworks()
         established = false
@@ -206,7 +211,18 @@ class CalabiVpnService : VpnService() {
         fileWatch = fileScope.launch {
             while (true) {
                 try {
+                    val generation = CoreClient.session.requestGeneration()
                     val snapshot = CoreClient.call("GET", "/v1/files").json()
+                    val received = snapshot.optJSONArray("received")
+                    val pendingCount = if (snapshot.optBoolean("available") && received != null) {
+                        (0 until received.length()).count { index ->
+                            received.optJSONObject(index)?.optJSONObject("transfer")?.optString("state") == "waiting"
+                        }
+                    } else 0
+                    withContext(Dispatchers.Main) {
+                        if (!disconnecting && app.vpnService === this@CalabiVpnService)
+                            CoreClient.session.recordPendingIncomingFileCount(generation, pendingCount)
+                    }
                     val permitted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                         ContextCompat.checkSelfPermission(this@CalabiVpnService, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
                     fileNotifications.update(snapshot, permitted)
@@ -214,6 +230,11 @@ class CalabiVpnService : VpnService() {
                 delay(2000)
             }
         }
+    }
+
+    private fun clearPendingFiles() {
+        val session = CoreClient.session
+        session.recordPendingIncomingFileCount(session.requestGeneration(), 0)
     }
 
     private fun openAppIntent(): PendingIntent = PendingIntent.getActivity(

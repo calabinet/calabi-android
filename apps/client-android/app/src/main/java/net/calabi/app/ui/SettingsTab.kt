@@ -29,7 +29,7 @@ import net.calabi.app.CoreClient
 import net.calabi.app.R
 import org.json.JSONObject
 
-private enum class SettingsPage { Home, Account, Connection, Device, Usage, Support, About, Organizations, Exit }
+private enum class SettingsPage { Home, Account, Connection, Device, Usage, Support, About, Organizations, Exit, Network }
 
 @Composable
 fun SettingsTab(model: AppModel, onSignedOut: () -> Unit, onReplace: () -> Unit, onFileTest: () -> Unit = {}, onFiles: () -> Unit = {}, onDetailChanged: (Boolean) -> Unit = {}, initialAccount: Boolean = false, onRootBack: () -> Unit = {}) {
@@ -55,7 +55,7 @@ fun SettingsTab(model: AppModel, onSignedOut: () -> Unit, onReplace: () -> Unit,
         if (initialAccount && page == SettingsPage.Account) { onRootBack(); return }
         page = when (page) {
         SettingsPage.Organizations -> SettingsPage.Account
-        SettingsPage.Exit -> SettingsPage.Connection
+        SettingsPage.Exit, SettingsPage.Network -> SettingsPage.Connection
         else -> SettingsPage.Home
     } }
     BackHandler(enabled = page != SettingsPage.Home && !renaming && !confirmSignOut, onBack = ::back)
@@ -69,6 +69,7 @@ fun SettingsTab(model: AppModel, onSignedOut: () -> Unit, onReplace: () -> Unit,
         SettingsPage.About -> R.string.mobile_settings_about
         SettingsPage.Organizations -> R.string.settings_org
         SettingsPage.Exit -> R.string.settings_exit
+        SettingsPage.Network -> R.string.nat_title
     })
     FixedPage(title, onBack = if (page != SettingsPage.Home) ::back else null) {
         pageState.SaveableStateProvider(page.name) {
@@ -127,7 +128,15 @@ fun SettingsTab(model: AppModel, onSignedOut: () -> Unit, onReplace: () -> Unit,
                             }
                             RowDivider()
                             LinkRow(stringResource(R.string.settings_exit), model.exitNode.ifBlank { stringResource(R.string.settings_exit_none) }) { page = SettingsPage.Exit }
+                            RowDivider()
+                            LinkRow(
+                                stringResource(R.string.nat_title),
+                                model.netCheck?.let { natTypeLabel(it.natType) } ?: stringResource(R.string.nat_entry_hint),
+                            ) { page = SettingsPage.Network }
                         }
+                    }
+                    SettingsPage.Network -> {
+                        NatDiagnosticsDetail(model)
                     }
                     SettingsPage.Exit -> {
                         Text(stringResource(R.string.settings_exit_hint), style = Styles.hint)
